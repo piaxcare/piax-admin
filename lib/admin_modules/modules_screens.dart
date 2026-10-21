@@ -14,6 +14,7 @@ import 'dashboard_widgets.dart' show greens;
 import 'insights.dart';
 import 'member_widgets.dart';
 import 'overview_screen.dart';
+import 'record_filter.dart';
 import 'repository.dart';
 import 'schema.dart';
 
@@ -52,7 +53,10 @@ class _StatusChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(999)),
-      child: Text(status, style: TextStyle(color: fg, fontSize: 12.5, fontWeight: FontWeight.w600)),
+      child: Text(
+        status,
+        style: TextStyle(color: fg, fontSize: 12.5, fontWeight: FontWeight.w600),
+      ),
     );
   }
 }
@@ -66,7 +70,11 @@ class _SourceBanner extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     width: double.infinity,
     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-    decoration: BoxDecoration(color: const Color(0xFFFFF7E6), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFF3D9A6))),
+    decoration: BoxDecoration(
+      color: const Color(0xFFFFF7E6),
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: const Color(0xFFF3D9A6)),
+    ),
     child: Row(
       children: [
         Icon(repo.source == ModuleSource.localServer ? Icons.dns_outlined : Icons.science_outlined, size: 18, color: const Color(0xFF7F5300)),
@@ -93,17 +101,7 @@ Future<void> _handleError(BuildContext context, Object error) async {
 // ================================================================ Home
 
 class ModulesHomeScreen extends StatefulWidget {
-  const ModulesHomeScreen({
-    super.key,
-    required this.api,
-    this.appNav,
-    this.initialModule,
-    this.initialStatus,
-    this.startAdding = false,
-    this.showAllModules = false,
-    this.showSidebar = true,
-    this.onTab,
-  });
+  const ModulesHomeScreen({super.key, required this.api, this.appNav, this.initialModule, this.initialStatus, this.startAdding = false, this.showAllModules = false, this.showSidebar = true, this.onTab});
   final AdminApi api;
 
   /// Its own sidebar on big screens. Off inside the app frame (AdminShell), which has the sidebar for every page.
@@ -167,10 +165,15 @@ class ModulesHomeScreenState extends State<ModulesHomeScreen> {
     final repo = _repo;
     if (repo == null) return;
     Navigator.of(context)
-        .push(MaterialPageRoute(settings: RouteSettings(name: 'module:$key'), builder: (_) => ModuleListScreen(repo: repo, module: moduleByKey(key), initialStatus: status, preset: preset, startAdding: create)))
+        .push(
+          MaterialPageRoute(
+            settings: RouteSettings(name: 'module:$key'),
+            builder: (_) => ModuleListScreen(repo: repo, module: moduleByKey(key), initialStatus: status, preset: preset, startAdding: create),
+          ),
+        )
         .then((_) {
-      if (mounted) setState(() {});
-    });
+          if (mounted) setState(() {});
+        });
   }
 
   /// Leaves the admin modules, then runs [go] (another page of the app).
@@ -195,6 +198,7 @@ class ModulesHomeScreenState extends State<ModulesHomeScreen> {
       setTab(1);
     },
     module: (key, {status, create = false}) => _open(key, status: status, create: create),
+    item: widget.appNav?.item,
   );
 
   void _reload() {
@@ -212,7 +216,14 @@ class ModulesHomeScreenState extends State<ModulesHomeScreen> {
         ? Center(
             child: _error == null
                 ? const CircularProgressIndicator()
-                : Column(mainAxisSize: MainAxisSize.min, children: [Text(_error!), const SizedBox(height: 12), FilledButton(onPressed: _load, child: const Text('Try again'))]),
+                : Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(_error!),
+                      const SizedBox(height: 12),
+                      FilledButton(onPressed: _load, child: const Text('Try again')),
+                    ],
+                  ),
           )
         : _tab == 0
         ? AdminOverview(
@@ -225,14 +236,18 @@ class ModulesHomeScreenState extends State<ModulesHomeScreen> {
         : _allModules(repo);
     return Scaffold(
       backgroundColor: const Color(0xFFF4F7F6),
-      drawer: shell ? null : AdminDrawer(nav: _nav, server: widget.api.base, onSignOut: () => signOut(context)),
+      drawer: shell ? null : AdminDrawer(nav: _nav, server: widget.api.base, onSignOut: widget.api.isDemo ? null : () => signOut(context)),
       appBar: shell
           ? null
           : AppBar(
-              title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
+              title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
               actions: [
                 AdminSearchBar(nav: _nav, compact: true),
-                if (repo != null) _Bell(repo: repo, onOpen: (key, {status, preset}) => _open(key, status: status, preset: preset)),
+                if (repo != null)
+                  _Bell(
+                    repo: repo,
+                    onOpen: (key, {status, preset}) => _open(key, status: status, preset: preset),
+                  ),
                 IconButton(tooltip: 'Reload', icon: const Icon(Icons.refresh), onPressed: _reload),
               ],
             ),
@@ -240,7 +255,7 @@ class ModulesHomeScreenState extends State<ModulesHomeScreen> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (shell && widget.showSidebar) AdminSidebar(nav: _nav, active: _tab == 0 ? 'overview' : 'modules', onSignOut: () => signOut(context)),
+            if (shell && widget.showSidebar) AdminSidebar(nav: _nav, activeItemId: _tab == 0 ? 'founder-overview' : null, onSignOut: widget.api.isDemo ? null : () => signOut(context)),
             Expanded(
               child: Column(
                 children: [
@@ -249,12 +264,25 @@ class ModulesHomeScreenState extends State<ModulesHomeScreen> {
                       padding: const EdgeInsets.fromLTRB(28, 20, 28, 12),
                       child: Row(
                         children: [
-                          Text(title, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: Color(0xFF0C1C19), letterSpacing: -.5)),
+                          Text(
+                            title,
+                            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w600, color: Color(0xFF0C1C19), letterSpacing: -.5),
+                          ),
                           const SizedBox(width: 24),
                           const Spacer(),
-                          Flexible(flex: 3, child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 380), child: AdminSearchBar(nav: _nav, hint: 'Search modules, features, pages'))),
+                          Flexible(
+                            flex: 3,
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 380),
+                              child: AdminSearchBar(nav: _nav, hint: 'Search modules, features, pages'),
+                            ),
+                          ),
                           const SizedBox(width: 12),
-                          if (repo != null) _Bell(repo: repo, onOpen: (key, {status, preset}) => _open(key, status: status, preset: preset)),
+                          if (repo != null)
+                            _Bell(
+                              repo: repo,
+                              onOpen: (key, {status, preset}) => _open(key, status: status, preset: preset),
+                            ),
                           IconButton(tooltip: 'Reload', icon: const Icon(Icons.refresh), onPressed: _reload),
                           const SizedBox(width: 10),
                           _Profile(server: widget.api.base),
@@ -293,7 +321,13 @@ class ModulesHomeScreenState extends State<ModulesHomeScreen> {
 
   Widget _allModules(ModuleRepository repo) => LayoutBuilder(
     builder: (context, box) {
-      final across = box.maxWidth >= 1200 ? 4 : box.maxWidth >= 860 ? 3 : box.maxWidth >= 560 ? 2 : 1;
+      final across = box.maxWidth >= 1200
+          ? 4
+          : box.maxWidth >= 860
+          ? 3
+          : box.maxWidth >= 560
+          ? 2
+          : 1;
       return ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
         children: [
@@ -301,15 +335,15 @@ class ModulesHomeScreenState extends State<ModulesHomeScreen> {
           for (final group in moduleGroups) ...[
             Padding(
               padding: const EdgeInsets.fromLTRB(4, 22, 4, 10),
-              child: Text(group.toUpperCase(), style: const TextStyle(color: Color(0xFF5B6B67), fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 1.6)),
+              child: Text(
+                group.toUpperCase(),
+                style: const TextStyle(color: Color(0xFF5B6B67), fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 1.6),
+              ),
             ),
             EqualRows(
               columns: across,
               gap: 12,
-              children: [
-                for (final module in modules.where((m) => m.group == group))
-                  _ModuleTile(module: module, count: repo.count(module.key), onTap: () => _open(module.key)),
-              ],
+              children: [for (final module in modules.where((m) => m.group == group)) _ModuleTile(module: module, count: repo.count(module.key), onTap: () => _open(module.key))],
             ),
           ],
         ],
@@ -337,17 +371,22 @@ class _Bell extends StatelessWidget {
         for (final a in items)
           PopupMenuItem(
             value: a,
-            child: Row(children: [
-              Container(
-                width: 30,
-                alignment: Alignment.center,
-                padding: const EdgeInsets.symmetric(vertical: 3),
-                decoration: BoxDecoration(color: a.urgency == Urgency.high ? const Color(0xFFFBE7E5) : const Color(0xFFEFF7F4), borderRadius: BorderRadius.circular(8)),
-                child: Text('${a.count}', style: TextStyle(fontWeight: FontWeight.w800, color: a.urgency == Urgency.high ? const Color(0xFFB3261E) : brand)),
-              ),
-              const SizedBox(width: 10),
-              Flexible(child: Text(a.text, style: const TextStyle(fontSize: 13.5))),
-            ]),
+            child: Row(
+              children: [
+                Container(
+                  width: 30,
+                  alignment: Alignment.center,
+                  padding: const EdgeInsets.symmetric(vertical: 3),
+                  decoration: BoxDecoration(color: a.urgency == Urgency.high ? const Color(0xFFFBE7E5) : const Color(0xFFEFF7F4), borderRadius: BorderRadius.circular(8)),
+                  child: Text(
+                    '${a.count}',
+                    style: TextStyle(fontWeight: FontWeight.w600, color: a.urgency == Urgency.high ? const Color(0xFFB3261E) : brand),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Flexible(child: Text(a.text, style: const TextStyle(fontSize: 13.5))),
+              ],
+            ),
           ),
       ],
       child: Padding(
@@ -369,20 +408,30 @@ class _Profile extends StatelessWidget {
   final String server;
 
   @override
-  Widget build(BuildContext context) => Row(mainAxisSize: MainAxisSize.min, children: [
-    Container(
-      width: 40,
-      height: 40,
-      padding: const EdgeInsets.all(6),
-      decoration: BoxDecoration(color: greens[5], borderRadius: BorderRadius.circular(12)),
-      child: Image.asset('assets/brand/icon.png', errorBuilder: (_, _, _) => const Icon(Icons.person_outline, color: brand)),
-    ),
-    const SizedBox(width: 10),
-    Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-      const Text('PIAX team', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: Color(0xFF0C1C19))),
-      Text('Admin · ${server.replaceFirst(RegExp(r'^https?://'), '')}', style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 11.5)),
-    ]),
-  ]);
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Container(
+        width: 40,
+        height: 40,
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(color: greens[5], borderRadius: BorderRadius.circular(12)),
+        child: Image.asset('assets/brand/icon.png', errorBuilder: (_, _, _) => const Icon(Icons.person_outline, color: brand)),
+      ),
+      const SizedBox(width: 10),
+      Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'PIAX team',
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Color(0xFF0C1C19)),
+          ),
+          Text('Admin · ${server.replaceFirst(RegExp(r'^https?://'), '')}', style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 11.5)),
+        ],
+      ),
+    ],
+  );
 }
 
 class _ModuleTile extends StatelessWidget {
@@ -414,14 +463,27 @@ class _ModuleTile extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(module.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                  Text(
+                    module.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                  ),
                   const SizedBox(height: 2),
-                  Text(module.description, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 12.5)),
+                  Text(
+                    module.description,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 12.5),
+                  ),
                 ],
               ),
             ),
             const SizedBox(width: 8),
-            Text('$count', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: brand)),
+            Text(
+              '$count',
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 18, color: brand),
+            ),
           ],
         ),
       ),
@@ -448,13 +510,19 @@ class ModuleListScreen extends StatefulWidget {
 }
 
 class _ModuleListScreenState extends State<ModuleListScreen> {
-  final _search = TextEditingController();
-  late String? _status = widget.initialStatus;
+  /// The list's search, filters and sort (kept while the app is open); a status from the overview starts it filtered.
+  late RecordQuery _q = widget.initialStatus != null && m.statusField != null
+      ? const RecordQuery().withFilter(m.statusField!, ChoiceFilter({widget.initialStatus!}))
+      : rememberedQuery('module:${m.key}');
   late ListPreset? _preset = widget.preset;
+  String? _selectedRecordId;
 
-  /// Sorted by this field (null: as stored), biggest / newest first unless [_ascending].
-  String? _sortBy;
-  bool _ascending = false;
+  /// The side panel (wide screens) shows a form instead of details: 'edit' the selected record, or 'add' one.
+  String? _panelForm;
+  bool _split = false;
+
+  /// The side panel fills the page (its full-screen button); reset whenever the panel closes.
+  bool _panelExpanded = false;
 
   ModuleDef get m => widget.module;
 
@@ -464,51 +532,89 @@ class _ModuleListScreenState extends State<ModuleListScreen> {
     if (widget.startAdding && m.canCreate) WidgetsBinding.instance.addPostFrameCallback((_) => _add());
   }
 
-  /// Fields worth sorting by: numbers, dates and the title.
-  List<FieldDef> get _sortable => [
+  /// Every field but pictures, by its kind: text, choices, numbers, dates, yes / no.
+  List<FilterField> get _fields => [
     for (final f in m.fields)
-      if (f.key == m.titleField || const {FieldType.integer, FieldType.decimal, FieldType.money, FieldType.dateTime}.contains(f.type)) f,
+      if (f.type != FieldType.image)
+        switch (f.type) {
+          FieldType.choice => FilterField(f.key, f.label, FilterKind.choice, options: f.options),
+          FieldType.boolean => FilterField(f.key, f.label, FilterKind.boolean),
+          FieldType.integer || FieldType.decimal => FilterField(f.key, f.label, FilterKind.number),
+          FieldType.money => FilterField(f.key, f.label, FilterKind.number, money: true),
+          FieldType.dateTime => FilterField(f.key, f.label, FilterKind.date),
+          _ => FilterField(f.key, f.label, FilterKind.text),
+        },
   ];
 
-  int _compare(Map<String, dynamic> a, Map<String, dynamic> b) {
-    final f = m.field(_sortBy!)!;
-    final x = a[f.key], y = b[f.key];
-    final int result;
-    if (f.type == FieldType.dateTime) {
-      result = (DateTime.tryParse('${x ?? ''}') ?? DateTime(0)).compareTo(DateTime.tryParse('${y ?? ''}') ?? DateTime(0));
-    } else if (x is num && y is num) {
-      result = x.compareTo(y);
-    } else {
-      result = '${x ?? ''}'.toLowerCase().compareTo('${y ?? ''}'.toLowerCase());
+  /// A field of a record; "last modified" is when it was last changed here, else its own updated / edited date.
+  static Object? _read(Map<String, dynamic> r, String key) =>
+      key == modifiedKey ? r['_modifiedAt'] ?? r['updatedAt'] ?? r['lastEdited'] ?? r['lastActive'] ?? r['uploadedAt'] : r[key];
+
+  void _setQuery(RecordQuery q) {
+    rememberQuery('module:${m.key}', q);
+    setState(() => _q = q);
+  }
+
+  List<Map<String, dynamic>> _filter(RecordQuery q) {
+    final base = widget.repo.records(m.key).where((r) => _preset == null || _preset!.test(r)).toList();
+    return applyQuery(base, q, _fields, _read);
+  }
+
+  List<Map<String, dynamic>> get _shown => _filter(_q);
+
+  Future<void> _open(Map<String, dynamic> record, {required bool split}) async {
+    if (split) {
+      setState(() => _selectedRecordId = '${record['id']}');
+      return;
     }
-    return _ascending ? result : -result;
-  }
-
-  @override
-  void dispose() {
-    _search.dispose();
-    super.dispose();
-  }
-
-  List<Map<String, dynamic>> get _shown {
-    final q = _search.text.trim().toLowerCase();
-    final list = widget.repo.records(m.key).where((r) {
-      if (_status != null && '${r[m.statusField]}' != _status) return false;
-      if (_preset != null && !_preset!.test(r)) return false;
-      if (q.isEmpty) return true;
-      return r.values.any((v) => '$v'.toLowerCase().contains(q));
-    }).toList();
-    if (_sortBy != null) list.sort(_compare);
-    return list;
-  }
-
-  Future<void> _open(Map<String, dynamic> record) async {
-    await Navigator.of(context).push(MaterialPageRoute(builder: (_) => ModuleDetailScreen(repo: widget.repo, module: m, recordId: '${record['id']}')));
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ModuleDetailScreen(repo: widget.repo, module: m, recordId: '${record['id']}'),
+      ),
+    );
     if (mounted) setState(() {});
   }
 
+  Future<void> _editRecord(Map<String, dynamic> record) async {
+    if (!m.canEdit || m.sensitive) return;
+    if (_split) {
+      return setState(() {
+        _selectedRecordId = '${record['id']}';
+        _panelForm = 'edit';
+      });
+    }
+    final saved = await Navigator.of(context).push<Map<String, dynamic>>(
+      MaterialPageRoute(
+        builder: (_) => ModuleFormScreen(repo: widget.repo, module: m, record: record),
+      ),
+    );
+    if (saved != null && mounted) {
+      setState(() {});
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Saved.')));
+    }
+  }
+
+  /// The panel form finished: back to the record's details (a new one opens), or to what was there before.
+  void _panelDone(Map<String, dynamic>? saved, {bool added = false}) {
+    setState(() {
+      _panelForm = null;
+      if (saved == null) {
+        _selectedRecordId = null; // closed: the whole panel goes, details too
+        _panelExpanded = false;
+      } else if (added) {
+        _selectedRecordId = '${saved['id']}';
+      }
+    });
+    if (saved != null) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(added ? '${m.singular} added.' : 'Saved.')));
+  }
+
   Future<void> _add() async {
-    final made = await Navigator.of(context).push<Map<String, dynamic>>(MaterialPageRoute(builder: (_) => ModuleFormScreen(repo: widget.repo, module: m)));
+    if (_split) return setState(() => _panelForm = 'add');
+    final made = await Navigator.of(context).push<Map<String, dynamic>>(
+      MaterialPageRoute(
+        builder: (_) => ModuleFormScreen(repo: widget.repo, module: m),
+      ),
+    );
     if (made != null && mounted) {
       setState(() {});
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${m.singular} added.')));
@@ -521,195 +627,215 @@ class _ModuleListScreenState extends State<ModuleListScreen> {
     final all = widget.repo.records(m.key);
     return Scaffold(
       backgroundColor: const Color(0xFFF2F6F5),
-      appBar: AppBar(title: Text(m.title, style: const TextStyle(fontWeight: FontWeight.w800))),
-      floatingActionButton: m.canCreate
-          ? FloatingActionButton.extended(onPressed: _add, icon: const Icon(Icons.add), label: Text('Add ${m.singular.toLowerCase()}'))
-          : null,
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
-        children: [
-          _SourceBanner(widget.repo),
-          const SizedBox(height: 14),
-          _ModuleHeader(module: m, total: all.length, onAdd: m.canCreate ? _add : null),
-          const SizedBox(height: 14),
-          _ModuleDashboard(insight: analyse(m, all), status: _status, onStatus: (s) => setState(() => _status = s)),
-          const SizedBox(height: 22),
-          Text('All ${m.title.toLowerCase()}', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
-          const SizedBox(height: 10),
-          TextField(
-            controller: _search,
-            onChanged: (_) => setState(() {}),
-            style: const TextStyle(fontSize: 16),
-            decoration: InputDecoration(
-              hintText: 'Search ${m.title.toLowerCase()}',
-              prefixIcon: const Icon(Icons.search),
-              filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
-              suffixIcon: _search.text.isEmpty ? null : IconButton(tooltip: 'Clear', icon: const Icon(Icons.close), onPressed: () => setState(_search.clear)),
-            ),
-          ),
-          if (m.statuses.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                ChoiceChip(label: Text('All ${all.length}'), selected: _status == null, onSelected: (_) => setState(() => _status = null)),
-                for (final s in m.statuses)
-                  ChoiceChip(
-                    label: Text('$s ${all.where((r) => '${r[m.statusField]}' == s).length}'),
-                    selected: _status == s,
-                    onSelected: (_) => setState(() => _status = _status == s ? null : s),
-                  ),
-              ],
-            ),
-          ],
-          if (_preset != null) ...[
-            const SizedBox(height: 10),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: InputChip(
-                avatar: const Icon(Icons.filter_alt_outlined, size: 18),
-                label: Text(_preset!.label),
-                onDeleted: () => setState(() => _preset = null),
-                deleteButtonTooltipMessage: 'Remove this filter',
-              ),
-            ),
-          ],
-          const SizedBox(height: 14),
-          Row(
+      appBar: AppBar(
+        title: Text(m.title, style: const TextStyle(fontWeight: FontWeight.w600)),
+      ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final split = _split = constraints.maxWidth >= 1100;
+          final list = ListView(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 104), // room under the last card for the Add button
             children: [
-              Expanded(
-                child: Text(
-                  shown.length == all.length ? 'Showing all ${all.length}' : 'Showing ${shown.length} of ${all.length}',
-                  style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 13, fontWeight: FontWeight.w600),
-                ),
+              _SourceBanner(widget.repo),
+              const SizedBox(height: 14),
+              _ModuleHeader(module: m, total: all.length), // adding is the floating button
+              const SizedBox(height: 14),
+              _ModuleDashboard(
+                insight: analyse(m, all),
+                status: switch (_q.filters[m.statusField]) {
+                  ChoiceFilter(:final values) when values.length == 1 => values.single,
+                  _ => null,
+                },
+                onStatus: (s) => _setQuery(_q.withFilter(m.statusField ?? '', s == null ? null : ChoiceFilter({s}))),
               ),
-              PopupMenuButton<String>(
-                tooltip: 'Sort',
-                onSelected: (key) => setState(() {
-                  if (key == '') {
-                    _sortBy = null;
-                  } else if (_sortBy == key) {
-                    _ascending = !_ascending;
-                  } else {
-                    _sortBy = key;
-                    _ascending = m.field(key)?.type == FieldType.text || m.field(key)?.type == FieldType.longText;
-                  }
-                }),
-                itemBuilder: (_) => [
-                  const PopupMenuItem(value: '', child: Text('Default order')),
-                  for (final f in _sortable)
-                    PopupMenuItem(
-                      value: f.key,
-                      child: Row(children: [
-                        Expanded(child: Text(f.label)),
-                        if (_sortBy == f.key) Icon(_ascending ? Icons.arrow_upward : Icons.arrow_downward, size: 16, color: brand),
-                      ]),
+              const SizedBox(height: 22),
+              Text('All ${m.title.toLowerCase()}', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 10),
+              FilterBar(
+                pageKey: 'module:${m.key}',
+                fields: _fields,
+                query: _q,
+                onChanged: _setQuery,
+                total: all.length,
+                shown: shown.length,
+                count: (draft) => _filter(draft).length,
+                noun: m.title.toLowerCase(),
+                quickField: m.statusField,
+                quickCounts: {for (final st in m.statuses) st: all.where((r) => '${r[m.statusField]}' == st).length},
+                extraChips: [
+                  if (_preset != null)
+                    InputChip(
+                      avatar: const Icon(Icons.filter_alt_outlined, size: 18),
+                      label: Text(_preset!.label),
+                      onDeleted: () => setState(() => _preset = null),
+                      deleteButtonTooltipMessage: 'Remove this filter',
                     ),
                 ],
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    const Icon(Icons.sort, size: 18, color: brand),
-                    const SizedBox(width: 6),
-                    Text(
-                      _sortBy == null ? 'Sort' : '${m.field(_sortBy!)!.label} ${_ascending ? '↑' : '↓'}',
-                      style: const TextStyle(color: brand, fontWeight: FontWeight.w600, fontSize: 13.5),
-                    ),
-                  ]),
+              ),
+              const SizedBox(height: 8),
+              if (shown.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 48),
+                  child: Center(
+                    child: Text(all.isEmpty ? 'No ${m.title.toLowerCase()} yet.' : 'Nothing matches these filters.', style: const TextStyle(color: Color(0xFF5A6C68))),
+                  ),
+                )
+              else
+                // One card per row on phones, two on tablets, three on desktops; cards in a row share one height.
+                LayoutBuilder(
+                  builder: (context, box) => EqualRows(
+                    columns: box.maxWidth >= 1100
+                        ? 3
+                        : box.maxWidth >= 680
+                        ? 2
+                        : 1,
+                    gap: 12,
+                    children: [
+                      for (final r in shown)
+                        m.key == 'members'
+                            ? MemberCard(
+                                member: r,
+                                onTap: () => _open(r, split: split),
+                                onEdit: m.canEdit && !m.sensitive ? () => _editRecord(r) : null,
+                              )
+                            : _RecordCard(
+                                module: m,
+                                record: r,
+                                onTap: () => _open(r, split: split),
+                                onEdit: m.canEdit && !m.sensitive ? () => _editRecord(r) : null,
+                              ),
+                    ],
+                  ),
                 ),
+            ],
+          );
+          final withAdd = m.canCreate ? floatingAdd('Add ${m.singular.toLowerCase()}', _add, list) : list;
+          if (!split) return withAdd;
+          final selected = _selectedRecordId;
+          final form = _panelForm;
+          final record = selected == null ? null : widget.repo.records(m.key).where((r) => '${r['id']}' == selected).firstOrNull;
+          final Widget? panel = form == 'add'
+              ? ModuleFormScreen(key: const ValueKey('panel-add'), repo: widget.repo, module: m, onDone: (saved) => _panelDone(saved, added: true))
+              : form == 'edit' && record != null
+              ? ModuleFormScreen(key: ValueKey('panel-edit-$selected'), repo: widget.repo, module: m, record: record, onDone: (saved) => _panelDone(saved))
+              : selected != null
+              ? ModuleDetailScreen(
+                  key: ValueKey(selected),
+                  repo: widget.repo,
+                  module: m,
+                  recordId: selected,
+                  embedded: true,
+                  onClose: () => setState(() {
+                    _selectedRecordId = null;
+                    _panelExpanded = false;
+                  }),
+                  onEdit: m.canEdit && !m.sensitive ? () => setState(() => _panelForm = 'edit') : null,
+                )
+              : null;
+          // Full screen: the panel takes the whole page (the list comes back with the same button or on close).
+          if (panel != null && _panelExpanded) {
+            return PanelScope(expanded: true, onToggle: () => setState(() => _panelExpanded = false), child: panel);
+          }
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(child: withAdd),
+              AnimatedContainer(
+                duration: MediaQuery.disableAnimationsOf(context) ? Duration.zero : const Duration(milliseconds: 220),
+                curve: Curves.easeOutCubic,
+                width: panel == null ? 0 : (form == null ? 460 : 520),
+                clipBehavior: Clip.hardEdge,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF2F6F5),
+                  border: Border(left: BorderSide(color: Color(0xFFE1E8E6))),
+                ),
+                child: panel == null ? const SizedBox.shrink() : PanelScope(expanded: false, onToggle: () => setState(() => _panelExpanded = true), child: panel),
               ),
             ],
-          ),
-          const SizedBox(height: 8),
-          if (shown.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 48),
-              child: Center(child: Text(all.isEmpty ? 'No ${m.title.toLowerCase()} yet.' : 'Nothing matches your search.', style: const TextStyle(color: Color(0xFF5A6C68)))),
-            )
-          else
-            // One card per row on phones, two on tablets, three on desktops; cards in a row share one height.
-            LayoutBuilder(
-              builder: (context, box) => EqualRows(
-                columns: box.maxWidth >= 1100 ? 3 : box.maxWidth >= 680 ? 2 : 1,
-                gap: 12,
-                children: [
-                  for (final r in shown)
-                    m.key == 'members' ? MemberCard(member: r, onTap: () => _open(r)) : _RecordCard(module: m, record: r, onTap: () => _open(r)),
-                ],
-              ),
-            ),
-        ],
+          );
+        },
       ),
     );
   }
 }
 
 class _RecordCard extends StatelessWidget {
-  const _RecordCard({required this.module, required this.record, required this.onTap});
+  const _RecordCard({required this.module, required this.record, required this.onTap, this.onEdit});
   final ModuleDef module;
   final Map<String, dynamic> record;
   final VoidCallback onTap;
+  final VoidCallback? onEdit;
 
   @override
   Widget build(BuildContext context) {
     final title = module.field(module.titleField);
     final subtitle = [
       for (final key in module.subtitleFields)
-        if (module.field(key) case final f? when record[key] != null && '${record[key]}'.isNotEmpty) '${f.type == FieldType.text || f.type == FieldType.longText || f.type == FieldType.choice ? '' : '${f.label}: '}${displayValue(f, record[key])}',
+        if (module.field(key) case final f? when record[key] != null && '${record[key]}'.isNotEmpty)
+          '${f.type == FieldType.text || f.type == FieldType.longText || f.type == FieldType.choice ? '' : '${f.label}: '}${displayValue(f, record[key])}',
     ].join(' · ');
     final status = module.statusField == null ? null : record[module.statusField];
     return Material(
-        color: Colors.white,
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            child: Row(
-              children: [
-                if (recordImage(module.key, record) case final image?) ...[AssetThumb(image, size: 52), const SizedBox(width: 14)],
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(title == null ? '${record['id']}' : displayValue(title, record[module.titleField]),
-                          maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
-                      if (subtitle.isNotEmpty) ...[
-                        const SizedBox(height: 4),
-                        Text(subtitle, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 13)),
-                      ],
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              if (recordImage(module.key, record) case final image?) ...[AssetThumb(image, size: 52), const SizedBox(width: 14)],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title == null ? '${record['id']}' : displayValue(title, record[module.titleField]),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                    ),
+                    if (subtitle.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 13),
+                      ),
                     ],
-                  ),
+                  ],
                 ),
-                if (status != null) ...[const SizedBox(width: 10), _StatusChip('$status')],
-                const SizedBox(width: 4),
-                const Icon(Icons.chevron_right, color: Color(0xFF94A3B8)),
-              ],
-            ),
+              ),
+              if (status != null) ...[const SizedBox(width: 10), _StatusChip('$status')],
+              if (onEdit != null) IconButton(tooltip: 'Edit ${module.singular.toLowerCase()}', icon: const Icon(Icons.edit_outlined, size: 19), onPressed: onEdit, visualDensity: VisualDensity.compact),
+              const SizedBox(width: 4),
+              const Icon(Icons.chevron_right, color: Color(0xFF94A3B8)),
+            ],
           ),
         ),
+      ),
     );
   }
 }
 
 /// The top of a module page: its picture or icon, name, what it holds, and the add button.
 class _ModuleHeader extends StatelessWidget {
-  const _ModuleHeader({required this.module, required this.total, this.onAdd});
+  const _ModuleHeader({required this.module, required this.total});
   final ModuleDef module;
   final int total;
-  final VoidCallback? onAdd;
 
   @override
   Widget build(BuildContext context) {
     final m = module;
-    final wide = MediaQuery.sizeOf(context).width >= 700;
     return Container(
       padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFFE6EEEB))),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE6EEEB)),
+      ),
       child: Row(
         children: [
           if (moduleImage(m.key) case final image?)
@@ -723,18 +849,20 @@ class _ModuleHeader extends StatelessWidget {
             ),
           const SizedBox(width: 16),
           Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(m.title, style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w800, color: Color(0xFF0C1C19))),
-              const SizedBox(height: 3),
-              Text(m.description, style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 13.5, height: 1.35)),
-              const SizedBox(height: 6),
-              Text('${m.group} · $total ${total == 1 ? 'record' : 'records'}${m.readOnly ? ' · read-only' : ''}', style: const TextStyle(color: Color(0xFF8A9A96), fontSize: 12)),
-            ]),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  m.title,
+                  style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w600, color: Color(0xFF0C1C19)),
+                ),
+                const SizedBox(height: 3),
+                Text(m.description, style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 13.5, height: 1.35)),
+                const SizedBox(height: 6),
+                Text('${m.group} · $total ${total == 1 ? 'record' : 'records'}${m.readOnly ? ' · read-only' : ''}', style: const TextStyle(color: Color(0xFF8A9A96), fontSize: 12)),
+              ],
+            ),
           ),
-          if (onAdd != null && wide) ...[
-            const SizedBox(width: 12),
-            FilledButton.icon(onPressed: onAdd, icon: const Icon(Icons.add), label: Text('Add ${m.singular.toLowerCase()}')),
-          ],
         ],
       ),
     );
@@ -754,7 +882,10 @@ class _KpiTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Material(
     color: selected ? color.withValues(alpha: 0.08) : Colors.white,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: selected ? color : const Color(0xFFE6EEEB), width: selected ? 1.6 : 1)),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(16),
+      side: BorderSide(color: selected ? color : const Color(0xFFE6EEEB), width: selected ? 1.6 : 1),
+    ),
     child: InkWell(
       borderRadius: BorderRadius.circular(16),
       onTap: onTap,
@@ -763,19 +894,44 @@ class _KpiTile extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(children: [
-              if (icon != null)
-                Icon(icon, size: 16, color: color)
-              else
-                Container(width: 10, height: 10, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(3))),
-              const SizedBox(width: 8),
-              Expanded(child: Text(label, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFF34443F), fontSize: 12.5, fontWeight: FontWeight.w600))),
-            ]),
+            Row(
+              children: [
+                if (icon != null)
+                  Icon(icon, size: 16, color: color)
+                else
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(3)),
+                  ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    label,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Color(0xFF34443F), fontSize: 12.5, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 8),
-            FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Color(0xFF0C1C19)))),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                value,
+                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600, color: Color(0xFF0C1C19)),
+              ),
+            ),
             if (caption != null && caption!.isNotEmpty) ...[
               const SizedBox(height: 2),
-              Text(caption!, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 11.5)),
+              Text(
+                caption!,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 11.5),
+              ),
             ],
           ],
         ),
@@ -802,12 +958,29 @@ class _ModuleDashboard extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, box) {
         final w = box.maxWidth;
-        final cols = w >= 1100 ? 5 : w >= 760 ? 4 : w >= 480 ? 3 : 2;
-        final chartCols = w >= 1100 ? 3 : w >= 640 ? 2 : 1;
+        final cols = w >= 1100
+            ? 5
+            : w >= 760
+            ? 4
+            : w >= 480
+            ? 3
+            : 2;
+        final chartCols = w >= 1100
+            ? 3
+            : w >= 640
+            ? 2
+            : 1;
         final chartWidth = (w - 14 * (chartCols - 1)) / chartCols;
         final beside = DonutChart.fitsBeside(chartWidth - 36, size: 132);
         final tiles = <Widget>[
-          _KpiTile(label: 'All ${m.title.toLowerCase()}', value: '${i.total}', caption: status == null ? 'showing all' : 'tap to show all', icon: m.icon, selected: status == null && i.statuses.isNotEmpty, onTap: () => onStatus(null)),
+          _KpiTile(
+            label: 'All ${m.title.toLowerCase()}',
+            value: '${i.total}',
+            caption: status == null ? 'showing all' : 'tap to show all',
+            icon: m.icon,
+            selected: status == null && i.statuses.isNotEmpty,
+            onTap: () => onStatus(null),
+          ),
           for (final s in i.statuses.where((s) => s.count > 0).take(4))
             _KpiTile(label: s.label, value: '${s.count}', caption: '${(s.count * 100 / i.total).round()}% of all', color: s.color, selected: status == s.label, onTap: () => onStatus(s.label)),
           for (final n in i.numbers.take(3)) _KpiTile(label: n.headlineLabel, value: n.headline, caption: n.range.isEmpty ? null : 'from ${n.range}', icon: Icons.insights_outlined, color: const Color(0xFF0F766E)),
@@ -822,20 +995,24 @@ class _ModuleDashboard extends StatelessWidget {
         ];
         Widget panel(String title, Widget child) => Container(
           padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18), border: Border.all(color: const Color(0xFFE6EEEB))),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(title, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5)),
-            const SizedBox(height: 12),
-            if (chartCols > 1) Expanded(child: Center(child: child)) else child,
-          ]),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: const Color(0xFFE6EEEB)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14.5)),
+              const SizedBox(height: 12),
+              if (chartCols > 1) Expanded(child: Center(child: child)) else child,
+            ],
+          ),
         );
         final charts = <Widget>[
           if (i.statuses.isNotEmpty) panel('By status', DonutChart(slices: i.statuses, centerLabel: m.title.toLowerCase(), size: 132, horizontal: beside)),
           for (final b in i.breakdowns.take(trend == null ? 3 : 2))
-            panel(
-              'By ${b.field.label.toLowerCase()}',
-              b.slices.length <= 4 ? DonutChart(slices: b.slices, centerLabel: m.title.toLowerCase(), size: 132, horizontal: beside) : BarList(slices: b.slices.take(5).toList()),
-            ),
+            panel('By ${b.field.label.toLowerCase()}', b.slices.length <= 4 ? DonutChart(slices: b.slices, centerLabel: m.title.toLowerCase(), size: 132, horizontal: beside) : BarList(slices: b.slices.take(5).toList())),
           if (trend != null) panel('${trend.field.label}, per week', TrendChart(series: [(trend.field.label, brand, trend.weekly)], height: 150)),
         ];
         return Column(
@@ -854,22 +1031,38 @@ class _ModuleDashboard extends StatelessWidget {
 String? compareHint(FieldDef f, Object? value, List<Map<String, dynamic>> records) {
   final v = value is num ? value : num.tryParse('${value ?? ''}');
   if (v == null) return null;
-  final all = [for (final r in records) if (r[f.key] case final num n) n];
+  final all = [
+    for (final r in records)
+      if (r[f.key] case final num n) n,
+  ];
   if (all.length < 2) return null;
   final avg = all.reduce((a, b) => a + b) / all.length;
   final rank = all.where((n) => n > v).length + 1;
-  final where = (v - avg).abs() < avg * 0.05 ? 'About average' : v > avg ? 'Above average' : 'Below average';
-  final place = rank == 1 ? 'highest' : rank == all.length ? 'lowest' : '#$rank highest';
+  final where = (v - avg).abs() < avg * 0.05
+      ? 'About average'
+      : v > avg
+      ? 'Above average'
+      : 'Below average';
+  final place = rank == 1
+      ? 'highest'
+      : rank == all.length
+      ? 'lowest'
+      : '#$rank highest';
   return '$where (${formatNumber(f, avg)}) · $place of ${all.length}';
 }
 
 // ================================================================ Details
 
 class ModuleDetailScreen extends StatefulWidget {
-  const ModuleDetailScreen({super.key, required this.repo, required this.module, required this.recordId});
+  const ModuleDetailScreen({super.key, required this.repo, required this.module, required this.recordId, this.embedded = false, this.onClose, this.onEdit});
   final ModuleRepository repo;
   final ModuleDef module;
   final String recordId;
+  final bool embedded;
+  final VoidCallback? onClose;
+
+  /// In a side panel: opens the edit form in the panel instead of a full page.
+  final VoidCallback? onEdit;
 
   @override
   State<ModuleDetailScreen> createState() => _ModuleDetailScreenState();
@@ -879,6 +1072,7 @@ class _ModuleDetailScreenState extends State<ModuleDetailScreen> {
   bool _busy = false;
 
   ModuleDef get m => widget.module;
+
   /// The number fields this record has a value for (price, stock, fee, rating…).
   List<FieldDef> _numbers(Map<String, dynamic> record) => [
     for (final f in m.fields)
@@ -920,7 +1114,12 @@ class _ModuleDetailScreenState extends State<ModuleDetailScreen> {
   Future<void> _edit() async {
     final record = _record;
     if (record == null) return;
-    final saved = await Navigator.of(context).push<Map<String, dynamic>>(MaterialPageRoute(builder: (_) => ModuleFormScreen(repo: widget.repo, module: m, record: record)));
+    if (widget.onEdit != null) return widget.onEdit!();
+    final saved = await Navigator.of(context).push<Map<String, dynamic>>(
+      MaterialPageRoute(
+        builder: (_) => ModuleFormScreen(repo: widget.repo, module: m, record: record),
+      ),
+    );
     if (saved != null && mounted) {
       setState(() {});
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Saved.')));
@@ -935,7 +1134,11 @@ class _ModuleDetailScreenState extends State<ModuleDetailScreen> {
         content: const Text('It’s removed from the dummy data. This can’t be undone.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-          FilledButton(style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error), onPressed: () => Navigator.pop(context, true), child: const Text('Delete')),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
         ],
       ),
     );
@@ -943,7 +1146,13 @@ class _ModuleDetailScreenState extends State<ModuleDetailScreen> {
     setState(() => _busy = true);
     try {
       await widget.repo.delete(m.key, widget.recordId);
-      if (mounted) Navigator.of(context).pop();
+      if (mounted) {
+        if (widget.embedded) {
+          widget.onClose?.call();
+        } else {
+          Navigator.of(context).pop();
+        }
+      }
     } catch (e) {
       if (mounted) {
         setState(() => _busy = false);
@@ -956,7 +1165,14 @@ class _ModuleDetailScreenState extends State<ModuleDetailScreen> {
   Widget build(BuildContext context) {
     final record = _record;
     if (record == null) {
-      return Scaffold(appBar: AppBar(title: Text(m.singular)), body: const Center(child: Text('This record is no longer there.')));
+      return Scaffold(
+        appBar: AppBar(
+          title: Text(m.singular),
+          automaticallyImplyLeading: !widget.embedded,
+          actions: [?panelExpandButton(context), if (widget.embedded) IconButton(tooltip: 'Close', onPressed: widget.onClose, icon: const Icon(Icons.close)), const SizedBox(width: 8)],
+        ),
+        body: const Center(child: Text('This record is no longer there.')),
+      );
     }
     final title = m.field(m.titleField);
     final status = m.statusField == null ? null : record[m.statusField];
@@ -964,10 +1180,15 @@ class _ModuleDetailScreenState extends State<ModuleDetailScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF2F6F5),
       appBar: AppBar(
-        title: Text(m.singular, style: const TextStyle(fontWeight: FontWeight.w800)),
+        title: Text(m.singular, style: const TextStyle(fontWeight: FontWeight.w600)),
+        automaticallyImplyLeading: !widget.embedded,
         actions: [
           if (m.canEdit && !m.sensitive) IconButton(tooltip: 'Edit', icon: const Icon(Icons.edit_outlined), onPressed: _busy ? null : _edit),
           if (m.canDelete && !m.sensitive) IconButton(tooltip: 'Delete', icon: const Icon(Icons.delete_outline), onPressed: _busy ? null : _delete),
+          // In the side panel: close at the right end, like every panel.
+          ?panelExpandButton(context),
+          if (widget.embedded) IconButton(tooltip: 'Close', onPressed: widget.onClose, icon: const Icon(Icons.close)),
+          const SizedBox(width: 8),
         ],
         bottom: _busy ? const PreferredSize(preferredSize: Size.fromHeight(3), child: LinearProgressIndicator(minHeight: 3)) : null,
       ),
@@ -994,8 +1215,7 @@ class _ModuleDetailScreenState extends State<ModuleDetailScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
-                          child: Text(title == null ? '${record['id']}' : displayValue(title, record[m.titleField]),
-                              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, height: 1.25)),
+                          child: Text(title == null ? '${record['id']}' : displayValue(title, record[m.titleField]), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600, height: 1.25)),
                         ),
                         if (status != null) ...[const SizedBox(width: 12), _StatusChip('$status')],
                       ],
@@ -1004,7 +1224,10 @@ class _ModuleDetailScreenState extends State<ModuleDetailScreen> {
                     Text('ID ${record['id']}', style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12.5)),
                     if (m.sensitive) ...[
                       const SizedBox(height: 10),
-                      const Text('Health data: anonymised and read-only.', style: TextStyle(color: Color(0xFFA8243F), fontSize: 13, fontWeight: FontWeight.w600)),
+                      const Text(
+                        'Health data: anonymised and read-only.',
+                        style: TextStyle(color: Color(0xFFA8243F), fontSize: 13, fontWeight: FontWeight.w600),
+                      ),
                     ],
                     if (actions.isNotEmpty) ...[
                       const SizedBox(height: 14),
@@ -1021,13 +1244,16 @@ class _ModuleDetailScreenState extends State<ModuleDetailScreen> {
                             Tooltip(
                               message: 'Sets the status to “${a.to}”',
                               child: a.danger
-                                ? OutlinedButton.icon(
-                                    onPressed: _busy ? null : () => _run(a),
-                                    icon: Icon(a.icon, size: 18),
-                                    label: Text(a.label),
-                                    style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFFB3261E), side: const BorderSide(color: Color(0xFFF0B8B3))),
-                                  )
-                                : FilledButton.tonalIcon(onPressed: _busy ? null : () => _run(a), icon: Icon(a.icon, size: 18), label: Text(a.label)),
+                                  ? OutlinedButton.icon(
+                                      onPressed: _busy ? null : () => _run(a),
+                                      icon: Icon(a.icon, size: 18),
+                                      label: Text(a.label),
+                                      style: OutlinedButton.styleFrom(
+                                        foregroundColor: const Color(0xFFB3261E),
+                                        side: const BorderSide(color: Color(0xFFF0B8B3)),
+                                      ),
+                                    )
+                                  : FilledButton.tonalIcon(onPressed: _busy ? null : () => _run(a), icon: Icon(a.icon, size: 18), label: Text(a.label)),
                             ),
                         ],
                       ),
@@ -1035,12 +1261,19 @@ class _ModuleDetailScreenState extends State<ModuleDetailScreen> {
                   ],
                 ),
               ),
-              if (m.key == 'members') ...[const SizedBox(height: 14), MemberProfile(member: record)] else if (_numbers(record).isNotEmpty) ...[
+              if (m.key == 'members') ...[
+                const SizedBox(height: 14),
+                MemberProfile(member: record),
+              ] else if (_numbers(record).isNotEmpty) ...[
                 const SizedBox(height: 14),
                 // The record's numbers as cards, each saying where it stands among the others.
                 LayoutBuilder(
                   builder: (context, box) => EqualRows(
-                    columns: box.maxWidth >= 900 ? 4 : box.maxWidth >= 560 ? 3 : 2,
+                    columns: box.maxWidth >= 900
+                        ? 4
+                        : box.maxWidth >= 560
+                        ? 3
+                        : 2,
                     gap: 12,
                     children: [
                       for (final f in _numbers(record))
@@ -1053,7 +1286,14 @@ class _ModuleDetailScreenState extends State<ModuleDetailScreen> {
                 const SizedBox(height: 14),
                 _SectionCard(
                   title: m.sections.length > 1 ? section : null,
-                  child: fieldGrid([for (final f in m.fields) if (f.section == section) f], (f) => _FieldView(module: m, field: f, record: record, repo: widget.repo), gap: 18),
+                  child: fieldGrid(
+                    [
+                      for (final f in m.fields)
+                        if (f.section == section) f,
+                    ],
+                    (f) => _FieldView(module: m, field: f, record: record, repo: widget.repo),
+                    gap: 18,
+                  ),
                 ),
               ],
             ],
@@ -1079,31 +1319,49 @@ class _FieldView extends StatelessWidget {
     final empty = value == null || (value is String && value.isEmpty) || (value is List && value.isEmpty);
     final Widget shown;
     if (empty) {
-      shown = const Text('Not filled in yet', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 14, fontStyle: FontStyle.italic));
+      shown = const Text(
+        'Not filled in yet',
+        style: TextStyle(color: Color(0xFF94A3B8), fontSize: 14, fontStyle: FontStyle.italic),
+      );
     } else if (f.key == module.statusField) {
       shown = Align(alignment: Alignment.centerLeft, child: _StatusChip('$value'));
     } else if (f.type == FieldType.image) {
-      shown = Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        imagePreview('$value', repo.api.base, size: 110),
-        const SizedBox(width: 12),
-        Expanded(child: SelectableText('$value', style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 12.5))),
-      ]);
-    } else if (f.type == FieldType.list && value is List) {
-      shown = Wrap(spacing: 6, runSpacing: 6, children: [
-        for (final v in value)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(color: const Color(0xFFEFF7F4), borderRadius: BorderRadius.circular(999)),
-            child: Text('$v', style: const TextStyle(fontSize: 13, color: Color(0xFF26413B), fontWeight: FontWeight.w600)),
+      shown = Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          imagePreview('$value', repo.api.base, size: 110),
+          const SizedBox(width: 12),
+          Expanded(
+            child: SelectableText('$value', style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 12.5)),
           ),
-      ]);
+        ],
+      );
+    } else if (f.type == FieldType.list && value is List) {
+      shown = Wrap(
+        spacing: 6,
+        runSpacing: 6,
+        children: [
+          for (final v in value)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(color: const Color(0xFFEFF7F4), borderRadius: BorderRadius.circular(999)),
+              child: Text(
+                '$v',
+                style: const TextStyle(fontSize: 13, color: Color(0xFF26413B), fontWeight: FontWeight.w600),
+              ),
+            ),
+        ],
+      );
     } else if (f.type == FieldType.url) {
       shown = InkWell(
         onTap: () => launchUrl(Uri.parse('$value'), mode: LaunchMode.externalApplication),
-        child: Text('$value', style: const TextStyle(color: brand, fontSize: 14, fontWeight: FontWeight.w600, decoration: TextDecoration.underline)),
+        child: Text(
+          '$value',
+          style: const TextStyle(color: brand, fontSize: 14, fontWeight: FontWeight.w600, decoration: TextDecoration.underline),
+        ),
       );
     } else {
-      shown = SelectableText(displayValue(f, value), style: TextStyle(fontSize: 14.5, fontWeight: f.type == FieldType.longText ? FontWeight.w500 : FontWeight.w700, height: 1.45));
+      shown = SelectableText(displayValue(f, value), style: TextStyle(fontSize: 14.5, fontWeight: f.type == FieldType.longText ? FontWeight.w500 : FontWeight.w600, height: 1.45));
     }
     final hint = const {FieldType.integer, FieldType.decimal, FieldType.money}.contains(f.type) ? compareHint(f, value, repo.records(module.key)) : null;
     final max = f.maxLength;
@@ -1111,12 +1369,27 @@ class _FieldView extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(f.label, style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 12.5, fontWeight: FontWeight.w600)),
+        Text(
+          f.label,
+          style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 12.5, fontWeight: FontWeight.w600),
+        ),
         const SizedBox(height: 5),
         shown,
-        if (hint != null) Padding(padding: const EdgeInsets.only(top: 4), child: Text(hint, style: const TextStyle(color: Color(0xFF0F766E), fontSize: 12.5))),
-        if (long) Padding(padding: const EdgeInsets.only(top: 4), child: Text('${value.length} characters: over the $max that show in full.', style: const TextStyle(color: Color(0xFF8A5A00), fontSize: 12.5))),
-        if (f.help != null) Padding(padding: const EdgeInsets.only(top: 4), child: Text(f.help!, style: const TextStyle(color: Color(0xFF8A9A96), fontSize: 12, height: 1.35))),
+        if (hint != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(hint, style: const TextStyle(color: Color(0xFF0F766E), fontSize: 12.5)),
+          ),
+        if (long)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text('${value.length} characters: over the $max that show in full.', style: const TextStyle(color: Color(0xFF8A5A00), fontSize: 12.5)),
+          ),
+        if (f.help != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(f.help!, style: const TextStyle(color: Color(0xFF8A9A96), fontSize: 12, height: 1.35)),
+          ),
       ],
     );
   }
@@ -1132,7 +1405,20 @@ Widget fieldGrid(List<FieldDef> fields, Widget Function(FieldDef) build, {double
     final rows = <Widget>[];
     FieldDef? waiting;
     void flush() {
-      if (waiting != null) rows.add(two ? Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Expanded(child: build(waiting!)), SizedBox(width: gap), const Expanded(child: SizedBox())]) : build(waiting!));
+      if (waiting != null) {
+        rows.add(
+          two
+              ? Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: build(waiting!)),
+                    SizedBox(width: gap),
+                    const Expanded(child: SizedBox()),
+                  ],
+                )
+              : build(waiting!),
+        );
+      }
       waiting = null;
     }
 
@@ -1143,12 +1429,30 @@ Widget fieldGrid(List<FieldDef> fields, Widget Function(FieldDef) build, {double
       } else if (waiting == null) {
         waiting = f;
       } else {
-        rows.add(Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Expanded(child: build(waiting!)), SizedBox(width: gap), Expanded(child: build(f))]));
+        rows.add(
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: build(waiting!)),
+              SizedBox(width: gap),
+              Expanded(child: build(f)),
+            ],
+          ),
+        );
         waiting = null;
       }
     }
     flush();
-    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [for (final (i, r) in rows.indexed) Padding(padding: EdgeInsets.only(top: i == 0 ? 0 : gap), child: r)]);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final (i, r) in rows.indexed)
+          Padding(
+            padding: EdgeInsets.only(top: i == 0 ? 0 : gap),
+            child: r,
+          ),
+      ],
+    );
   },
 );
 
@@ -1162,12 +1466,19 @@ class _SectionCard extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     width: double.infinity,
     padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
-    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFFE6EEEB))),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(20),
+      border: Border.all(color: const Color(0xFFE6EEEB)),
+    ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (title != null) ...[
-          Text(title!, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF0C1C19))),
+          Text(
+            title!,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF0C1C19)),
+          ),
           const SizedBox(height: 14),
         ],
         child,
@@ -1195,9 +1506,12 @@ Widget imagePreview(String value, String server, {double size = 96}) {
 }
 
 class ModuleFormScreen extends StatefulWidget {
-  const ModuleFormScreen({super.key, required this.repo, required this.module, this.record});
+  const ModuleFormScreen({super.key, required this.repo, required this.module, this.record, this.onDone});
   final ModuleRepository repo;
   final ModuleDef module;
+
+  /// In a side panel: called with the saved record (null when closed without saving), instead of leaving a page.
+  final void Function(Map<String, dynamic>? saved)? onDone;
 
   /// The record being edited; null to add a new one.
   final Map<String, dynamic>? record;
@@ -1226,18 +1540,17 @@ class _ModuleFormScreenState extends State<ModuleFormScreen> {
       for (final f in _editable)
         f.key: switch (f.type) {
           FieldType.list => [for (final v in (record[f.key] as List?) ?? const []) '$v'],
-          _ => record[f.key] ?? switch (f.type) {
-            FieldType.boolean => false,
-            FieldType.choice => f.options.firstOrNull,
-            FieldType.dateTime => DateTime.now().toUtc().toIso8601String(),
-            _ => null,
-          },
+          _ =>
+            record[f.key] ??
+                switch (f.type) {
+                  FieldType.boolean => false,
+                  FieldType.choice => f.options.firstOrNull,
+                  FieldType.dateTime => DateTime.now().toUtc().toIso8601String(),
+                  _ => null,
+                },
         },
     };
-    _text = {
-      for (final f in _editable.where((f) => !_picked.contains(f.type)))
-        f.key: TextEditingController(text: record[f.key] == null ? '' : '${record[f.key]}'),
-    };
+    _text = {for (final f in _editable.where((f) => !_picked.contains(f.type))) f.key: TextEditingController(text: record[f.key] == null ? '' : '${record[f.key]}')};
   }
 
   @override
@@ -1262,13 +1575,16 @@ class _ModuleFormScreenState extends State<ModuleFormScreen> {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Some boxes need a look. They’re marked in red.')));
       return;
     }
-    final record = <String, dynamic>{
-      for (final f in _editable) f.key: _text.containsKey(f.key) ? _parsed(f) : _values[f.key],
-    };
+    final record = <String, dynamic>{for (final f in _editable) f.key: _text.containsKey(f.key) ? _parsed(f) : _values[f.key]};
     setState(() => _busy = true);
     try {
       final saved = _editing ? await widget.repo.update(m.key, '${widget.record!['id']}', record) : await widget.repo.create(m.key, record);
-      if (mounted) Navigator.of(context).pop(saved);
+      if (!mounted) return;
+      if (widget.onDone != null) {
+        widget.onDone!(saved);
+      } else {
+        Navigator.of(context).pop(saved);
+      }
     } catch (e) {
       if (mounted) {
         setState(() => _busy = false);
@@ -1319,21 +1635,27 @@ class _ModuleFormScreenState extends State<ModuleFormScreen> {
           color: const Color(0xFFF7FAF9),
           borderRadius: BorderRadius.circular(12),
           child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-          child: SwitchListTile(
-            value: _values[f.key] == true,
-            onChanged: _busy ? null : (v) => setState(() => _values[f.key] = v),
-            title: Text(f.label, style: const TextStyle(fontWeight: FontWeight.w600)),
-            subtitle: f.help == null ? null : Text(f.help!, style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 12.5)),
-            contentPadding: EdgeInsets.zero,
-          ),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+            child: SwitchListTile(
+              value: _values[f.key] == true,
+              onChanged: _busy ? null : (v) => setState(() => _values[f.key] = v),
+              title: Text(f.label, style: const TextStyle(fontWeight: FontWeight.w600)),
+              subtitle: f.help == null ? null : Text(f.help!, style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 12.5)),
+              contentPadding: EdgeInsets.zero,
+            ),
           ),
         );
       case FieldType.choice:
         return DropdownButtonFormField<String>(
           initialValue: f.options.contains(_values[f.key]) ? _values[f.key] as String : null,
           isExpanded: true,
-          items: [for (final o in f.options) DropdownMenuItem(value: o, child: Text(o, overflow: TextOverflow.ellipsis))],
+          items: [
+            for (final o in f.options)
+              DropdownMenuItem(
+                value: o,
+                child: Text(o, overflow: TextOverflow.ellipsis),
+              ),
+          ],
           onChanged: _busy ? null : (v) => setState(() => _values[f.key] = v),
           decoration: decoration,
           validator: (v) => f.required && v == null ? 'Choose a ${f.label.toLowerCase()}.' : null,
@@ -1342,16 +1664,13 @@ class _ModuleFormScreenState extends State<ModuleFormScreen> {
         return InkWell(
           borderRadius: BorderRadius.circular(12),
           onTap: _busy ? null : () => _pickDate(f),
-          child: InputDecorator(decoration: decoration.copyWith(suffixIcon: const Icon(Icons.event)), child: Text(displayValue(f, _values[f.key]))),
+          child: InputDecorator(
+            decoration: decoration.copyWith(suffixIcon: const Icon(Icons.event)),
+            child: Text(displayValue(f, _values[f.key])),
+          ),
         );
       case FieldType.list:
-        return _ListField(
-          field: f,
-          decoration: decoration,
-          initial: _values[f.key] as List<String>,
-          enabled: !_busy,
-          onChanged: (items) => _values[f.key] = items,
-        );
+        return _ListField(field: f, decoration: decoration, initial: _values[f.key] as List<String>, enabled: !_busy, onChanged: (items) => _values[f.key] = items);
       default:
         final numeric = f.type == FieldType.integer || f.type == FieldType.money || f.type == FieldType.decimal;
         final input = TextFormField(
@@ -1385,7 +1704,11 @@ class _ModuleFormScreenState extends State<ModuleFormScreen> {
                 ? Container(
                     width: 96,
                     height: 96,
-                    decoration: BoxDecoration(color: const Color(0xFFF4F8F6), borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFFDCE6E3))),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF4F8F6),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFFDCE6E3)),
+                    ),
                     child: const Icon(Icons.add_photo_alternate_outlined, color: Color(0xFF8DA19C)),
                   )
                 : imagePreview(link, widget.repo.api.base),
@@ -1397,16 +1720,27 @@ class _ModuleFormScreenState extends State<ModuleFormScreen> {
   @override
   Widget build(BuildContext context) {
     final title = _editing ? 'Edit ${m.singular.toLowerCase()}' : 'Add ${m.singular.toLowerCase()}';
-    final sections = [for (final s in m.sections) if (_editable.any((f) => f.section == s)) s];
+    final sections = [
+      for (final s in m.sections)
+        if (_editable.any((f) => f.section == s)) s,
+    ];
     return Scaffold(
       backgroundColor: const Color(0xFFF2F6F5),
       appBar: AppBar(
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
+        automaticallyImplyLeading: widget.onDone == null,
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
         actions: [
           Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: FilledButton(onPressed: _busy ? null : _save, style: FilledButton.styleFrom(minimumSize: const Size(0, 40)), child: Text(_editing ? 'Save' : 'Add')),
+            padding: EdgeInsets.only(right: widget.onDone == null ? 12 : 4),
+            child: FilledButton(
+              onPressed: _busy ? null : _save,
+              style: FilledButton.styleFrom(minimumSize: const Size(0, 40)),
+              child: Text(_editing ? 'Save' : 'Add'),
+            ),
           ),
+          // In the side panel: close (without saving) at the right end; it closes the whole panel.
+          ?panelExpandButton(context),
+          if (widget.onDone != null) ...[IconButton(tooltip: 'Close', icon: const Icon(Icons.close), onPressed: () => widget.onDone!(null)), const SizedBox(width: 8)],
         ],
       ),
       body: Form(
@@ -1419,46 +1753,52 @@ class _ModuleFormScreenState extends State<ModuleFormScreen> {
               key: const Key('form-scroll'),
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
               child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (m.formIntro != null) ...[
-                  Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(color: const Color(0xFFEFF7F4), borderRadius: BorderRadius.circular(16)),
-                    child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      const Icon(Icons.info_outline, color: brand, size: 20),
-                      const SizedBox(width: 10),
-                      Expanded(child: Text(m.formIntro!, style: const TextStyle(color: Color(0xFF26413B), fontSize: 13.5, height: 1.4))),
-                    ]),
-                  ),
-                  const SizedBox(height: 6),
-                  const Padding(
-                    padding: EdgeInsets.only(left: 4, bottom: 10),
-                    child: Text('Boxes marked * are needed. Each box says what it’s for underneath.', style: TextStyle(color: Color(0xFF5A6C68), fontSize: 12.5)),
-                  ),
-                ],
-                for (final s in sections) ...[
-                  _SectionCard(
-                    title: sections.length > 1 || s != 'Details' ? s : null,
-                    child: fieldGrid([for (final f in _editable) if (f.section == s) f], _field),
-                  ),
-                  const SizedBox(height: 14),
-                ],
-                const SizedBox(height: 4),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: SizedBox(
-                    height: 52,
-                    width: MediaQuery.sizeOf(context).width < 600 ? double.infinity : 260,
-                    child: FilledButton(
-                      onPressed: _busy ? null : _save,
-                      child: _busy
-                          ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.white))
-                          : Text(_editing ? 'Save changes' : 'Add ${m.singular.toLowerCase()}'),
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (m.formIntro != null) ...[
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(color: const Color(0xFFEFF7F4), borderRadius: BorderRadius.circular(16)),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(Icons.info_outline, color: brand, size: 20),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(m.formIntro!, style: const TextStyle(color: Color(0xFF26413B), fontSize: 13.5, height: 1.4)),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    const Padding(
+                      padding: EdgeInsets.only(left: 4, bottom: 10),
+                      child: Text('Boxes marked * are needed. Each box says what it’s for underneath.', style: TextStyle(color: Color(0xFF5A6C68), fontSize: 12.5)),
+                    ),
+                  ],
+                  for (final s in sections) ...[
+                    _SectionCard(
+                      title: sections.length > 1 || s != 'Details' ? s : null,
+                      child: fieldGrid([
+                        for (final f in _editable)
+                          if (f.section == s) f,
+                      ], _field),
+                    ),
+                    const SizedBox(height: 14),
+                  ],
+                  const SizedBox(height: 4),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: SizedBox(
+                      height: 52,
+                      width: MediaQuery.sizeOf(context).width < 600 ? double.infinity : 260,
+                      child: FilledButton(
+                        onPressed: _busy ? null : _save,
+                        child: _busy ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.white)) : Text(_editing ? 'Save changes' : 'Add ${m.singular.toLowerCase()}'),
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
               ),
             ),
           ),
@@ -1532,21 +1872,34 @@ class _ListFieldState extends State<_ListField> {
               ),
               const SizedBox(height: 10),
             ],
-            Row(children: [
-              Expanded(
-                child: TextField(
-                  controller: _input,
-                  enabled: widget.enabled,
-                  style: const TextStyle(fontSize: 16),
-                  minLines: 1,
-                  maxLines: 3,
-                  onSubmitted: (_) => add(),
-                  decoration: InputDecoration(isDense: true, hintText: 'Type one, then press Add', filled: true, fillColor: const Color(0xFFF7FAF9), border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none)),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _input,
+                    enabled: widget.enabled,
+                    style: const TextStyle(fontSize: 16),
+                    minLines: 1,
+                    maxLines: 3,
+                    onSubmitted: (_) => add(),
+                    decoration: InputDecoration(
+                      isDense: true,
+                      hintText: 'Type one, then press Add',
+                      filled: true,
+                      fillColor: const Color(0xFFF7FAF9),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+                    ),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              FilledButton.tonalIcon(onPressed: widget.enabled ? add : null, icon: const Icon(Icons.add, size: 18), label: const Text('Add'), style: FilledButton.styleFrom(minimumSize: const Size(0, 44))),
-            ]),
+                const SizedBox(width: 8),
+                FilledButton.tonalIcon(
+                  onPressed: widget.enabled ? add : null,
+                  icon: const Icon(Icons.add, size: 18),
+                  label: const Text('Add'),
+                  style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
+                ),
+              ],
+            ),
           ],
         ),
       );

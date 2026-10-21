@@ -370,7 +370,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       appBar: AppBar(
         automaticallyImplyLeading: !widget.embedded,
         leading: widget.embedded ? IconButton(tooltip: 'Close', icon: const Icon(Icons.close), onPressed: widget.onClose) : null,
-        title: Text(order?.id ?? widget.orderId, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18)),
+        title: Text(order?.id ?? widget.orderId, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 18)),
         actions: [
           IconButton(
             tooltip: 'Copy order number',
@@ -652,7 +652,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               backgroundColor: const Color(0xFFDDF3EC),
               child: Text(
                 _initials(name),
-                style: const TextStyle(color: brand, fontWeight: FontWeight.w700, fontSize: 17),
+                style: const TextStyle(color: brand, fontWeight: FontWeight.w600, fontSize: 17),
               ),
             ),
             const SizedBox(width: 12),
@@ -660,7 +660,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                  Text(name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
                   Text('Ordered ${dateTime(order.createdAt)}', style: _muted),
                 ],
               ),
@@ -918,7 +918,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               children: [
                 Text(
                   title,
-                  style: TextStyle(color: fg, fontWeight: FontWeight.w700, fontSize: 15),
+                  style: TextStyle(color: fg, fontWeight: FontWeight.w600, fontSize: 15),
                 ),
                 Text(text, style: TextStyle(color: fg, fontSize: 13.5)),
               ],
@@ -940,7 +940,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('${item.quantity}×', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                Text('${item.quantity}×', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
@@ -1044,7 +1044,7 @@ class _Section extends StatelessWidget {
                 Expanded(
                   child: Text(
                     title!,
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, letterSpacing: .6, color: brand),
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, letterSpacing: .6, color: brand),
                   ),
                 ),
                 ?trailing,
@@ -1131,7 +1131,7 @@ class _Field extends StatelessWidget {
                 value,
                 style: TextStyle(
                   fontSize: big ? 20 : 15.5,
-                  fontWeight: big ? FontWeight.w700 : FontWeight.w500,
+                  fontWeight: big ? FontWeight.w600 : FontWeight.w500,
                   letterSpacing: big ? 1.5 : 0,
                   height: 1.35,
                 ),
@@ -1200,7 +1200,7 @@ class _Figure extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(value, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+        Text(value, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
         Text(label, style: const TextStyle(color: Color(0xFF5B6B67), fontSize: 12)),
       ],
     ),
@@ -1235,7 +1235,7 @@ class _Amount extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final style = TextStyle(fontSize: bold ? 16 : 14.5, fontWeight: bold ? FontWeight.w700 : FontWeight.w400);
+    final style = TextStyle(fontSize: bold ? 16 : 14.5, fontWeight: bold ? FontWeight.w600 : FontWeight.w400);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
@@ -1402,7 +1402,7 @@ class _Panel extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: TextStyle(color: ink, fontWeight: FontWeight.w700, fontSize: 14.5),
+                    style: TextStyle(color: ink, fontWeight: FontWeight.w600, fontSize: 14.5),
                   ),
                   Text(text, style: TextStyle(color: ink, fontSize: 13)),
                 ],
@@ -1550,7 +1550,7 @@ class _ComposeSheetState extends State<_ComposeSheet> {
           ),
           const SizedBox(height: 14),
         ],
-        Text('“${widget.title}” to ${widget.to}', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+        Text('“${widget.title}” to ${widget.to}', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
         const SizedBox(height: 12),
         ConstrainedBox(
           constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * .5),

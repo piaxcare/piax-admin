@@ -287,9 +287,9 @@ class _OrdersScreenState extends State<OrdersScreen> with WidgetsBindingObserver
 
   Widget _phone() {
     return Scaffold(
-      drawer: AdminDrawer(nav: _nav, server: _api.base, onSignOut: () => signOut(context)),
+      drawer: AdminDrawer(nav: _nav, server: _api.base, onSignOut: _api.isDemo ? null : () => signOut(context)),
       appBar: AppBar(
-        title: const Text('PIAX Orders', style: TextStyle(fontWeight: FontWeight.w700)),
+        title: const Text('PIAX Orders', style: TextStyle(fontWeight: FontWeight.w600)),
         actions: [
           AdminSearchBar(nav: _nav, compact: true),
           IconButton(tooltip: 'Refresh', icon: const Icon(Icons.refresh), onPressed: _refresh),
@@ -319,7 +319,7 @@ class _OrdersScreenState extends State<OrdersScreen> with WidgetsBindingObserver
                 value: 'settings',
                 child: ListTile(leading: Icon(Icons.settings_outlined), title: Text('Settings'), contentPadding: EdgeInsets.zero),
               ),
-              const PopupMenuItem(
+              if (!_api.isDemo) const PopupMenuItem(
                 value: 'signout',
                 child: ListTile(leading: Icon(Icons.logout), title: Text('Sign out'), contentPadding: EdgeInsets.zero),
               ),
@@ -488,13 +488,13 @@ class _OrderCard extends StatelessWidget {
                       decoration: BoxDecoration(color: brand, borderRadius: BorderRadius.circular(6)),
                       child: const Text(
                         'NEW',
-                        style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700),
+                        style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
                       ),
                     ),
                     const SizedBox(width: 8),
                   ],
                   Expanded(
-                    child: Text(order.id, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                    child: Text(order.id, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
                   ),
                   StatusBadge(order.status),
                 ],

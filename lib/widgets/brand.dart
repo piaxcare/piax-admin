@@ -68,7 +68,7 @@ class BrandLogo extends StatelessWidget {
     semanticLabel: 'PIAX',
     errorBuilder: (_, _, _) => Text(
       'PIAX',
-      style: TextStyle(color: Colors.white, fontSize: height * .6, fontWeight: FontWeight.w800, letterSpacing: 3),
+      style: TextStyle(color: Colors.white, fontSize: height * .6, fontWeight: FontWeight.w600, letterSpacing: 3),
     ),
   );
 }

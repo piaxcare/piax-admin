@@ -401,13 +401,13 @@ const modules = <ModuleDef>[
   ModuleDef(
     key: 'appointments', title: 'Appointments', singular: 'Appointment', group: 'Care', icon: Icons.event_available_outlined,
     description: 'Consultations booked with doctors.',
-    titleField: 'patient', subtitleFields: ['doctor', 'at', 'mode'], statusField: 'status', canCreate: false,
+    titleField: 'patient', subtitleFields: ['doctor', 'at', 'mode'], statusField: 'status',
     fields: [
-      FieldDef('patient', 'Patient', FieldType.text, readOnly: true),
-      FieldDef('doctor', 'Doctor', FieldType.text, readOnly: true),
+      FieldDef('patient', 'Patient', FieldType.text, required: true),
+      FieldDef('doctor', 'Doctor', FieldType.text, required: true),
       FieldDef('at', 'When', FieldType.dateTime, help: 'Changing this reschedules the appointment; the member is told by SMS.'),
       FieldDef('mode', 'Type', FieldType.choice, options: ['Video call', 'Clinic visit']),
-      FieldDef('fee', 'Fee', FieldType.money, readOnly: true),
+      FieldDef('fee', 'Fee', FieldType.money),
       FieldDef('status', 'Status', FieldType.choice, options: ['Booked', 'Completed', 'Cancelled', 'No-show']),
     ],
     actions: [
@@ -445,7 +445,7 @@ const modules = <ModuleDef>[
   ModuleDef(
     key: 'members', title: 'Members', singular: 'Member', group: 'Orders & members', icon: Icons.people_outline,
     description: 'People with a PIAX account: contact details, how their orders went, what they spend and whether they subscribe.',
-    titleField: 'name', subtitleFields: ['email', 'city', 'orders'], statusField: 'status', canCreate: false, canDelete: false,
+    titleField: 'name', subtitleFields: ['email', 'city', 'orders'], statusField: 'status', canDelete: false,
     fields: [
       FieldDef('name', 'Name', FieldType.text, required: true, section: 'Profile'),
       FieldDef('email', 'Email', FieldType.email, section: 'Profile', help: 'Order emails and receipts go here.'),
@@ -476,13 +476,13 @@ const modules = <ModuleDef>[
   ModuleDef(
     key: 'subscriptions', title: 'Member subscriptions', singular: 'Subscription', group: 'Orders & members', icon: Icons.card_membership_outlined,
     description: 'Who is subscribed to which plan, and when it renews.',
-    titleField: 'member', subtitleFields: ['plan', 'amount', 'renewsAt'], statusField: 'status', canCreate: false,
+    titleField: 'member', subtitleFields: ['plan', 'amount', 'renewsAt'], statusField: 'status',
     fields: [
-      FieldDef('member', 'Member', FieldType.text, readOnly: true),
-      FieldDef('plan', 'Plan', FieldType.text, readOnly: true),
-      FieldDef('startedAt', 'Started', FieldType.dateTime, readOnly: true),
+      FieldDef('member', 'Member', FieldType.text, required: true),
+      FieldDef('plan', 'Plan', FieldType.text, required: true),
+      FieldDef('startedAt', 'Started', FieldType.dateTime),
       FieldDef('renewsAt', 'Renews', FieldType.dateTime, help: 'The next charge and delivery.'),
-      FieldDef('amount', 'Amount', FieldType.money, readOnly: true),
+      FieldDef('amount', 'Amount', FieldType.money, required: true),
       FieldDef('status', 'Status', FieldType.choice, options: ['Active', 'Paused', 'Cancelled']),
     ],
     actions: [

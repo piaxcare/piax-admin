@@ -432,7 +432,7 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
               children: [
                 const Text(
                   'Orders',
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: Color(0xFF0C1C19), letterSpacing: -.5),
+                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.w600, color: Color(0xFF0C1C19), letterSpacing: -.5),
                 ),
                 Text(
                   '${weekdayDate(now)} · updated ${timeOnly(_updatedAt)}',
@@ -583,7 +583,7 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
       children: [
         const Text(
           'All orders',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF0C1C19)),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Color(0xFF0C1C19)),
         ),
         const SizedBox(width: 12),
         Text('${widget.orders.length} shown', style: const TextStyle(color: Color(0xFF5B6B67), fontSize: 13.5)),
@@ -631,7 +631,7 @@ class _Sidebar extends StatelessWidget {
     Widget heading(String text) => wide
         ? Padding(
             padding: const EdgeInsets.fromLTRB(14, 16, 8, 6),
-            child: Text(text.toUpperCase(), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFF8DB8AE), fontSize: 10.5, fontWeight: FontWeight.w700, letterSpacing: 1.4)),
+            child: Text(text.toUpperCase(), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFF8DB8AE), fontSize: 10.5, fontWeight: FontWeight.w600, letterSpacing: 1.4)),
           )
         : const Padding(padding: EdgeInsets.symmetric(vertical: 8, horizontal: 14), child: Divider(height: 1, color: Color(0x33FFFFFF)));
 
@@ -694,7 +694,7 @@ class _Sidebar extends StatelessWidget {
                         SizedBox(height: 6),
                         Text(
                           'ORDER DESK',
-                          style: TextStyle(color: Color(0xFFB9D6CF), fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 2),
+                          style: TextStyle(color: Color(0xFFB9D6CF), fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 2),
                         ),
                       ],
                     ),
@@ -818,7 +818,7 @@ class _Stat extends StatelessWidget {
                     alignment: Alignment.centerLeft,
                     child: Text(
                       value,
-                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Color(0xFF0C1C19), height: 1.1),
+                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w600, color: Color(0xFF0C1C19), height: 1.1),
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -826,7 +826,7 @@ class _Stat extends StatelessWidget {
                     label,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5, color: Color(0xFF0C1C19)),
+                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5, color: Color(0xFF0C1C19)),
                   ),
                   if (roomy)
                     Text(
@@ -869,7 +869,7 @@ class _WeekChart extends StatelessWidget {
               const Expanded(
                 child: Text(
                   'Orders, last 7 days',
-                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15.5, color: Color(0xFF0C1C19)),
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15.5, color: Color(0xFF0C1C19)),
                 ),
               ),
               Text('$total total', style: const TextStyle(color: Color(0xFF5B6B67), fontSize: 13)),
@@ -918,7 +918,7 @@ class _WeekChart extends StatelessWidget {
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: i == 6 ? brand : const Color(0xFF5B6B67),
-                                  fontWeight: i == 6 ? FontWeight.w700 : FontWeight.w500,
+                                  fontWeight: i == 6 ? FontWeight.w600 : FontWeight.w500,
                                 ),
                               ),
                             ),
@@ -968,7 +968,7 @@ class _Banner extends StatelessWidget {
           onPressed: onTap,
           child: Text(
             action,
-            style: TextStyle(color: ink, fontWeight: FontWeight.w700),
+            style: TextStyle(color: ink, fontWeight: FontWeight.w600),
           ),
         ),
       ],
@@ -987,7 +987,7 @@ class _TableColumns {
 }
 
 const _rowPadding = EdgeInsets.symmetric(horizontal: 18);
-const _headStyle = TextStyle(color: Color(0xFF5B6B67), fontSize: 12.5, fontWeight: FontWeight.w700, letterSpacing: .4);
+const _headStyle = TextStyle(color: Color(0xFF5B6B67), fontSize: 12.5, fontWeight: FontWeight.w600, letterSpacing: .4);
 
 class _TableHeader extends StatelessWidget {
   const _TableHeader({required this.columns, required this.sortBy, required this.ascending, required this.onSort});
@@ -1108,7 +1108,7 @@ class _TableRow extends StatelessWidget {
                         decoration: BoxDecoration(color: brand, borderRadius: BorderRadius.circular(6)),
                         child: const Text(
                           'NEW',
-                          style: TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.w800),
+                          style: TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.w600),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -1117,7 +1117,7 @@ class _TableRow extends StatelessWidget {
                       child: Text(
                         order.id,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontWeight: FontWeight.w700, color: ink, fontSize: 14),
+                        style: const TextStyle(fontWeight: FontWeight.w600, color: ink, fontSize: 14),
                       ),
                     ),
                   ],
@@ -1161,7 +1161,7 @@ class _TableRow extends StatelessWidget {
                 child: Text(
                   rupees(order.totals.total),
                   textAlign: TextAlign.end,
-                  style: const TextStyle(fontWeight: FontWeight.w700, color: ink, fontSize: 14),
+                  style: const TextStyle(fontWeight: FontWeight.w600, color: ink, fontSize: 14),
                 ),
               ),
               const SizedBox(width: 20),

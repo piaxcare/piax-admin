@@ -35,7 +35,10 @@ class LetterAvatar extends StatelessWidget {
         shape: BoxShape.circle,
         gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [color.withValues(alpha: 0.75), color]),
       ),
-      child: Text(letter, style: TextStyle(color: Colors.white, fontSize: size * 0.42, fontWeight: FontWeight.w800)),
+      child: Text(
+        letter,
+        style: TextStyle(color: Colors.white, fontSize: size * 0.42, fontWeight: FontWeight.w600),
+      ),
     );
   }
 }
@@ -50,11 +53,17 @@ class _Badge extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
     decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(999)),
-    child: Row(mainAxisSize: MainAxisSize.min, children: [
-      Icon(icon, size: 13, color: fg),
-      const SizedBox(width: 4),
-      Text(text, style: TextStyle(color: fg, fontSize: 11.5, fontWeight: FontWeight.w700)),
-    ]),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 13, color: fg),
+        const SizedBox(width: 4),
+        Text(
+          text,
+          style: TextStyle(color: fg, fontSize: 11.5, fontWeight: FontWeight.w600),
+        ),
+      ],
+    ),
   );
 }
 
@@ -67,18 +76,29 @@ List<Widget> memberBadges(Map<String, dynamic> m) => [
 
 /// The member's card in the list: avatar, name, email and city, badges, and their order numbers at a glance.
 class MemberCard extends StatelessWidget {
-  const MemberCard({super.key, required this.member, required this.onTap});
+  const MemberCard({super.key, required this.member, required this.onTap, this.onEdit});
   final Map<String, dynamic> member;
   final VoidCallback onTap;
+  final VoidCallback? onEdit;
 
   @override
   Widget build(BuildContext context) {
     final m = member;
     Widget stat(String label, Object? value, Color color) => Expanded(
-      child: Column(children: [
-        Text('${_n(value).round()}', style: TextStyle(color: color, fontSize: 17, fontWeight: FontWeight.w800)),
-        Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: muted, fontSize: 11)),
-      ]),
+      child: Column(
+        children: [
+          Text(
+            '${_n(value).round()}',
+            style: TextStyle(color: color, fontSize: 17, fontWeight: FontWeight.w600),
+          ),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(color: muted, fontSize: 11),
+          ),
+        ],
+      ),
     );
     return Material(
       color: Colors.white,
@@ -96,14 +116,35 @@ class MemberCard extends StatelessWidget {
                   LetterAvatar('${m['name'] ?? ''}'),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text('${m['name'] ?? '—'}', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: ink)),
-                      const SizedBox(height: 2),
-                      Text('${m['email'] ?? m['phone'] ?? ''}', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: muted, fontSize: 12.5)),
-                      Text([m['city'], m['phone']].where((v) => v != null && '$v'.isNotEmpty).join(' · '), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: muted, fontSize: 12.5)),
-                    ]),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${m['name'] ?? '—'}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: ink),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${m['email'] ?? m['phone'] ?? ''}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(color: muted, fontSize: 12.5),
+                        ),
+                        Text(
+                          [m['city'], m['phone']].where((v) => v != null && '$v'.isNotEmpty).join(' · '),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(color: muted, fontSize: 12.5),
+                        ),
+                      ],
+                    ),
                   ),
-                  const Icon(Icons.chevron_right, color: Color(0xFF94A3B8)),
+                  if (onEdit != null)
+                    IconButton(tooltip: 'Edit member', icon: const Icon(Icons.edit_outlined, size: 19), onPressed: onEdit, visualDensity: VisualDensity.compact)
+                  else
+                    const Icon(Icons.chevron_right, color: Color(0xFF94A3B8)),
                 ],
               ),
               const SizedBox(height: 10),
@@ -112,12 +153,14 @@ class MemberCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 decoration: BoxDecoration(color: const Color(0xFFF7FAF9), borderRadius: BorderRadius.circular(12)),
-                child: Row(children: [
-                  stat('Orders', m['orders'], ink),
-                  stat('Delivered', m['delivered'], greens[0]),
-                  stat('Cancelled', m['cancelled'], const Color(0xFFB3261E)),
-                  stat('Refunded', m['refunded'], const Color(0xFF8A5A00)),
-                ]),
+                child: Row(
+                  children: [
+                    stat('Orders', m['orders'], ink),
+                    stat('Delivered', m['delivered'], greens[0]),
+                    stat('Cancelled', m['cancelled'], const Color(0xFFB3261E)),
+                    stat('Refunded', m['refunded'], const Color(0xFF8A5A00)),
+                  ],
+                ),
               ),
               const SizedBox(height: 8),
               Text(
@@ -151,49 +194,95 @@ class MemberProfile extends StatelessWidget {
     Widget tile(String label, String value, IconData icon, {Color color = const Color(0xFF0B5B4E)}) => Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(color: const Color(0xFFF7FAF9), borderRadius: BorderRadius.circular(14)),
-      child: Row(children: [
-        Container(
-          width: 34,
-          height: 34,
-          decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(10)),
-          child: Icon(icon, size: 18, color: color),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: ink))),
-            Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: muted, fontSize: 12)),
-          ]),
-        ),
-      ]),
+      child: Row(
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(10)),
+            child: Icon(icon, size: 18, color: color),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    value,
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: ink),
+                  ),
+                ),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: muted, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
 
     Widget outcome(bool beside) => DonutChart(
       horizontal: beside,
       slices: [
-        Slice('Delivered', delivered, greens[0]),
-        Slice('On the way', moving, greens[3]),
-        Slice('Cancelled, refunded', refunded, const Color(0xFFD29B2B)),
-        Slice('Cancelled, not refunded', cancelled - refunded, const Color(0xFFB3261E)),
+        Slice('Delivered', delivered, chartPalette[0]),
+        Slice('On the way', moving, chartPalette[3]),
+        // Checked together (all pairs): teal, blue, yellow, status red.
+        Slice('Cancelled, refunded', refunded, chartPalette[4]),
+        Slice('Cancelled, not refunded', cancelled - refunded, const Color(0xFFD03B3B)),
       ],
       centerLabel: 'orders',
       size: 140,
     );
     final top = math.max(1, monthly.fold<int>(0, math.max));
     final history = monthly.isEmpty || monthly.every((v) => v == 0)
-        ? const Padding(padding: EdgeInsets.symmetric(vertical: 30), child: Center(child: Text('No orders in the last six months', style: TextStyle(color: muted))))
+        ? const Padding(
+            padding: EdgeInsets.symmetric(vertical: 30),
+            child: Center(
+              child: Text('No orders in the last six months', style: TextStyle(color: muted)),
+            ),
+          )
         : SizedBox(
             height: 170,
             child: BarChart(
               BarChartData(
                 maxY: top * 1.25,
                 borderData: FlBorderData(show: false),
-                gridData: FlGridData(drawVerticalLine: false, horizontalInterval: top <= 4 ? 1 : (top / 4).ceilToDouble(), getDrawingHorizontalLine: (_) => const FlLine(color: line, strokeWidth: 1)),
+                gridData: FlGridData(
+                  drawVerticalLine: false,
+                  horizontalInterval: top <= 4 ? 1 : (top / 4).ceilToDouble(),
+                  getDrawingHorizontalLine: (_) => const FlLine(color: line, strokeWidth: 1),
+                ),
                 titlesData: FlTitlesData(
                   topTitles: const AxisTitles(),
                   rightTitles: const AxisTitles(),
-                  leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 24, interval: top <= 4 ? 1 : (top / 4).ceilToDouble(), getTitlesWidget: (v, meta) => SideTitleWidget(meta: meta, child: Text('${v.toInt()}', style: const TextStyle(color: muted, fontSize: 11))))),
-                  bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 24, getTitlesWidget: (v, meta) => SideTitleWidget(meta: meta, child: Text(month(v.toInt()), style: const TextStyle(color: muted, fontSize: 11))))),
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 24,
+                      interval: top <= 4 ? 1 : (top / 4).ceilToDouble(),
+                      getTitlesWidget: (v, meta) => SideTitleWidget(
+                        meta: meta,
+                        child: Text('${v.toInt()}', style: const TextStyle(color: muted, fontSize: 11)),
+                      ),
+                    ),
+                  ),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 24,
+                      getTitlesWidget: (v, meta) => SideTitleWidget(
+                        meta: meta,
+                        child: Text(month(v.toInt()), style: const TextStyle(color: muted, fontSize: 11)),
+                      ),
+                    ),
+                  ),
                 ),
                 barTouchData: BarTouchData(
                   touchTooltipData: BarTouchTooltipData(
@@ -203,14 +292,17 @@ class MemberProfile extends StatelessWidget {
                 ),
                 barGroups: [
                   for (final (i, v) in monthly.indexed)
-                    BarChartGroupData(x: i, barRods: [
-                      BarChartRodData(
-                        toY: v.toDouble(),
-                        width: 20,
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
-                        gradient: LinearGradient(begin: Alignment.bottomCenter, end: Alignment.topCenter, colors: [greens[2], greens[0]]),
-                      ),
-                    ]),
+                    BarChartGroupData(
+                      x: i,
+                      barRods: [
+                        BarChartRodData(
+                          toY: v.toDouble(),
+                          width: 20,
+                          color: chartPalette[0],
+                          borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                        ),
+                      ],
+                    ),
                 ],
               ),
             ),
@@ -228,60 +320,86 @@ class MemberProfile extends StatelessWidget {
           tile('Average order', rupees(average.round()), Icons.shopping_bag_outlined, color: const Color(0xFF5B4A86)),
         ];
         final cols = box.maxWidth >= 900 ? 3 : 2;
-        final card = BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: line));
+        final card = BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: line),
+        );
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Container(
               padding: const EdgeInsets.all(18),
               decoration: card,
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Row(children: [
-                  LetterAvatar('${m['name'] ?? ''}', size: 64),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text('${m['name'] ?? '—'}', style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w800, color: ink)),
-                      const SizedBox(height: 3),
-                      Text(
-                        [m['email'], m['phone']].where((v) => v != null && '$v'.isNotEmpty).join(' · '),
-                        style: const TextStyle(color: muted, fontSize: 13),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      LetterAvatar('${m['name'] ?? ''}', size: 64),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${m['name'] ?? '—'}',
+                              style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w600, color: ink),
+                            ),
+                            const SizedBox(height: 3),
+                            Text([m['email'], m['phone']].where((v) => v != null && '$v'.isNotEmpty).join(' · '), style: const TextStyle(color: muted, fontSize: 13)),
+                            if (m['address'] != null) Text('${m['address']}${m['pincode'] == null ? '' : ' – ${m['pincode']}'}', style: const TextStyle(color: muted, fontSize: 13)),
+                            const SizedBox(height: 8),
+                            Wrap(spacing: 6, runSpacing: 6, children: memberBadges(m)),
+                          ],
+                        ),
                       ),
-                      if (m['address'] != null) Text('${m['address']}${m['pincode'] == null ? '' : ' – ${m['pincode']}'}', style: const TextStyle(color: muted, fontSize: 13)),
-                      const SizedBox(height: 8),
-                      Wrap(spacing: 6, runSpacing: 6, children: memberBadges(m)),
-                    ]),
+                    ],
                   ),
-                ]),
-                const SizedBox(height: 16),
-                EqualRows(columns: cols, gap: 10, children: tiles),
-                const SizedBox(height: 12),
-                Text(
-                  [
-                    if (m['joinedAt'] != null) 'Member since ${DateFormat('MMM yyyy').format(DateTime.parse('${m['joinedAt']}').toLocal())}',
-                    if (m['favouriteProduct'] != null) 'buys ${m['favouriteProduct']} most',
-                    if (m['paymentMethod'] != null) 'usually pays by ${m['paymentMethod']}',
-                    if (isSubscriber(m)) 'on the ${m['plan']} plan',
-                  ].join(' · '),
-                  style: const TextStyle(color: Color(0xFF34443F), fontSize: 13),
-                ),
-              ]),
+                  const SizedBox(height: 16),
+                  EqualRows(columns: cols, gap: 10, children: tiles),
+                  const SizedBox(height: 12),
+                  Text(
+                    [
+                      if (m['joinedAt'] != null) 'Member since ${DateFormat('MMM yyyy').format(DateTime.parse('${m['joinedAt']}').toLocal())}',
+                      if (m['favouriteProduct'] != null) 'buys ${m['favouriteProduct']} most',
+                      if (m['paymentMethod'] != null) 'usually pays by ${m['paymentMethod']}',
+                      if (isSubscriber(m)) 'on the ${m['plan']} plan',
+                    ].join(' · '),
+                    style: const TextStyle(color: Color(0xFF34443F), fontSize: 13),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 14),
             EqualRows(
               columns: wide ? 2 : 1,
               gap: 14,
               children: [
-                Container(padding: const EdgeInsets.all(18), decoration: card, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  const Text('How their orders ended', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15.5)),
-                  const SizedBox(height: 14),
-                  if (orders == 0) const Text('No orders yet.', style: TextStyle(color: muted)) else outcome(DonutChart.fitsBeside((wide ? (box.maxWidth - 14) / 2 : box.maxWidth) - 36, size: 140)),
-                ])),
-                Container(padding: const EdgeInsets.all(18), decoration: card, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  const Text('Orders, last 6 months', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15.5)),
-                  const SizedBox(height: 14),
-                  history,
-                ])),
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: card,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('How their orders ended', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15.5)),
+                      const SizedBox(height: 14),
+                      if (orders == 0) const Text('No orders yet.', style: TextStyle(color: muted)) else outcome(DonutChart.fitsBeside((wide ? (box.maxWidth - 14) / 2 : box.maxWidth) - 36, size: 140)),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: card,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Orders, last 6 months', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15.5)),
+                      const SizedBox(height: 14),
+                      history,
+                    ],
+                  ),
+                ),
               ],
             ),
           ],

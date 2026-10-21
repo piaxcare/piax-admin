@@ -59,8 +59,9 @@ class ModuleRepository {
     final made = source == ModuleSource.localServer
         ? await api.mockCreate(module, record)
         : {'id': '${module.substring(0, 3)}_${DateTime.now().millisecondsSinceEpoch}', ...record};
-    (_modules[module] ??= []).insert(0, made);
-    return made;
+    final stamped = {...made, '_modifiedAt': DateTime.now().toUtc().toIso8601String()};
+    (_modules[module] ??= []).insert(0, stamped);
+    return stamped;
   }
 
   Future<Map<String, dynamic>> update(String module, String id, Map<String, dynamic> changes) async {
@@ -69,8 +70,9 @@ class ModuleRepository {
     final updated = source == ModuleSource.localServer
         ? await api.mockUpdate(module, id, changes)
         : {...(index >= 0 ? list[index] : {'id': id}), ...changes};
-    if (index >= 0) list[index] = updated;
-    return updated;
+    final stamped = {...updated, '_modifiedAt': DateTime.now().toUtc().toIso8601String()};
+    if (index >= 0) list[index] = stamped;
+    return stamped;
   }
 
   Future<void> delete(String module, String id) async {

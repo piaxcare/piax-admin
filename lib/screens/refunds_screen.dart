@@ -140,7 +140,7 @@ class _RefundsScreenState extends State<RefundsScreen> {
       backgroundColor: const Color(0xFFF2F6F5),
       appBar: AppBar(
         backgroundColor: const Color(0xFFF2F6F5),
-        title: const Text('Refunds', style: TextStyle(fontWeight: FontWeight.w800)),
+        title: const Text('Refunds', style: TextStyle(fontWeight: FontWeight.w600)),
         actions: [
           TextButton.icon(
             onPressed: _checking || orders == null ? null : _checkAll,
@@ -270,7 +270,7 @@ class _RefundsScreenState extends State<RefundsScreen> {
                     runSpacing: 4,
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
-                      Text(order.id, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5)),
+                      Text(order.id, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14.5)),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(color: chipBg, borderRadius: BorderRadius.circular(999)),
@@ -366,7 +366,7 @@ class _Tile extends StatelessWidget {
             children: [
               Text(
                 value,
-                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Color(0xFF0C1C19)),
+                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600, color: Color(0xFF0C1C19)),
               ),
               Text('$label · $detail', style: const TextStyle(color: Color(0xFF5B6B67), fontSize: 12.5)),
             ],
@@ -395,7 +395,7 @@ class _Group extends StatelessWidget {
       children: [
         Text(
           '$title (${children.length})',
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF0C1C19)),
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF0C1C19)),
         ),
         Text(hint, style: const TextStyle(color: Color(0xFF5B6B67), fontSize: 12.5)),
         const SizedBox(height: 6),

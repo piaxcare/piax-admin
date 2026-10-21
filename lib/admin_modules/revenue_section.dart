@@ -98,12 +98,13 @@ class _RevenueSectionState extends State<RevenueSection> {
       final orders = await widget.repo.api.orders(status: 'all').timeout(const Duration(seconds: 8));
       if (orders.isNotEmpty) {
         points = [for (final o in orders) OrderPoint.fromOrder(o)];
-        live = true;
+        // The app's demo server serves dummy orders: shown, but labelled as demo.
+        live = !widget.repo.api.isDemo;
       }
     } catch (_) {
       // No order desk to ask (offline, a demo build): the demo orders below.
     }
-    if (!live) points = [for (final o in widget.repo.records('ordersDemo')) OrderPoint.fromDemo(o)];
+    if (points.isEmpty) points = [for (final o in widget.repo.records('ordersDemo')) OrderPoint.fromDemo(o)];
     if (mounted) setState(() => (_points = points, _live = live));
   }
 
@@ -165,7 +166,7 @@ class _RevenueSectionState extends State<RevenueSection> {
     final products = productRevenue.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
     final productImages = {for (final x in widget.repo.records('products')) '${x['name']}': recordImage('products', x)};
     final topProducts = [
-      for (final (i, e) in products.take(5).indexed) Slice('${e.key} · ${productUnits[e.key]} boxes', e.value, greens[i], image: productImages[e.key]),
+      for (final e in products.take(5)) Slice('${e.key} · ${productUnits[e.key]} boxes', e.value, chartPalette[0], image: productImages[e.key]),
     ];
     final payments = countBy(period.where((p) => p.counts).map((p) => p.payment), top: 5);
     final cityRevenue = <String, int>{};
@@ -196,7 +197,7 @@ class _RevenueSectionState extends State<RevenueSection> {
           title: 'Revenue & orders',
           subtitle: bucket == 1 ? 'By day. Revenue counts paid orders that weren’t cancelled.' : 'By week. Revenue counts paid orders that weren’t cancelled.',
           trailing: PillPicker<int>(value: _days, options: const [7, 30, 90], label: (d) => 'Last $d days', onChanged: (d) => setState(() => _days = d)),
-          child: _RevenueChart(revenue: revBy, orders: ordersBy, label: label),
+          child: ComboChart(bars: revBy, counts: ordersBy, label: label, barLabel: 'Revenue', lineLabel: 'Orders'),
         );
         final statusCard = DashCard(
           title: 'Orders by status',
@@ -211,7 +212,7 @@ class _RevenueSectionState extends State<RevenueSection> {
         );
         final paymentCard = DashCard(
           title: 'How customers pay',
-          child: SingleChildScrollView(physics: const NeverScrollableScrollPhysics(), child: ShareBar(slices: [for (final (i, s) in payments.indexed) Slice(s.label, s.count, greens[(i * 2).clamp(0, 4)])])),
+          child: SingleChildScrollView(physics: const NeverScrollableScrollPhysics(), child: ShareBar(slices: [for (final (i, s) in payments.indexed) Slice(s.label, s.count, s.label == 'Other' ? otherColor : chartPalette[i])])),
         );
         final cityCard = DashCard(
           title: 'Revenue by city',
@@ -222,7 +223,7 @@ class _RevenueSectionState extends State<RevenueSection> {
           subtitle: 'Cancelled orders paid online whose money hasn’t gone back yet.',
           trailing: widget.onOpenOrders == null ? null : SeeAll(onTap: widget.onOpenOrders!, label: 'Review'),
           child: SingleChildScrollView(physics: const NeverScrollableScrollPhysics(), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('${refundsDue.length}', style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w800, color: ink)),
+            Text('${refundsDue.length}', style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w600, color: ink)),
             Text(refundsDue.isEmpty ? 'Nothing to refund.' : '${rupees(refundsDue.fold(0, (a, p) => a + p.total))} to send back', style: const TextStyle(color: muted, fontSize: 13)),
             const SizedBox(height: 14),
             Container(
@@ -245,24 +246,24 @@ class _RevenueSectionState extends State<RevenueSection> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Wrap(spacing: 12, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center, alignment: WrapAlignment.spaceBetween, children: [
-              const Text('Revenue & orders', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800)),
+              const Text('Revenue & orders', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w600)),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(color: _live ? const Color(0xFFDDF3EC) : const Color(0xFFFFF4D6), borderRadius: BorderRadius.circular(999)),
-                child: Text(_live ? 'Live from the order desk' : 'Demo orders: no live orders to show', style: TextStyle(color: _live ? brand : const Color(0xFF7F5300), fontSize: 12, fontWeight: FontWeight.w700)),
+                child: Text(_live ? 'Live from the order desk' : 'Demo orders: no live orders to show', style: TextStyle(color: _live ? brand : const Color(0xFF7F5300), fontSize: 12, fontWeight: FontWeight.w600)),
               ),
             ]),
             const SizedBox(height: 4),
             Text('The last $_days days against the $_days before.', style: const TextStyle(color: muted, fontSize: 13)),
             const SizedBox(height: 12),
-            EqualRows(columns: wide ? 4 : medium ? 2 : 1, gap: 14, children: [for (final (i, h) in heads.indexed) HeadlineStatCard(card: h, highlight: i == 0, onTap: widget.onOpenOrders ?? () {})]),
+            EqualRows(columns: wide ? 4 : medium ? 2 : 1, gap: 14, children: [for (final (i, h) in heads.indexed) HeadlineStatCard(card: h, highlight: i == 0, onTap: widget.onOpenOrders)]),
             const SizedBox(height: gap),
             if (wide) ...[
-              row(400, [(2, chart), (1, statusCard)]),
+              row(480, [(2, chart), (1, statusCard)]),
               const SizedBox(height: gap),
               row(360, [(1, productsCard), (1, paymentCard), (1, cityCard), (1, refundsCard)]),
             ] else if (medium) ...[
-              fixed(360, chart),
+              fixed(440, chart),
               const SizedBox(height: gap),
               row(440, [(1, statusCard), (1, productsCard)]),
               const SizedBox(height: gap),
@@ -270,7 +271,7 @@ class _RevenueSectionState extends State<RevenueSection> {
               const SizedBox(height: gap),
               fixed(220, refundsCard),
             ] else ...[
-              fixed(330, chart),
+              fixed(440, chart),
               const SizedBox(height: gap),
               fixed(470, statusCard),
               const SizedBox(height: gap),
@@ -289,99 +290,130 @@ class _RevenueSectionState extends State<RevenueSection> {
   }
 }
 
-/// Revenue as columns and orders as a line over them, sharing the time axis.
-class _RevenueChart extends StatelessWidget {
-  const _RevenueChart({required this.revenue, required this.orders, required this.label});
-  final List<int> revenue, orders;
+/// A value (revenue, spend…) and a count (orders, records…) over the same weeks or days: two charts stacked, each with
+/// its own axis, lined up on the shared time axis. (Never one chart with two scales: the reader can't compare them.)
+/// The value is columns, the count a line with dots; touch either for exact numbers.
+class ComboChart extends StatelessWidget {
+  const ComboChart({super.key, required this.bars, required this.counts, required this.label, required this.barLabel, required this.lineLabel, this.money = true});
+  final List<int> bars, counts;
   final String Function(int) label;
+  final String barLabel, lineLabel;
+
+  /// The columns are rupees (else plain numbers).
+  final bool money;
+
+  static const _axis = 46.0;
+  static const _teal = Color(0xFF0F8A6F);
+  static const _ink = Color(0xFF0B5B4E);
 
   @override
   Widget build(BuildContext context) {
-    final topRev = math.max(1, revenue.fold<int>(0, math.max));
-    final topOrders = math.max(1, orders.fold<int>(0, math.max));
-    // Orders drawn on the revenue scale: each order counts as topRev / topOrders.
-    final scale = topRev / topOrders;
-    final every = revenue.length <= 7 ? 1 : revenue.length <= 14 ? 2 : (revenue.length / 6).ceil();
-    final compact = NumberFormat.compactCurrency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
+    final n = bars.length;
+    final topBar = math.max(1, bars.fold<int>(0, math.max)).toDouble();
+    final topCount = math.max(1, counts.fold<int>(0, math.max)).toDouble();
+    final every = n <= 7 ? 1 : n <= 14 ? 2 : (n / 6).ceil();
+    final compact = money ? NumberFormat.compactCurrency(locale: 'en_IN', symbol: '₹', decimalDigits: 0) : NumberFormat.compact(locale: 'en_IN');
+    String value(num v) => money ? rupees(v.round()) : NumberFormat.decimalPattern('en_IN').format(v);
+    double nice(double top) {
+      final raw = top / 4;
+      final mag = math.pow(10, (math.log(raw) / math.ln10).floor()).toDouble();
+      final step = [1, 2, 2.5, 5, 10].map((m) => m * mag).firstWhere((s) => s >= raw);
+      return step;
+    }
+
+    final barStep = nice(topBar), countStep = math.max(1.0, nice(topCount).ceilToDouble());
+    final barWidth = math.min(24.0, n > 20 ? 8.0 : 18.0);
+    Widget leftTitles(double v, TitleMeta meta, String Function(double) f) =>
+        SideTitleWidget(meta: meta, child: Text(f(v), style: const TextStyle(color: muted, fontSize: 10.5)));
+    Widget caption(Widget key, String text) => Row(children: [key, const SizedBox(width: 6), Flexible(child: Text(text, style: const TextStyle(color: Color(0xFF34443F), fontSize: 12.5, fontWeight: FontWeight.w600)))]);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Wrap(spacing: 16, runSpacing: 6, children: [
-          Row(mainAxisSize: MainAxisSize.min, children: [Container(width: 10, height: 10, decoration: BoxDecoration(color: greens[3], borderRadius: BorderRadius.circular(3))), const SizedBox(width: 6), Text('Revenue ${rupees(revenue.fold(0, (a, b) => a + b))}', style: const TextStyle(color: muted, fontSize: 12.5))]),
-          Row(mainAxisSize: MainAxisSize.min, children: [Container(width: 14, height: 3, color: greens[0]), const SizedBox(width: 6), Text('Orders ${orders.fold(0, (a, b) => a + b)}', style: const TextStyle(color: muted, fontSize: 12.5))]),
-        ]),
-        const SizedBox(height: 12),
+        caption(Container(width: 10, height: 10, decoration: BoxDecoration(color: _teal, borderRadius: BorderRadius.circular(2))), '$barLabel · ${value(bars.fold(0, (a, b) => a + b))} in total'),
+        const SizedBox(height: 8),
         Expanded(
-          child: Stack(children: [
-            BarChart(
-              BarChartData(
-                maxY: topRev * 1.2,
-                alignment: BarChartAlignment.spaceAround,
-                borderData: FlBorderData(show: false),
-                gridData: FlGridData(drawVerticalLine: false, horizontalInterval: topRev / 4, getDrawingHorizontalLine: (_) => const FlLine(color: line, strokeWidth: 1, dashArray: [4, 4])),
-                titlesData: FlTitlesData(
-                  topTitles: const AxisTitles(),
-                  rightTitles: const AxisTitles(),
-                  leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 46, interval: topRev / 4, getTitlesWidget: (v, meta) => SideTitleWidget(meta: meta, child: Text(compact.format(v), style: const TextStyle(color: muted, fontSize: 10.5))))),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 24,
-                      getTitlesWidget: (v, meta) => v.toInt() % every == 0 ? SideTitleWidget(meta: meta, child: Text(label(v.toInt()), style: const TextStyle(color: muted, fontSize: 10.5))) : const SizedBox.shrink(),
-                    ),
-                  ),
-                ),
-                barTouchData: BarTouchData(
-                  touchTooltipData: BarTouchTooltipData(
-                    getTooltipColor: (_) => const Color(0xFF1E293B),
-                    getTooltipItem: (group, _, rod, _) => BarTooltipItem(
-                      '${label(group.x)}\n${rupees(rod.toY.round())} · ${orders[group.x]} orders',
-                      const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                ),
-                barGroups: [
-                  for (final (i, v) in revenue.indexed)
-                    BarChartGroupData(x: i, barRods: [
-                      BarChartRodData(
-                        toY: v.toDouble(),
-                        width: revenue.length > 20 ? 7 : 16,
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(5)),
-                        gradient: LinearGradient(begin: Alignment.bottomCenter, end: Alignment.topCenter, colors: [greens[4], greens[3]]),
-                      ),
-                    ]),
-                ],
+          flex: 3,
+          child: BarChart(
+            BarChartData(
+              maxY: (topBar / barStep).ceil() * barStep,
+              alignment: BarChartAlignment.spaceAround,
+              borderData: FlBorderData(show: true, border: const Border(bottom: BorderSide(color: Color(0xFFCBD5D1)))),
+              gridData: FlGridData(drawVerticalLine: false, horizontalInterval: barStep, getDrawingHorizontalLine: (_) => const FlLine(color: line, strokeWidth: 1)),
+              titlesData: FlTitlesData(
+                topTitles: const AxisTitles(),
+                rightTitles: const AxisTitles(),
+                bottomTitles: const AxisTitles(),
+                leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: _axis, interval: barStep, getTitlesWidget: (v, m) => leftTitles(v, m, compact.format))),
               ),
+              barTouchData: BarTouchData(
+                touchTooltipData: BarTouchTooltipData(
+                  getTooltipColor: (_) => const Color(0xFF1E293B),
+                  getTooltipItem: (group, _, rod, _) =>
+                      BarTooltipItem('${label(group.x)}\n$barLabel ${value(rod.toY)}', const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                ),
+              ),
+              barGroups: [
+                for (final (i, v) in bars.indexed)
+                  BarChartGroupData(x: i, barRods: [
+                    BarChartRodData(toY: v.toDouble(), width: barWidth, color: _teal, borderRadius: const BorderRadius.vertical(top: Radius.circular(4))),
+                  ]),
+              ],
             ),
-            // The orders line, over the columns, on the same horizontal positions.
-            IgnorePointer(
-              child: Padding(
-                padding: const EdgeInsets.only(left: 46, bottom: 24),
-                child: LineChart(
-                  LineChartData(
-                    minX: -0.5,
-                    maxX: orders.length - 0.5,
-                    minY: 0,
-                    maxY: topRev * 1.2,
-                    borderData: FlBorderData(show: false),
-                    gridData: const FlGridData(show: false),
-                    titlesData: const FlTitlesData(show: false),
-                    lineTouchData: const LineTouchData(enabled: false),
-                    lineBarsData: [
-                      LineChartBarData(
-                        spots: [for (final (i, n) in orders.indexed) FlSpot(i.toDouble(), n * scale)],
-                        isCurved: true,
-                        preventCurveOverShooting: true,
-                        color: greens[0],
-                        barWidth: 2.4,
-                        dotData: FlDotData(getDotPainter: (_, _, _, _) => FlDotCirclePainter(radius: 2.6, color: Colors.white, strokeWidth: 2, strokeColor: greens[0])),
-                      ),
-                    ],
+          ),
+        ),
+        const SizedBox(height: 14),
+        caption(Container(width: 14, height: 2, color: _ink), '$lineLabel · ${NumberFormat.decimalPattern('en_IN').format(counts.fold(0, (a, b) => a + b))} in total'),
+        const SizedBox(height: 8),
+        Expanded(
+          flex: 2,
+          child: LineChart(
+            LineChartData(
+              minX: -0.5,
+              maxX: n - 0.5,
+              minY: 0,
+              maxY: (topCount / countStep).ceil() * countStep,
+              borderData: FlBorderData(show: true, border: const Border(bottom: BorderSide(color: Color(0xFFCBD5D1)))),
+              gridData: FlGridData(drawVerticalLine: false, horizontalInterval: countStep, getDrawingHorizontalLine: (_) => const FlLine(color: line, strokeWidth: 1)),
+              titlesData: FlTitlesData(
+                topTitles: const AxisTitles(),
+                rightTitles: const AxisTitles(),
+                leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: _axis, interval: countStep, getTitlesWidget: (v, m) => leftTitles(v, m, (x) => NumberFormat.compact(locale: 'en_IN').format(x)))),
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 24,
+                    interval: 1,
+                    getTitlesWidget: (v, meta) {
+                      final i = v.round();
+                      if (v != i.toDouble() || i < 0 || i >= n || i % every != 0) return const SizedBox.shrink();
+                      return SideTitleWidget(meta: meta, child: Text(label(i), style: const TextStyle(color: muted, fontSize: 10.5)));
+                    },
                   ),
                 ),
               ),
+              lineTouchData: LineTouchData(
+                touchTooltipData: LineTouchTooltipData(
+                  getTooltipColor: (_) => const Color(0xFF1E293B),
+                  getTooltipItems: (spots) => [
+                    for (final s in spots) LineTooltipItem('${label(s.x.round())}\n$lineLabel ${s.y.toInt()}', const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              ),
+              lineBarsData: [
+                LineChartBarData(
+                  spots: [for (final (i, c) in counts.indexed) FlSpot(i.toDouble(), c.toDouble())],
+                  isCurved: true,
+                  preventCurveOverShooting: true,
+                  color: _ink,
+                  barWidth: 2,
+                  isStrokeCapRound: true,
+                  dotData: FlDotData(show: n <= 31, getDotPainter: (_, _, _, _) => FlDotCirclePainter(radius: 4, color: _ink, strokeWidth: 2, strokeColor: Colors.white)),
+                  belowBarData: BarAreaData(show: true, color: _ink.withValues(alpha: 0.10)),
+                ),
+              ],
             ),
-          ]),
+          ),
         ),
       ],
     );

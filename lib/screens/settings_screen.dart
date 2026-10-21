@@ -76,7 +76,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Settings', style: TextStyle(fontWeight: FontWeight.w700)),
+          title: const Text('Settings', style: TextStyle(fontWeight: FontWeight.w600)),
         ),
         body: account == null
             ? Center(child: _loadError == null ? const CircularProgressIndicator() : Text(_loadError!))
@@ -133,7 +133,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         backgroundColor: Colors.white.withValues(alpha: .16),
                                         child: Text(
                                           account.username.isEmpty ? '?' : account.username[0].toUpperCase(),
-                                          style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w800),
+                                          style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w600),
                                         ),
                                       ),
                                       const SizedBox(width: 16),
@@ -146,7 +146,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                             Text(
                                               account.username,
                                               overflow: TextOverflow.ellipsis,
-                                              style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800),
+                                              style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w600),
                                             ),
                                             Text(
                                               '${account.updatedAt == null ? 'Sign-in never changed' : 'Last changed ${dateTime(account.updatedAt!)}'} · ${_api.base.replaceFirst(RegExp(r'^https?://'), '')}',
@@ -162,7 +162,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               ),
                             ),
                             const SizedBox(height: 16),
-                            if (wide)
+                            if (widget.api.isDemo)
+                              const Text(
+                                'This app runs on dummy data without signing in, so there’s no username or password to change here.',
+                                style: TextStyle(color: Color(0xFF5A6C68), fontSize: 13.5),
+                              )
+                            else if (wide)
                               IntrinsicHeight(
                                 child: Row(
                                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -181,7 +186,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             const SizedBox(height: 16),
                             const _SidebarBehaviour(),
                             const SizedBox(height: 20),
-                            Align(
+                            if (!widget.api.isDemo) Align(
                               alignment: Alignment.centerLeft,
                               child: OutlinedButton.icon(
                                 onPressed: () => signOut(context),
@@ -215,7 +220,7 @@ class _Card extends StatelessWidget {
         children: [
           Text(
             title,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, letterSpacing: .6, color: brand),
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, letterSpacing: .6, color: brand),
           ),
           const SizedBox(height: 10),
           ...children,

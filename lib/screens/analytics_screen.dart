@@ -86,7 +86,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       backgroundColor: const Color(0xFFF2F6F5),
       appBar: AppBar(
         backgroundColor: const Color(0xFFF2F6F5),
-        title: const Text('Analytics', style: TextStyle(fontWeight: FontWeight.w800)),
+        title: const Text('Analytics', style: TextStyle(fontWeight: FontWeight.w600)),
         actions: [
           IconButton(tooltip: 'Refresh', onPressed: _load, icon: const Icon(Icons.refresh)),
           const SizedBox(width: 8),
@@ -344,7 +344,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                     children: [
                       TextSpan(
                         text: rupees(s.y.round()),
-                        style: const TextStyle(color: _ink, fontWeight: FontWeight.w700, fontSize: 14),
+                        style: const TextStyle(color: _ink, fontWeight: FontWeight.w600, fontSize: 14),
                       ),
                     ],
                   ),
@@ -400,7 +400,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                 children: [
                   TextSpan(
                     text: '${rod.toY.round()} orders',
-                    style: const TextStyle(color: _ink, fontWeight: FontWeight.w700, fontSize: 14),
+                    style: const TextStyle(color: _ink, fontWeight: FontWeight.w600, fontSize: 14),
                   ),
                 ],
               ),
@@ -463,7 +463,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                       children: [
                         TextSpan(
                           text: g == null ? 'No sales the $per before' : '${g >= 0 ? '▲' : '▼'} ${_pct(g)} on the $per before',
-                          style: const TextStyle(color: _ink, fontWeight: FontWeight.w700, fontSize: 13.5),
+                          style: const TextStyle(color: _ink, fontWeight: FontWeight.w600, fontSize: 13.5),
                         ),
                       ],
                     );
@@ -591,7 +591,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             children: [
               Text(
                 '$total',
-                style: const TextStyle(color: _ink, fontSize: 26, fontWeight: FontWeight.w800),
+                style: const TextStyle(color: _ink, fontSize: 26, fontWeight: FontWeight.w600),
               ),
               const Text('packs', style: TextStyle(color: _muted, fontSize: 12.5)),
             ],
@@ -621,7 +621,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                 ),
                 Text(
                   _pct(packs / total),
-                  style: const TextStyle(color: _ink, fontSize: 13.5, fontWeight: FontWeight.w700),
+                  style: const TextStyle(color: _ink, fontSize: 13.5, fontWeight: FontWeight.w600),
                 ),
                 SizedBox(
                   width: 120,
@@ -782,7 +782,7 @@ class _Card extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(color: _ink, fontSize: 16.5, fontWeight: FontWeight.w800),
+                    style: const TextStyle(color: _ink, fontSize: 16.5, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 2),
                   Text(subtitle, style: const TextStyle(color: _muted, fontSize: 12.5)),
@@ -837,7 +837,7 @@ class _Kpi extends StatelessWidget {
           alignment: Alignment.centerLeft,
           child: Text(
             value,
-            style: const TextStyle(color: _ink, fontSize: 26, fontWeight: FontWeight.w800),
+            style: const TextStyle(color: _ink, fontSize: 26, fontWeight: FontWeight.w600),
           ),
         ),
         const SizedBox(height: 6),
@@ -881,7 +881,7 @@ class _ChangeChip extends StatelessWidget {
         const SizedBox(width: 2),
         Text(
           flat ? 'No change' : _pct(value),
-          style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 12.5),
+          style: TextStyle(color: color, fontWeight: FontWeight.w600, fontSize: 12.5),
         ),
         if (label.isNotEmpty) ...[
           const SizedBox(width: 6),
@@ -912,7 +912,7 @@ class _Stat extends StatelessWidget {
       children: [
         Text(
           value,
-          style: const TextStyle(color: _ink, fontSize: 20, fontWeight: FontWeight.w800),
+          style: const TextStyle(color: _ink, fontSize: 20, fontWeight: FontWeight.w600),
         ),
         Text(
           label,
@@ -970,7 +970,7 @@ class _PaymentRow extends StatelessWidget {
         ),
         Text(
           '$count · ${_pct(share)}',
-          style: const TextStyle(color: _ink, fontSize: 13.5, fontWeight: FontWeight.w700),
+          style: const TextStyle(color: _ink, fontSize: 13.5, fontWeight: FontWeight.w600),
         ),
       ],
     ),

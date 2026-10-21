@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import 'analytics.dart';
+import 'demo_server.dart';
 import 'models.dart';
 
 class SignedIn {
@@ -25,10 +26,18 @@ class ApiException implements Exception {
 
 /// The website's admin API (src/app/api/admin in the website repo). Every call but [login] sends the session token.
 class AdminApi {
-  AdminApi(String server, {this.token}) : base = server.replaceAll(RegExp(r'/+$'), '');
+  AdminApi(String server, {this.token}) : base = server.replaceAll(RegExp(r'/+$'), ''), _demo = null;
+
+  /// The app's own demo server: no sign-in, dummy orders and members only (demo_server.dart). Pictures with a website
+  /// path load from the public website.
+  AdminApi.demo() : base = 'https://piax.co.in', token = null, _demo = DemoServer.instance;
 
   final String base;
   final String? token;
+  final DemoServer? _demo;
+
+  /// Running on dummy data, without signing in.
+  bool get isDemo => _demo != null;
 
   static const _timeout = Duration(seconds: 20);
 
@@ -146,6 +155,13 @@ class AdminApi {
   Future<void> mockDelete(String module, String id) async => _send('DELETE', '/api/admin/mock/$module', query: {'id': id});
 
   Future<Map<String, dynamic>> _send(String method, String path, {Map<String, String>? query, Map<String, dynamic>? body}) async {
+    if (_demo case final demo?) {
+      try {
+        return await demo.handle(method, path, query: query, body: body);
+      } on DemoException catch (e) {
+        throw ApiException(e.message, status: e.status);
+      }
+    }
     final Uri uri;
     try {
       uri = Uri.parse('$base$path').replace(queryParameters: query);

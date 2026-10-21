@@ -3,10 +3,7 @@ import 'package:flutter/material.dart';
 
 import 'api.dart';
 import 'format.dart';
-import 'screens/login_screen.dart';
 import 'admin_modules/admin_shell.dart';
-import 'session.dart';
-import 'widgets/brand.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,10 +20,7 @@ class PiaxOrdersApp extends StatelessWidget {
       title: 'PIAX Orders',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        // SF Mono where it's installed (Macs, and Apple devices with it); Apple's licence doesn't allow bundling it,
-        // so elsewhere the closest monospace font the system has.
-        fontFamily: 'SF Mono',
-        fontFamilyFallback: const ['SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'Roboto Mono', 'Courier New', 'monospace'],
+        fontFamily: 'Poppins',
         colorScheme: scheme,
         scaffoldBackgroundColor: mist,
         appBarTheme: const AppBarTheme(
@@ -112,50 +106,8 @@ class PiaxOrdersApp extends StatelessWidget {
         listTileTheme: ListTileThemeData(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
         dividerTheme: const DividerThemeData(color: Color(0xFFE6EEEB), thickness: 1),
       ),
-      home: const StartScreen(),
+      // No sign-in: straight into the admin console, on dummy data only (lib/demo_server.dart).
+      home: AdminShell(api: AdminApi.demo()),
     );
   }
-}
-
-/// Opens the orders straight away when a session is saved, else the sign-in screen.
-class StartScreen extends StatefulWidget {
-  const StartScreen({super.key});
-
-  @override
-  State<StartScreen> createState() => _StartScreenState();
-}
-
-class _StartScreenState extends State<StartScreen> {
-  @override
-  void initState() {
-    super.initState();
-    _route();
-  }
-
-  Future<void> _route() async {
-    final token = await Session.token();
-    final server = await Session.server();
-    if (!mounted) return;
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) => token == null ? const LoginScreen() : AdminShell(api: AdminApi(server, token: token)),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) => const Scaffold(
-    body: BrandBackdrop(
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            BrandLogo(height: 56),
-            SizedBox(height: 28),
-            SizedBox(width: 26, height: 26, child: CircularProgressIndicator(strokeWidth: 2.6, color: Colors.white)),
-          ],
-        ),
-      ),
-    ),
-  );
 }

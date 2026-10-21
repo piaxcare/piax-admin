@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:piax_orders_admin/admin_modules/record_filter.dart';
 import 'package:piax_orders_admin/admin_modules/modules_screens.dart';
 import 'package:piax_orders_admin/admin_modules/schema.dart';
 import 'package:piax_orders_admin/api.dart';
@@ -7,6 +8,7 @@ import 'package:piax_orders_admin/api.dart';
 // The Admin modules mock-up on the bundled dummy data (a server that can't be reached falls back to it, as a
 // deployed build always uses it).
 void main() {
+  setUp(forgetQueries); // each test starts with no remembered filters
   Future<void> openHome(WidgetTester tester, {bool all = true, Size size = const Size(1400, 2600)}) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
@@ -44,6 +46,7 @@ void main() {
 
     await tester.tap(find.text('PIAX NOCTE'));
     await tester.pumpAndSettle();
+    expect(find.byTooltip('Close'), findsOneWidget); // desktop record details use the order-style side panel, closed at the right end
     final hide = find.text('Hide from shop');
     final show = find.text('Show in shop');
     expect(hide.evaluate().isNotEmpty || show.evaluate().isNotEmpty, isTrue);
@@ -57,6 +60,35 @@ void main() {
     await tester.tap(find.descendant(of: find.byType(AppBar), matching: find.text('Save')));
     await tester.pumpAndSettle();
     expect(find.text('321'), findsWidgets); // the number card and the field
+    await tester.tap(find.byTooltip('Close'));
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Edit product'), findsOneWidget); // editable records can also be edited from their list cards
+    await tester.tap(find.byTooltip('Edit product'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.widgetWithText(TextFormField, 'Product name *'), 'PIAX NOCTE revised');
+    await tester.tap(find.descendant(of: find.byType(AppBar), matching: find.text('Save')));
+    await tester.pumpAndSettle();
+    expect(find.text('PIAX NOCTE revised'), findsWidgets); // in the list and in the side panel
+
+    // Edit again, then close the form: the whole panel closes, details too.
+    await tester.tap(find.byTooltip('Edit'));
+    await tester.pumpAndSettle();
+    expect(find.byType(ModuleFormScreen), findsOneWidget);
+    final close = find.byTooltip('Close');
+    expect(tester.getTopRight(close).dx, greaterThan(tester.getTopLeft(find.byType(ModuleFormScreen)).dx + 300)); // at the right end
+    // Full screen and back, while editing.
+    await tester.tap(find.byTooltip('Full screen'));
+    await tester.pumpAndSettle();
+    expect(find.byType(ModuleFormScreen), findsOneWidget);
+    expect(find.text('By status'), findsNothing); // the list and its dashboard are hidden
+    await tester.tap(find.byTooltip('Back to side panel'));
+    await tester.pumpAndSettle();
+    expect(find.text('By status'), findsOneWidget);
+
+    await tester.tap(close);
+    await tester.pumpAndSettle();
+    expect(find.byType(ModuleFormScreen), findsNothing);
+    expect(find.byType(ModuleDetailScreen), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
@@ -118,13 +150,12 @@ void main() {
     await tester.tap(find.text('Products & pads').last);
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('Sort'), 200, scrollable: find.descendant(of: find.byType(ListView), matching: find.byType(Scrollable)).first);
-    await tester.drag(find.byType(ListView).first, const Offset(0, -300)); // out from under the "Add" button
+    // Open the sort menu (the floating "Add" button can sit over it on a phone).
+    tester.state<PopupMenuButtonState<String>>(find.ancestor(of: find.text('Sort'), matching: find.byType(PopupMenuButton<String>))).showButtonMenu();
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Sort'));
+    await tester.tap(find.text('Product name').last);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Boxes in stock').last);
-    await tester.pumpAndSettle();
-    expect(find.text('Boxes in stock ↓'), findsOneWidget);
+    expect(find.text('Product name ↑'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

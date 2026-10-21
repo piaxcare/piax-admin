@@ -11,17 +11,22 @@ import 'schema.dart';
 // a one-line summary per module, and the short list of things that need someone's attention. Pure calculations:
 // the screens (overview_screen.dart, modules_screens.dart) only draw them.
 
-/// Chart colours: the PIAX brand green first, then the soft product tones in a stronger shade so they read on white.
+/// Categorical chart colours (which item is which), in this fixed order, never cycled past the end: brand teal first.
+/// Checked with the data-viz validator on white: every hue inside the lightness band and above the chroma floor, and
+/// neighbours apart for colour-blind readers (worst ΔE 18) and everyone else (worst ΔE 23). Yellow is under 3:1 on
+/// white, so charts using it always carry labels or a legend. Red is left out on purpose: it means "stopped" (status).
+/// More than six parts fold into "Other".
 const chartPalette = [
-  Color(0xFF0B5B4E), // brand green
-  Color(0xFF8E79B0), // lavender
-  Color(0xFFC4785B), // terracotta
-  Color(0xFF2B3A5C), // night navy
-  Color(0xFF6E9A6C), // sage
-  Color(0xFFD29B2B), // amber
-  Color(0xFFC26D86), // rose
-  Color(0xFF4A90A4), // blue
+  Color(0xFF0F8A6F), // teal (brand)
+  Color(0xFF5B4BD1), // violet
+  Color(0xFFE8692F), // orange
+  Color(0xFF2A78D6), // blue
+  Color(0xFFE39A00), // yellow
+  Color(0xFFD9558A), // pink
 ];
+
+/// "Other" (the parts past the sixth) and empty tracks: a quiet grey.
+const otherColor = Color(0xFFB8C4C1);
 
 /// One part of a whole: a status, a city, a category…
 class Slice {
@@ -109,6 +114,7 @@ List<Slice> statusSlices(ModuleDef m, List<Map<String, dynamic>> records) {
 }
 
 List<Slice> countBy(Iterable<Object?> values, {int top = 6, Map<String, Color>? colors}) {
+  top = top.clamp(1, chartPalette.length);
   final counts = <String, int>{};
   for (final v in values) {
     final key = v == null || '$v'.isEmpty ? 'Not set' : '$v';
@@ -118,8 +124,8 @@ List<Slice> countBy(Iterable<Object?> values, {int top = 6, Map<String, Color>? 
   final shown = sorted.take(top).toList();
   final rest = sorted.skip(top).fold<int>(0, (sum, e) => sum + e.value);
   return [
-    for (final (i, e) in shown.indexed) Slice(e.key, e.value, colors?[e.key] ?? chartPalette[i % chartPalette.length]),
-    if (rest > 0) Slice('Other', rest, const Color(0xFFB8C4C1)),
+    for (final (i, e) in shown.indexed) Slice(e.key, e.value, colors?[e.key] ?? chartPalette[i]),
+    if (rest > 0) Slice('Other', rest, otherColor),
   ];
 }
 
@@ -242,14 +248,14 @@ List<Kpi> headlineNumbers(ModuleRepository repo, {DateTime? now}) {
   return [
     Kpi(label: 'Members', value: _n(where('members', (x) => x['status'] == 'Active')), caption: 'active of ${members.length} · ${where('members', (x) => x['status'] == 'Blocked')} blocked', icon: Icons.people_outline, module: 'members'),
     Kpi(label: 'Subscription income', value: rupees(sum(activeSubs, 'amount').round()), caption: 'per billing cycle from ${_plural(activeSubs.length, 'active subscription')}', icon: Icons.card_membership_outlined, module: 'subscriptions', color: chartPalette[1]),
-    Kpi(label: 'App rating', value: stars.isEmpty ? '—' : '${(stars.reduce((a, b) => a + b) / stars.length).toStringAsFixed(1)} ★', caption: 'average of ${_plural(stars.length, 'rating')}', icon: Icons.star_half_outlined, module: 'ratings', color: chartPalette[5]),
+    Kpi(label: 'App rating', value: stars.isEmpty ? '—' : '${(stars.reduce((a, b) => a + b) / stars.length).toStringAsFixed(1)} ★', caption: 'average of ${_plural(stars.length, 'rating')}', icon: Icons.star_half_outlined, module: 'ratings', color: chartPalette[4]),
     Kpi(label: 'Upcoming appointments', value: '$upcoming', caption: 'booked from today on', icon: Icons.event_available_outlined, module: 'appointments', color: chartPalette[3]),
     Kpi(label: 'Partners online', value: '${partners.where((x) => x['status'] == 'Online').length}', caption: 'of ${_plural(partners.length, 'delivery partner')}', icon: Icons.delivery_dining_outlined, module: 'partners', color: chartPalette[2]),
     Kpi(label: 'Products in shop', value: '${products.length}', caption: '${_n(sum(products, 'stock'))} boxes in stock', icon: Icons.inventory_2_outlined, module: 'products', color: chartPalette[4], image: moduleImage('products')),
-    Kpi(label: 'Website pages live', value: '${pages.where((x) => x['status'] == 'Live').length} of ${pages.length}', caption: '${_n(sum(pages, 'views30d'))} views in the last 30 days', icon: Icons.web_outlined, module: 'pages', color: chartPalette[6]),
-    Kpi(label: 'Integrations working', value: '${creds.where((x) => x['status'] == 'Connected').length} of ${creds.length}', caption: '${creds.where((x) => x['status'] == 'Expiring soon' || x['status'] == 'Error').length} need attention', icon: Icons.key_outlined, module: 'credentials', color: chartPalette[7]),
-    Kpi(label: 'Learn article views', value: _n(sum(published, 'views')), caption: 'across ${_plural(published.length, 'published article')}', icon: Icons.article_outlined, module: 'articles', color: chartPalette[6], image: moduleImage('articles')),
-    Kpi(label: 'AI bot chats', value: _n(sum(r('healthBots'), 'chats')), caption: 'with ${_plural(r('healthBots').length, 'health bot')}', icon: Icons.smart_toy_outlined, module: 'healthBots', color: chartPalette[7], image: robotImage),
+    Kpi(label: 'Website pages live', value: '${pages.where((x) => x['status'] == 'Live').length} of ${pages.length}', caption: '${_n(sum(pages, 'views30d'))} views in the last 30 days', icon: Icons.web_outlined, module: 'pages', color: chartPalette[5]),
+    Kpi(label: 'Integrations working', value: '${creds.where((x) => x['status'] == 'Connected').length} of ${creds.length}', caption: '${creds.where((x) => x['status'] == 'Expiring soon' || x['status'] == 'Error').length} need attention', icon: Icons.key_outlined, module: 'credentials', color: chartPalette[3]),
+    Kpi(label: 'Learn article views', value: _n(sum(published, 'views')), caption: 'across ${_plural(published.length, 'published article')}', icon: Icons.article_outlined, module: 'articles', color: chartPalette[5], image: moduleImage('articles')),
+    Kpi(label: 'AI bot chats', value: _n(sum(r('healthBots'), 'chats')), caption: 'with ${_plural(r('healthBots').length, 'health bot')}', icon: Icons.smart_toy_outlined, module: 'healthBots', color: chartPalette[1], image: robotImage),
   ];
 }
 
@@ -294,8 +300,8 @@ List<(String, Color, List<int>)> activityTrend(ModuleRepository repo, {DateTime?
   return [
     ('New members', chartPalette[0], weeks('members', 'joinedAt')),
     ('Appointments', chartPalette[1], weeks('appointments', 'at')),
-    ('App ratings', chartPalette[5], weeks('ratings', 'at')),
-    ('Admin changes', chartPalette[2], weeks('audit', 'at')),
+    ('App ratings', chartPalette[2], weeks('ratings', 'at')),
+    ('Admin changes', chartPalette[3], weeks('audit', 'at')),
   ];
 }
 

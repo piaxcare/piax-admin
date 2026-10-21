@@ -10,7 +10,8 @@ import '../session.dart';
 import '../widgets/brand.dart';
 import 'admin_search.dart';
 import 'modules_screens.dart';
-import 'schema.dart';
+import 'nav_config.dart';
+import 'nav_widgets.dart';
 
 // The app's frame after sign-in: the sidebar on the left on every page, and the pages beside it in their own
 // navigator, so opening a module, a record or a form keeps the sidebar in place. The first page is the Admin
@@ -35,8 +36,11 @@ class _AdminShellState extends State<AdminShell> {
   bool _open = true;
   String _mode = 'open';
 
-  /// The sidebar item for the page on top: 'overview', 'modules', 'orders', 'module:products'…
-  String _active = 'overview';
+  /// The menu item (nav_config.dart) for the page on top, highlighted in the sidebar; null for pages outside the menu.
+  String? _active = 'founder-overview';
+
+  /// The menu item last opened from the sidebar: when two items open the same module, it's the one highlighted.
+  String? _clicked;
 
   @override
   void initState() {
@@ -48,10 +52,25 @@ class _AdminShellState extends State<AdminShell> {
     });
   }
 
+  /// The menu item for a page's route name: `nav:item-id`, `module:key`, or one of the app's pages.
+  String? _itemFor(String name) {
+    if (name.startsWith('nav:')) return name.substring(4);
+    final clicked = _clicked == null ? null : navItemById(_clicked!)?.$2;
+    if (name.startsWith('module:')) {
+      final key = name.substring(7);
+      if (clicked?.target case ModuleTarget(module: final m) when m == key) return clicked!.id;
+      return navItemForModule(key)?.id;
+    }
+    final page = const {'overview': AppPage.overview, 'orders': AppPage.orders, 'analytics': AppPage.analytics, 'refunds': AppPage.refunds, 'settings': AppPage.settings}[name];
+    if (page == null) return null;
+    if (clicked?.target case PageTarget(page: final p) when p == page) return clicked!.id;
+    return navItemForPage(page)?.id;
+  }
+
   void _pageChanged(String? name, {required bool opened}) {
     if (!mounted) return;
     setState(() {
-      if (name != null) _active = name;
+      if (name != null) _active = _itemFor(name);
       if (opened && _mode != 'remember') _open = _mode == 'open';
     });
   }
@@ -77,7 +96,7 @@ class _AdminShellState extends State<AdminShell> {
     setState(() {
       _mode = mode;
       // A new server: start again from the overview, on that server.
-      if (api != null) (_api = api, _pages = GlobalKey<NavigatorState>(), _active = 'overview');
+      if (api != null) (_api = api, _pages = GlobalKey<NavigatorState>(), _active = 'founder-overview');
     });
   }
 
@@ -98,7 +117,20 @@ class _AdminShellState extends State<AdminShell> {
       _home0();
       _home.currentState?.open(key, status: status, create: create);
     },
+    item: _openItem,
   );
+
+  /// Opens a sidebar menu item: its page or module, or its demonstration page if it isn't built yet.
+  void _openItem(String id) {
+    final found = navItemById(id);
+    if (found == null) return;
+    final item = found.$2;
+    _clicked = id;
+    if (item.target is DemoTarget) return _push('nav:$id', NavDemoPage(itemId: id, nav: nav));
+    openNavItem(context, AdminNav(orders: nav.orders, analytics: nav.analytics, refunds: nav.refunds, settings: nav.settings, overview: nav.overview, allModules: nav.allModules, module: nav.module), item);
+    // Founder Overview is the first page, so no route change tells the sidebar: highlight it here.
+    setState(() => _active = id);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -122,7 +154,7 @@ class _AdminShellState extends State<AdminShell> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          AdminSidebar(nav: nav, active: _active, collapsed: !_open, onToggle: _toggle, onSignOut: () => signOut(context)),
+          AdminSidebar(nav: nav, activeItemId: _active, collapsed: !_open, onToggle: _toggle, onSignOut: _api.isDemo ? null : () => signOut(context)),
           Expanded(child: pages),
         ],
       ),
@@ -149,81 +181,71 @@ class _PageObserver extends NavigatorObserver {
   void didReplace({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}) => _later(newRoute?.settings.name, opened: true);
 }
 
-/// The sidebar, in the order desk's dark brand-green style: the white PIAX logo, the overview, the app's pages, then
-/// every admin module by group. The current page is a soft white highlight. Folded, it's a slim rail of icons (each
-/// with its name on hover), still one tap from anywhere.
+/// The sidebar, in the order desk's dark brand-green style: the white PIAX logo, the 12 numbered sections with their
+/// folding submenus (nav_config.dart), then Settings and Sign out. Folded, it's a slim rail of section icons, each
+/// opening a menu of its pages (names on hover).
 class AdminSidebar extends StatelessWidget {
-  const AdminSidebar({super.key, required this.nav, required this.active, required this.onSignOut, this.collapsed = false, this.onToggle});
+  const AdminSidebar({super.key, required this.nav, this.onSignOut, this.activeItemId, this.collapsed = false, this.onToggle});
   final AdminNav nav;
-  final String active;
-  final VoidCallback onSignOut;
+  final String? activeItemId;
+
+  /// Shown only when there's a sign-in to leave (the demo app has none).
+  final VoidCallback? onSignOut;
   final bool collapsed;
   final VoidCallback? onToggle;
 
   @override
   Widget build(BuildContext context) => AnimatedContainer(
-    duration: const Duration(milliseconds: 220),
+    duration: MediaQuery.disableAnimationsOf(context) ? Duration.zero : const Duration(milliseconds: 220),
     curve: Curves.easeOutCubic,
-    width: collapsed ? 76 : 250,
+    width: collapsed ? 76 : 280,
     clipBehavior: Clip.hardEdge,
     decoration: const BoxDecoration(
       gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0xFF0B5B4E), Color(0xFF083F37)]),
     ),
     // Laid out for the width it has right now, so nothing overflows while it opens or folds.
-    child: LayoutBuilder(builder: (context, box) => _content(box.maxWidth < 170)),
+    child: LayoutBuilder(builder: (context, box) => _content(context, box.maxWidth < 170)),
   );
 
-  Widget _content(bool collapsed) {
-    Widget item(IconData icon, String label, VoidCallback? onTap, {bool isActive = false, bool small = false}) {
-      final fg = isActive ? Colors.white : const Color(0xFFB9D6CF);
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 4),
-        child: Tooltip(
-          message: collapsed ? label : '',
-          preferBelow: false,
-          child: Material(
-            color: isActive ? Colors.white.withValues(alpha: .12) : Colors.transparent,
+  Widget _content(BuildContext context, bool folded) {
+    Widget footer(IconData icon, String label, VoidCallback? onTap, {bool isActive = false}) => Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Tooltip(
+        message: folded ? label : '',
+        child: Material(
+          color: isActive ? Colors.white.withValues(alpha: .12) : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          child: InkWell(
             borderRadius: BorderRadius.circular(12),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(12),
-              onTap: onTap,
-              child: Container(
-                height: small ? 38 : 44,
-                padding: EdgeInsets.symmetric(horizontal: collapsed ? 0 : 14),
-                child: Row(
-                  mainAxisAlignment: collapsed ? MainAxisAlignment.center : MainAxisAlignment.start,
-                  children: [
-                    Icon(icon, size: small ? 19 : 21, color: fg),
-                    if (!collapsed) ...[
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: fg, fontSize: small ? 13.5 : 14.5, fontWeight: isActive ? FontWeight.w700 : FontWeight.w600)),
-                      ),
-                    ],
+            focusColor: const Color(0x29FFFFFF),
+            onTap: onTap,
+            child: Container(
+              height: 42,
+              padding: EdgeInsets.symmetric(horizontal: folded ? 0 : 12),
+              child: Row(
+                mainAxisAlignment: folded ? MainAxisAlignment.center : MainAxisAlignment.start,
+                children: [
+                  Icon(icon, size: 20, color: isActive ? Colors.white : const Color(0xFFB9D6CF)),
+                  if (!folded) ...[
+                    const SizedBox(width: 12),
+                    Expanded(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFFB9D6CF), fontSize: 14, fontWeight: FontWeight.w600))),
                   ],
-                ),
+                ],
               ),
             ),
           ),
         ),
-      );
-    }
-
-    Widget heading(String text) => collapsed
-        ? const Padding(padding: EdgeInsets.symmetric(vertical: 8, horizontal: 10), child: Divider(height: 1, color: Color(0x33FFFFFF)))
-        : Padding(
-            padding: const EdgeInsets.fromLTRB(14, 16, 8, 6),
-            child: Text(text.toUpperCase(), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFF8DB8AE), fontSize: 10.5, fontWeight: FontWeight.w700, letterSpacing: 1.4)),
-          );
+      ),
+    );
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(collapsed ? 10 : 14, 18, collapsed ? 10 : 14, 14),
+      padding: EdgeInsets.fromLTRB(folded ? 10 : 12, 18, folded ? 10 : 12, 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
-            padding: EdgeInsets.only(left: collapsed ? 0 : 8, bottom: 16),
-            child: collapsed
+            padding: EdgeInsets.only(left: folded ? 0 : 8, bottom: 14),
+            child: folded
                 ? Column(children: [
                     // The folded logo: the PIAX mark with rounded corners inside a rounded white tile.
                     Container(
@@ -252,7 +274,7 @@ class AdminSidebar extends StatelessWidget {
                           children: [
                             BrandLogo(height: 40),
                             SizedBox(height: 6),
-                            Text('ADMIN', style: TextStyle(color: Color(0xFFB9D6CF), fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 2)),
+                            Text('ADMIN CONSOLE', style: TextStyle(color: Color(0xFFB9D6CF), fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 2)),
                           ],
                         ),
                       ),
@@ -261,24 +283,13 @@ class AdminSidebar extends StatelessWidget {
                   ),
           ),
           Expanded(
-            child: ListView(
-              padding: EdgeInsets.zero,
-              children: [
-                item(Icons.space_dashboard_outlined, 'Overview', nav.overview, isActive: active == 'overview'),
-                item(Icons.apps_outlined, 'All modules', nav.allModules, isActive: active == 'modules'),
-                if (nav.orders != null) item(Icons.receipt_long_outlined, 'Orders', nav.orders, isActive: active == 'orders'),
-                if (nav.analytics != null) item(Icons.insights_outlined, 'Analytics', nav.analytics, isActive: active == 'analytics'),
-                if (nav.refunds != null) item(Icons.currency_exchange, 'Refunds', nav.refunds, isActive: active == 'refunds'),
-                for (final group in moduleGroups) ...[
-                  heading(group),
-                  for (final m in modules.where((m) => m.group == group)) item(m.icon, m.title, () => nav.module(m.key), small: true, isActive: active == 'module:${m.key}'),
-                ],
-              ],
+            child: SingleChildScrollView(
+              child: folded ? NavRail(nav: nav, activeItemId: activeItemId) : NavTree(nav: nav, activeItemId: activeItemId),
             ),
           ),
           const Divider(height: 20, color: Color(0x33FFFFFF)),
-          if (nav.settings != null) item(Icons.settings_outlined, 'Settings', nav.settings, isActive: active == 'settings'),
-          item(Icons.logout, 'Sign out', onSignOut),
+          if (nav.settings != null) footer(Icons.settings_outlined, 'Settings', nav.settings),
+          if (onSignOut != null) footer(Icons.logout, 'Sign out', onSignOut),
         ],
       ),
     );

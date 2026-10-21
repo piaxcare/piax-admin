@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -36,7 +38,7 @@ class ChartCard extends StatelessWidget {
       children: [
         Row(
           children: [
-            Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15.5))),
+            Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15.5))),
             ?trailing,
           ],
         ),
@@ -57,7 +59,98 @@ class _Empty extends StatelessWidget {
   );
 }
 
-/// Donut of [slices] with the total in the middle and a legend (count and share) beside or below it.
+/// A ring of [slices]: segments on a light track, a small surface gap between them, drawn in with a sweep. Touching
+/// or hovering a segment selects it ([onSelect]); the selected one thickens and the others fade. [center] sits inside.
+class SegmentRing extends StatelessWidget {
+  const SegmentRing({super.key, required this.slices, required this.size, this.selected, this.onSelect, this.center});
+  final List<Slice> slices;
+  final double size;
+  final int? selected;
+  final ValueChanged<int?>? onSelect;
+  final Widget? center;
+
+  int? _hit(Offset p) {
+    final total = slices.fold<int>(0, (a, s) => a + s.count);
+    if (total == 0) return null;
+    final c = Offset(size / 2, size / 2), d = p - c;
+    final r = d.distance, outer = size / 2, inner = outer - size * 0.2;
+    if (r < inner || r > outer) return null;
+    var angle = math.atan2(d.dy, d.dx) + math.pi / 2;
+    if (angle < 0) angle += 2 * math.pi;
+    var acc = 0.0;
+    for (final (i, s) in slices.indexed) {
+      acc += s.count / total * 2 * math.pi;
+      if (angle <= acc) return i;
+    }
+    return null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final motion = MediaQuery.disableAnimationsOf(context) ? Duration.zero : const Duration(milliseconds: 700);
+    return SizedBox(
+      width: size,
+      height: size,
+      child: MouseRegion(
+        onHover: onSelect == null ? null : (e) => onSelect!(_hit(e.localPosition)),
+        onExit: onSelect == null ? null : (_) => onSelect!(null),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTapDown: onSelect == null ? null : (e) {
+            final hit = _hit(e.localPosition);
+            onSelect!(hit == selected ? null : hit);
+          },
+          child: TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0, end: 1),
+            duration: motion,
+            curve: Curves.easeOutCubic,
+            builder: (context, t, child) => CustomPaint(painter: _RingPainter(slices, t, selected), child: child),
+            child: Center(child: center),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RingPainter extends CustomPainter {
+  _RingPainter(this.slices, this.progress, this.selected);
+  final List<Slice> slices;
+  final double progress;
+  final int? selected;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final total = slices.fold<int>(0, (a, s) => a + s.count);
+    final stroke = size.width * 0.13;
+    final rect = Rect.fromCircle(center: size.center(Offset.zero), radius: size.width / 2 - size.width * 0.1);
+    canvas.drawArc(rect, 0, 2 * math.pi, false, Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke
+      ..color = const Color(0xFFEEF2F1));
+    if (total == 0) return;
+    final shown = slices.where((s) => s.count > 0).length;
+    final gap = shown > 1 ? 0.035 : 0.0; // radians of surface between segments
+    var start = -math.pi / 2;
+    for (final (i, s) in slices.indexed) {
+      final sweep = s.count / total * 2 * math.pi * progress;
+      if (s.count > 0 && sweep > gap) {
+        final on = selected == null || selected == i;
+        canvas.drawArc(rect, start + gap / 2, sweep - gap, false, Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = selected == i ? stroke + 6 : stroke
+          ..color = on ? s.color : s.color.withValues(alpha: 0.28));
+      }
+      start += sweep;
+    }
+  }
+
+  @override
+  bool shouldRepaint(_RingPainter old) => old.progress != progress || old.selected != selected || old.slices != slices;
+}
+
+/// A ring of [slices] with the total in the middle and a legend table (count and share) beside or below it. Selecting
+/// a part, on the ring or in the legend, shows its count and share in the middle.
 class DonutChart extends StatefulWidget {
   const DonutChart({super.key, required this.slices, this.centerLabel = 'total', this.size = 148, this.horizontal});
   final List<Slice> slices;
@@ -68,86 +161,82 @@ class DonutChart extends StatefulWidget {
   final bool? horizontal;
 
   /// Whether a card [width] wide has room for the legend beside a ring of [size].
-  static bool fitsBeside(double width, {double size = 148}) => width >= size + 190;
+  static bool fitsBeside(double width, {double size = 148}) => width >= size + 220;
 
   @override
   State<DonutChart> createState() => _DonutChartState();
 }
 
 class _DonutChartState extends State<DonutChart> {
-  int? _touched;
+  int? _selected;
 
   @override
   Widget build(BuildContext context) {
-    final total = widget.slices.fold<int>(0, (a, s) => a + s.count);
+    final slices = widget.slices;
+    final total = slices.fold<int>(0, (a, s) => a + s.count);
     if (total == 0) return const _Empty();
-    final shown = [for (final s in widget.slices) if (s.count > 0) s];
-    final focus = _touched != null && _touched! < shown.length ? shown[_touched!] : null;
-    final ring = widget.size;
-    final donut = SizedBox(
-      width: ring,
-      height: ring,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          PieChart(
-            PieChartData(
-              startDegreeOffset: -90,
-              sectionsSpace: 2.5,
-              centerSpaceRadius: ring * 0.31,
-              pieTouchData: PieTouchData(
-                touchCallback: (event, response) => setState(() {
-                  _touched = event.isInterestedForInteractions ? response?.touchedSection?.touchedSectionIndex : null;
-                  if (_touched != null && _touched! < 0) _touched = null;
-                }),
-              ),
-              sections: [
-                for (final (i, s) in shown.indexed)
-                  PieChartSectionData(value: s.count.toDouble(), color: s.color, radius: ring * (i == _touched ? 0.19 : 0.16), showTitle: false),
-              ],
-            ),
-            duration: const Duration(milliseconds: 450),
-            curve: Curves.easeOutCubic,
+    final focus = _selected != null && _selected! < slices.length ? slices[_selected!] : null;
+    final ring = SegmentRing(
+      slices: slices,
+      size: widget.size,
+      selected: _selected,
+      onSelect: (i) => setState(() => _selected = i),
+      center: SizedBox(
+        width: widget.size * 0.56,
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text('${focus?.count ?? total}', style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w600, height: 1.1, color: Color(0xFF0C1C19))),
           ),
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('${focus?.count ?? total}', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, height: 1.1)),
-              SizedBox(
-                width: ring * 0.55,
-                child: Text(focus?.label ?? widget.centerLabel, textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: _muted, fontSize: 11.5)),
-              ),
-            ],
+          const SizedBox(height: 2),
+          Text(
+            focus == null ? widget.centerLabel : '${focus.label} · ${(focus.count * 100 / total).round()}%',
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(color: _muted, fontSize: 11.5, height: 1.25),
           ),
-        ],
+        ]),
       ),
     );
     final legend = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
-        for (final s in widget.slices)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 3.5),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(width: 10, height: 10, decoration: BoxDecoration(color: s.color, borderRadius: BorderRadius.circular(3))),
-                const SizedBox(width: 8),
-                Flexible(child: Text(s.label, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13))),
-                const SizedBox(width: 8),
-                Text('${s.count}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
-                Text('  ${(s.count * 100 / total).round()}%', style: const TextStyle(fontSize: 12, color: _muted)),
-              ],
+        for (final (i, s) in slices.indexed)
+          MouseRegion(
+            onEnter: (_) => setState(() => _selected = i),
+            onExit: (_) => setState(() => _selected = null),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(8),
+              onTap: () => setState(() => _selected = _selected == i ? null : i),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                decoration: BoxDecoration(color: _selected == i ? const Color(0xFFF1F6F4) : null, borderRadius: BorderRadius.circular(8)),
+                child: Row(
+                  children: [
+                    Container(width: 10, height: 10, decoration: BoxDecoration(color: s.color, borderRadius: BorderRadius.circular(3))),
+                    const SizedBox(width: 10),
+                    Expanded(child: Text(s.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13, color: Color(0xFF34443F)))),
+                    const SizedBox(width: 8),
+                    Text('${s.count}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF0C1C19), fontFeatures: [FontFeature.tabularFigures()])),
+                    SizedBox(
+                      width: 46,
+                      child: Text('${(s.count * 100 / total).round()}%', textAlign: TextAlign.right, style: const TextStyle(fontSize: 12, color: _muted, fontFeatures: [FontFeature.tabularFigures()])),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
       ],
     );
     Widget lay(bool beside) => beside
-        ? Row(children: [donut, const SizedBox(width: 22), Flexible(child: legend)])
-        : Column(children: [donut, const SizedBox(height: 14), legend]);
+        ? Row(children: [ring, const SizedBox(width: 24), Expanded(child: legend)])
+        : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [Center(child: ring), const SizedBox(height: 16), legend]);
     if (widget.horizontal != null) return lay(widget.horizontal!);
-    return LayoutBuilder(builder: (context, box) => lay(box.maxWidth >= ring + 190));
+    return LayoutBuilder(builder: (context, box) => lay(box.maxWidth >= widget.size + 220));
   }
 }
 
@@ -183,11 +272,13 @@ class EqualRows extends StatelessWidget {
   );
 }
 
-/// Ranked horizontal bars, biggest first: "which city / plan / article has the most". [format] writes the values.
+/// Ranked horizontal bars, biggest first: "which city / plan / article has the most". One measure, so one colour
+/// ([color], brand teal): the bars differ by length, and each is labelled. [format] writes the values.
 class BarList extends StatelessWidget {
-  const BarList({super.key, required this.slices, this.format});
+  const BarList({super.key, required this.slices, this.format, this.color = const Color(0xFF0F8A6F)});
   final List<Slice> slices;
   final String Function(int value)? format;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
@@ -211,12 +302,12 @@ class BarList extends StatelessWidget {
                   Row(
                     children: [
                       Expanded(child: Text(s.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13))),
-                      Text(format?.call(s.count) ?? '${s.count}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                      Text(format?.call(s.count) ?? '${s.count}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                     ],
                   ),
                   const SizedBox(height: 5),
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(99),
+                    borderRadius: BorderRadius.circular(4),
                     child: Stack(
                       children: [
                         Container(height: 8, color: const Color(0xFFEDF2F0)),
@@ -228,10 +319,7 @@ class BarList extends StatelessWidget {
                             widthFactor: f,
                             child: Container(
                               height: 8,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(99),
-                                gradient: LinearGradient(colors: [s.color.withValues(alpha: 0.75), s.color]),
-                              ),
+                              decoration: BoxDecoration(color: s.label == 'Other' ? otherColor : color, borderRadius: BorderRadius.circular(4)),
                             ),
                           ),
                         ),
@@ -323,8 +411,8 @@ class ColumnChart extends StatelessWidget {
                 BarChartRodData(
                   toY: s.count.toDouble(),
                   width: 22,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(7)),
-                  gradient: LinearGradient(begin: Alignment.bottomCenter, end: Alignment.topCenter, colors: [s.color.withValues(alpha: 0.65), s.color]),
+                  color: s.color,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
                 ),
               ]),
           ],
@@ -372,7 +460,7 @@ class TrendChart extends StatelessWidget {
               minY: 0,
               maxY: top * 1.25,
               borderData: FlBorderData(show: false),
-              gridData: FlGridData(drawVerticalLine: false, horizontalInterval: top <= 4 ? 1 : (top / 4).ceilToDouble(), getDrawingHorizontalLine: (_) => const FlLine(color: _grid, strokeWidth: 1, dashArray: [4, 4])),
+              gridData: FlGridData(drawVerticalLine: false, horizontalInterval: top <= 4 ? 1 : (top / 4).ceilToDouble(), getDrawingHorizontalLine: (_) => const FlLine(color: _grid, strokeWidth: 1)),
               titlesData: FlTitlesData(
                 topTitles: const AxisTitles(),
                 rightTitles: const AxisTitles(),
@@ -412,11 +500,11 @@ class TrendChart extends StatelessWidget {
                     isCurved: true,
                     preventCurveOverShooting: true,
                     color: s.$2,
-                    barWidth: 2.6,
+                    barWidth: 2,
                     dotData: const FlDotData(show: false),
                     belowBarData: BarAreaData(
                       show: true,
-                      gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [s.$2.withValues(alpha: 0.16), s.$2.withValues(alpha: 0)]),
+                      gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [s.$2.withValues(alpha: 0.10), s.$2.withValues(alpha: 0)]),
                     ),
                   ),
               ],
@@ -427,4 +515,40 @@ class TrendChart extends StatelessWidget {
       ],
     );
   }
+}
+
+/// The floating "Add" button: bottom right of the list (not over a side panel), 24 px in from both edges.
+Widget floatingAdd(String label, VoidCallback onPressed, Widget list) => Stack(
+  children: [
+    Positioned.fill(child: list),
+    Positioned(
+      right: 24,
+      bottom: 24,
+      child: FloatingActionButton.extended(heroTag: null, onPressed: onPressed, icon: const Icon(Icons.add), label: Text(label)),
+    ),
+  ],
+);
+
+/// Around a right-hand side panel (details, add or edit): whether it's full screen, and how to switch. Panels read it
+/// to show the full-screen button beside their close button.
+class PanelScope extends InheritedWidget {
+  const PanelScope({super.key, required this.expanded, required this.onToggle, required super.child});
+  final bool expanded;
+  final VoidCallback onToggle;
+
+  static PanelScope? of(BuildContext context) => context.dependOnInheritedWidgetOfExactType<PanelScope>();
+
+  @override
+  bool updateShouldNotify(PanelScope old) => old.expanded != expanded;
+}
+
+/// The full-screen / back-to-panel button for a side panel's top bar; nothing outside a side panel.
+Widget? panelExpandButton(BuildContext context) {
+  final scope = PanelScope.of(context);
+  if (scope == null) return null;
+  return IconButton(
+    tooltip: scope.expanded ? 'Back to side panel' : 'Full screen',
+    icon: Icon(scope.expanded ? Icons.close_fullscreen : Icons.open_in_full, size: 20),
+    onPressed: scope.onToggle,
+  );
 }

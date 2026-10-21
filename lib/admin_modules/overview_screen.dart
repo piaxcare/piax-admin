@@ -143,7 +143,7 @@ class AdminOverview extends StatelessWidget {
                 ),
                 if (onAdd != null) ...[
                   const SizedBox(height: 22),
-                  const Text('Quick actions', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: Color(0xFF34443F))),
+                  const Text('Quick actions', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Color(0xFF34443F))),
                   const SizedBox(height: 10),
                   Wrap(
                     spacing: 8,
@@ -172,7 +172,7 @@ class AdminOverview extends StatelessWidget {
                 for (final group in moduleGroups) ...[
                   Padding(
                     padding: const EdgeInsets.fromLTRB(2, 18, 2, 10),
-                    child: Text(group.toUpperCase(), style: const TextStyle(color: Color(0xFF5B6B67), fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 1.6)),
+                    child: Text(group.toUpperCase(), style: const TextStyle(color: Color(0xFF5B6B67), fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 1.6)),
                   ),
                   EqualRows(
                     columns: chartCols,
@@ -215,7 +215,7 @@ class AdminOverview extends StatelessWidget {
                 child: Column(mainAxisSize: MainAxisSize.min, children: [
                   Gauge(percent: pct, caption: 'running well'),
                   const SizedBox(height: 12),
-                  Text(title, style: const TextStyle(color: ink, fontSize: 15, fontWeight: FontWeight.w700)),
+                  Text(title, style: const TextStyle(color: ink, fontSize: 15, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 4),
                   Text(line, textAlign: TextAlign.center, style: const TextStyle(color: muted, fontSize: 12.5)),
                 ]),
@@ -232,7 +232,7 @@ class AdminOverview extends StatelessWidget {
   Widget _stock() {
     final products = [...repo.records('products')]..sort((a, b) => ((b['stock'] as num?) ?? 0).compareTo((a['stock'] as num?) ?? 0));
     final slices = [
-      for (final (i, p) in products.take(5).indexed) Slice('${p['name']}', ((p['stock'] as num?) ?? 0).round(), greens[i], image: recordImage('products', p)),
+      for (final (i, p) in products.take(5).indexed) Slice('${p['name']}', ((p['stock'] as num?) ?? 0).round(), chartPalette[i], image: recordImage('products', p)),
     ];
     final total = slices.fold<int>(0, (a, s) => a + s.count);
     final number = NumberFormat.decimalPattern('en_IN');
@@ -260,7 +260,7 @@ class AdminOverview extends StatelessWidget {
             children: [
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(NumberFormat.decimalPattern('en_IN').format(active), style: const TextStyle(color: ink, fontSize: 24, fontWeight: FontWeight.w800)),
+                  Text(NumberFormat.decimalPattern('en_IN').format(active), style: const TextStyle(color: ink, fontSize: 24, fontWeight: FontWeight.w600)),
                   const Text('active members', style: TextStyle(color: muted, fontSize: 12)),
                 ]),
               ),
@@ -280,7 +280,7 @@ class AdminOverview extends StatelessWidget {
       views['${a['category']}'] = (views['${a['category']}'] ?? 0) + ((a['views'] as num?) ?? 0).round();
     }
     final sorted = views.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
-    final slices = [for (final (i, e) in sorted.indexed) Slice(e.key, e.value, greens[(i * 2).clamp(0, greens.length - 2)])];
+    final slices = [for (final (i, e) in sorted.take(chartPalette.length).indexed) Slice(e.key, e.value, chartPalette[i])];
     return DashCard(
       title: 'Learn views by topic',
       trailing: SeeAll(onTap: () => onOpen('articles')),
@@ -292,7 +292,7 @@ class AdminOverview extends StatelessWidget {
     List<Map<String, dynamic>> r(String k) => repo.records(k);
     Widget open(String k) => TextButton(onPressed: () => onOpen(k), child: const Text('Open'));
     Slice valueSlice(String k, Map<String, dynamic> x, String label, String value, int i) =>
-        Slice('${x[label]}', (x[value] is num ? x[value] as num : num.tryParse('${x[value]}') ?? 0).round(), chartPalette[i % chartPalette.length], image: recordImage(k, x));
+        Slice('${x[label]}', (x[value] is num ? x[value] as num : num.tryParse('${x[value]}') ?? 0).round(), chartPalette[0], image: recordImage(k, x));
     List<Slice> ranked(String k, String label, String value, {bool Function(Map<String, dynamic>)? where}) {
       final rows = r(k).where(where ?? (_) => true).toList()
         ..sort((a, b) => ((b[value] as num?) ?? 0).compareTo((a[value] as num?) ?? 0));
@@ -300,7 +300,8 @@ class AdminOverview extends StatelessWidget {
     }
 
     final number = NumberFormat.decimalPattern('en_IN');
-    final starColors = [const Color(0xFF8B2E2E), const Color(0xFFC4785B), const Color(0xFFD29B2B), const Color(0xFF6E9A6C), const Color(0xFF0B5B4E)];
+    // Stars are ordered: one hue, lightest for 1 star, darkest for 5.
+    final starColors = [greens[4], greens[3], greens[2], greens[1], greens[0]];
     return [
       ChartCard(
         fill: fill,
@@ -341,7 +342,7 @@ class _SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text(title, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800)),
+      Text(title, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w600)),
       const SizedBox(height: 3),
       Text(note, style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 13)),
     ],
@@ -389,7 +390,7 @@ class _OperationsCard extends StatelessWidget {
                       ]),
                     ),
                     const SizedBox(width: 8),
-                    Text(k.value, style: const TextStyle(color: ink, fontWeight: FontWeight.w800, fontSize: 16)),
+                    Text(k.value, style: const TextStyle(color: ink, fontWeight: FontWeight.w600, fontSize: 16)),
                   ],
                 ),
               ),
@@ -450,7 +451,7 @@ class _AttentionCardState extends State<_AttentionCard> {
                             height: 38,
                             alignment: Alignment.center,
                             decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(11)),
-                            child: Text('${a.count}', style: TextStyle(color: fg, fontWeight: FontWeight.w800, fontSize: 15)),
+                            child: Text('${a.count}', style: TextStyle(color: fg, fontWeight: FontWeight.w600, fontSize: 15)),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -515,8 +516,8 @@ class _ModuleSummaryCard extends StatelessWidget {
                       child: Icon(m.icon, size: 20, color: m.sensitive ? const Color(0xFFA8243F) : brand),
                     ),
                   const SizedBox(width: 12),
-                  Expanded(child: Text(m.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15))),
-                  Text('${insight.total}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: brand)),
+                  Expanded(child: Text(m.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15))),
+                  Text('${insight.total}', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 18, color: brand)),
                 ],
               ),
               const SizedBox(height: 8),

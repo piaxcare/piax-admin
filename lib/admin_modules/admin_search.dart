@@ -9,12 +9,16 @@ import 'schema.dart';
 
 /// Where the search can take the admin. Pages the current screen can't reach are left null and not offered.
 class AdminNav {
-  const AdminNav({this.orders, this.analytics, this.refunds, this.settings, required this.overview, required this.allModules, required this.module});
+  const AdminNav({this.orders, this.analytics, this.refunds, this.settings, required this.overview, required this.allModules, required this.module, this.item});
   final VoidCallback? orders, analytics, refunds, settings;
   final VoidCallback overview, allModules;
 
   /// Opens a module's list, optionally filtered to [status], or straight into its "add" form.
   final void Function(String module, {String? status, bool create}) module;
+
+  /// Opens a sidebar menu item by its id (nav_config.dart) and highlights it. Set by the app frame; without it, items
+  /// open their page or module directly.
+  final void Function(String itemId)? item;
 }
 
 enum SearchKind { page, module, feature }
@@ -111,7 +115,7 @@ class AdminSearchBar extends StatelessWidget {
             if (shown.any((e) => e.kind == kind)) ...[
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 14, 20, 6),
-                child: Text(_kindLabel[kind]!, style: const TextStyle(color: Color(0xFF5B6B67), fontSize: 11.5, fontWeight: FontWeight.w700, letterSpacing: 1.4)),
+                child: Text(_kindLabel[kind]!, style: const TextStyle(color: Color(0xFF5B6B67), fontSize: 11.5, fontWeight: FontWeight.w600, letterSpacing: 1.4)),
               ),
               for (final e in shown.where((e) => e.kind == kind))
                 ListTile(

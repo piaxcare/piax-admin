@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 
 import '../format.dart';
 import 'dashboard_images.dart';
+import 'charts.dart' show SegmentRing;
 import 'insights.dart';
 
 // The dashboard's building blocks, laid out like a modern commerce admin (big stat cards with a change badge, an
@@ -19,7 +20,9 @@ const up = Color(0xFF0F8A5F);
 const down = Color(0xFFB3261E);
 
 /// Brand green, darkest to lightest: the one-colour family the charts use.
-const greens = [Color(0xFF0B5B4E), Color(0xFF0F766E), Color(0xFF3E9A86), Color(0xFF7DBFAE), Color(0xFFB9DDD2), Color(0xFFDCEFE8)];
+/// For ordered steps only (funnel stages, star ratings), darkest first; checked as an ordinal ramp (one hue, even
+/// steps, the lightest still 2.2:1 on white). The last one is a background tint for tracks, never a data colour.
+const greens = [Color(0xFF0B5B4E), Color(0xFF0F766E), Color(0xFF2E8F7B), Color(0xFF4FA48F), Color(0xFF79BBA8), Color(0xFFDCEFE8)];
 
 /// A white dashboard card: title on the left, an optional control on the right, then the content.
 class DashCard extends StatelessWidget {
@@ -39,7 +42,7 @@ class DashCard extends StatelessWidget {
       children: [
         Row(
           children: [
-            Expanded(child: Text(title, style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.w700, color: ink))),
+            Expanded(child: Text(title, style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.w600, color: ink))),
             ?trailing,
           ],
         ),
@@ -76,7 +79,7 @@ class DeltaBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = delta.up ? up : down;
-    final text = Text(delta.text, style: TextStyle(color: color, fontSize: 12.5, fontWeight: FontWeight.w700));
+    final text = Text(delta.text, style: TextStyle(color: color, fontSize: 12.5, fontWeight: FontWeight.w600));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       mainAxisSize: MainAxisSize.min,
@@ -97,9 +100,11 @@ class DeltaBadge extends StatelessWidget {
 
 /// A big number card: label and icon on top, the value and its change below. The first one is highlighted.
 class HeadlineStatCard extends StatelessWidget {
-  const HeadlineStatCard({super.key, required this.card, required this.onTap, this.highlight = false});
+  const HeadlineStatCard({super.key, required this.card, this.onTap, this.highlight = false});
   final HeadlineCard card;
-  final VoidCallback onTap;
+
+  /// Opens what the number is about; without it the card isn't tappable.
+  final VoidCallback? onTap;
   final bool highlight;
 
   @override
@@ -137,7 +142,7 @@ class HeadlineStatCard extends StatelessWidget {
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerLeft,
-                    child: Text(card.value, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: ink, letterSpacing: -.5)),
+                    child: Text(card.value, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w600, color: ink, letterSpacing: -.5)),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -207,10 +212,10 @@ class _ActivityCardState extends State<ActivityCard> {
       preventCurveOverShooting: true,
       curveSmoothness: 0.35,
       color: c,
-      barWidth: dashed ? 2 : 2.8,
+      barWidth: 2,
       dashArray: dashed ? [6, 5] : null,
-      dotData: FlDotData(checkToShowDot: (spot, bar) => !dashed && spot.x.toInt() == peak, getDotPainter: (_, _, _, _) => FlDotCirclePainter(radius: 5, color: Colors.white, strokeWidth: 2.5, strokeColor: c)),
-      belowBarData: BarAreaData(show: !dashed, gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [c.withValues(alpha: 0.12), c.withValues(alpha: 0)])),
+      dotData: FlDotData(checkToShowDot: (spot, bar) => !dashed && spot.x.toInt() == peak, getDotPainter: (_, _, _, _) => FlDotCirclePainter(radius: 4, color: c, strokeWidth: 2, strokeColor: Colors.white)),
+      belowBarData: BarAreaData(show: !dashed, gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [c.withValues(alpha: 0.10), c.withValues(alpha: 0)])),
     );
 
     return DashCard(
@@ -220,8 +225,8 @@ class _ActivityCardState extends State<ActivityCard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Wrap(spacing: 18, runSpacing: 6, children: [
-            _legend(greens[0], 'Everything', false),
-            _legend(greens[2], 'Member actions', true),
+            _legend(chartPalette[0], 'Everything', false),
+            _legend(chartPalette[1], 'Member actions', true),
           ]),
           const SizedBox(height: 14),
           Expanded(
@@ -231,7 +236,7 @@ class _ActivityCardState extends State<ActivityCard> {
                   minY: 0,
                   maxY: top * 1.25,
                   borderData: FlBorderData(show: false),
-                  gridData: FlGridData(drawVerticalLine: false, horizontalInterval: step, getDrawingHorizontalLine: (_) => const FlLine(color: line, strokeWidth: 1, dashArray: [4, 4])),
+                  gridData: FlGridData(drawVerticalLine: false, horizontalInterval: step, getDrawingHorizontalLine: (_) => const FlLine(color: line, strokeWidth: 1)),
                   titlesData: FlTitlesData(
                     topTitles: const AxisTitles(),
                     rightTitles: const AxisTitles(),
@@ -257,7 +262,7 @@ class _ActivityCardState extends State<ActivityCard> {
                       for (final _ in spots)
                         TouchedSpotIndicatorData(
                           FlLine(color: brand.withValues(alpha: 0.07), strokeWidth: 44),
-                          FlDotData(getDotPainter: (_, _, _, _) => FlDotCirclePainter(radius: 5, color: Colors.white, strokeWidth: 2.5, strokeColor: brand)),
+                          FlDotData(getDotPainter: (_, _, _, _) => FlDotCirclePainter(radius: 4, color: brand, strokeWidth: 2, strokeColor: Colors.white)),
                         ),
                     ],
                     touchTooltipData: LineTouchTooltipData(
@@ -268,12 +273,12 @@ class _ActivityCardState extends State<ActivityCard> {
                         for (final (i, s) in spots.indexed)
                           LineTooltipItem(
                             '${i == 0 ? 'Week of ${week(s.x.toInt())}\n' : ''}${s.barIndex == 0 ? 'Everything' : 'Members'}: ${s.y.toInt()}',
-                            TextStyle(color: i == 0 ? ink : muted, fontSize: 12, fontWeight: i == 0 ? FontWeight.w700 : FontWeight.w500),
+                            TextStyle(color: i == 0 ? ink : muted, fontSize: 12, fontWeight: i == 0 ? FontWeight.w600 : FontWeight.w500),
                           ),
                       ],
                     ),
                   ),
-                  lineBarsData: [series(all, greens[0]), series(members, greens[2], dashed: true)],
+                  lineBarsData: [series(all, chartPalette[0]), series(members, chartPalette[1], dashed: true)],
                 ),
                 duration: const Duration(milliseconds: 450),
               ),
@@ -313,7 +318,7 @@ class Gauge extends StatelessWidget {
         child: Align(
           alignment: const Alignment(0, 0.75),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Text('${(f * 100).round()}%', style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w800, color: ink)),
+            Text('${(f * 100).round()}%', style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w600, color: ink)),
             Text(caption, style: const TextStyle(color: muted, fontSize: 11.5)),
           ]),
         ),
@@ -356,7 +361,7 @@ class SplitStat extends StatelessWidget {
         child: Column(children: [
           Text(v.$1, style: const TextStyle(color: muted, fontSize: 12)),
           const SizedBox(height: 3),
-          Text(v.$2, style: const TextStyle(color: ink, fontSize: 16, fontWeight: FontWeight.w700)),
+          Text(v.$2, style: const TextStyle(color: ink, fontSize: 16, fontWeight: FontWeight.w600)),
         ]),
       ),
     );
@@ -379,30 +384,17 @@ class RingWithList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final total = slices.fold<int>(0, (a, s) => a + s.count);
     return Column(
       children: [
         SizedBox(
           width: ring,
           height: ring,
           child: Stack(alignment: Alignment.center, children: [
-            PieChart(
-              PieChartData(
-                startDegreeOffset: -90,
-                sectionsSpace: 6,
-                centerSpaceRadius: ring * 0.36,
-                sections: [
-                  for (final s in slices)
-                    if (s.count > 0) PieChartSectionData(value: s.count.toDouble(), color: s.color, radius: ring * 0.12, showTitle: false),
-                  if (total == 0) PieChartSectionData(value: 1, color: greens[5], radius: ring * 0.12, showTitle: false),
-                ],
-              ),
-              duration: const Duration(milliseconds: 450),
-            ),
+            SegmentRing(slices: slices, size: ring),
             Column(mainAxisSize: MainAxisSize.min, children: [
               Text(centerLabel, style: const TextStyle(color: muted, fontSize: 12)),
               const SizedBox(height: 2),
-              Text(centerValue, style: const TextStyle(color: ink, fontSize: 22, fontWeight: FontWeight.w800)),
+              Text(centerValue, style: const TextStyle(color: ink, fontSize: 22, fontWeight: FontWeight.w600)),
             ]),
           ]),
         ),
@@ -415,7 +407,7 @@ class RingWithList extends StatelessWidget {
               const SizedBox(width: 10),
               if (s.image != null) ...[AssetThumb(s.image!, size: 26, radius: 7, fit: BoxFit.contain), const SizedBox(width: 8)],
               Expanded(child: Text(s.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFF34443F), fontSize: 13.5))),
-              Text(format?.call(s.count) ?? '${s.count}', style: const TextStyle(color: ink, fontSize: 13.5, fontWeight: FontWeight.w700)),
+              Text(format?.call(s.count) ?? '${s.count}', style: const TextStyle(color: ink, fontSize: 13.5, fontWeight: FontWeight.w600)),
             ]),
           ),
       ],
@@ -439,7 +431,7 @@ class ProgressRows extends StatelessWidget {
             child: Column(children: [
               Row(children: [
                 Expanded(child: Text(s.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFF34443F), fontSize: 13.5))),
-                Text('${(s.count * 100 / total).toStringAsFixed(s.count * 100 % total == 0 ? 0 : 1)}%', style: const TextStyle(color: ink, fontSize: 13.5, fontWeight: FontWeight.w700)),
+                Text('${(s.count * 100 / total).toStringAsFixed(s.count * 100 % total == 0 ? 0 : 1)}%', style: const TextStyle(color: ink, fontSize: 13.5, fontWeight: FontWeight.w600)),
               ]),
               const SizedBox(height: 7),
               ClipRRect(
@@ -485,7 +477,7 @@ class FunnelChart extends StatelessWidget {
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       SizedBox(height: 34, child: Text(s.label, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: muted, fontSize: 12, height: 1.3))),
                       const SizedBox(height: 8),
-                      Text(NumberFormat.decimalPattern('en_IN').format(s.value), style: const TextStyle(color: ink, fontSize: 22, fontWeight: FontWeight.w800)),
+                      Text(NumberFormat.decimalPattern('en_IN').format(s.value), style: const TextStyle(color: ink, fontSize: 22, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 6),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -508,8 +500,9 @@ class FunnelChart extends StatelessWidget {
                           heightFactor: math.max(0.05, f),
                           child: Container(
                             decoration: BoxDecoration(
-                              color: s.bad ? const Color(0xFFE9B8B3) : greens[math.min(i + 1, greens.length - 1)].withValues(alpha: 0.9 - i * 0.12),
-                              borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
+                              // Stages in one hue, darkest first; "Blocked" in the status red, with its label.
+                              color: s.bad ? const Color(0xFFD03B3B) : greens[math.min(i, greens.length - 2)],
+                              borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
                             ),
                           ),
                         ),
@@ -540,12 +533,12 @@ class ShareBar extends StatelessWidget {
           height: 50,
           child: Row(children: [
             for (final (i, s) in shown.indexed) ...[
-              if (i > 0) const SizedBox(width: 4),
+              if (i > 0) const SizedBox(width: 2),
               Expanded(
                 flex: s.count,
                 child: Tooltip(
                   message: '${s.label}: ${(s.count * 100 / total).round()}%',
-                  child: Container(decoration: BoxDecoration(color: s.color, borderRadius: BorderRadius.circular(6))),
+                  child: Container(decoration: BoxDecoration(color: s.color, borderRadius: BorderRadius.circular(4))),
                 ),
               ),
             ],
@@ -559,7 +552,7 @@ class ShareBar extends StatelessWidget {
               Container(width: 9, height: 9, decoration: BoxDecoration(color: s.color, borderRadius: BorderRadius.circular(2.5))),
               const SizedBox(width: 10),
               Expanded(child: Text(s.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFF34443F), fontSize: 13.5))),
-              Text('${(s.count * 100 / total).round()}%', style: const TextStyle(color: ink, fontSize: 13.5, fontWeight: FontWeight.w700)),
+              Text('${(s.count * 100 / total).round()}%', style: const TextStyle(color: ink, fontSize: 13.5, fontWeight: FontWeight.w600)),
             ]),
           ),
       ],
