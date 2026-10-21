@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../admin_modules/menu_options_screen.dart';
+import '../admin_modules/admin_search.dart' show globalSearchActions;
 import '../api.dart';
 import '../format.dart';
 import '../models.dart';
@@ -77,6 +79,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Settings', style: TextStyle(fontWeight: FontWeight.w600)),
+          actions: [...globalSearchActions(context), const SizedBox(width: 8)],
         ),
         body: account == null
             ? Center(child: _loadError == null ? const CircularProgressIndicator() : Text(_loadError!))
@@ -185,6 +188,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ],
                             const SizedBox(height: 16),
                             const _SidebarBehaviour(),
+                            const SizedBox(height: 16),
+                            _Card(
+                              title: 'Dropdown menus',
+                              children: [
+                                const Text(
+                                  'Edit the values in the dropdowns of every add and edit form: add, rename, reorder or remove them, or go back to the defaults.',
+                                  style: TextStyle(color: Color(0xFF5A6C68), fontSize: 13.5),
+                                ),
+                                const SizedBox(height: 12),
+                                Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: FilledButton.tonalIcon(
+                                    onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const MenuOptionsScreen())),
+                                    icon: const Icon(Icons.list_alt_outlined),
+                                    label: const Text('Edit dropdown menus'),
+                                  ),
+                                ),
+                              ],
+                            ),
                             const SizedBox(height: 20),
                             if (!widget.api.isDemo) Align(
                               alignment: Alignment.centerLeft,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../api.dart';
 import '../screens/analytics_screen.dart';
@@ -35,6 +36,8 @@ class _AdminShellState extends State<AdminShell> {
 
   bool _open = true;
   String _mode = 'open';
+
+
 
   /// The menu item (nav_config.dart) for the page on top, highlighted in the sidebar; null for pages outside the menu.
   String? _active = 'founder-overview';
@@ -148,15 +151,27 @@ class _AdminShellState extends State<AdminShell> {
         ],
       ),
     );
-    if (!wide) return pages;
-    return Material(
-      color: const Color(0xFFF4F7F6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          AdminSidebar(nav: nav, activeItemId: _active, collapsed: !_open, onToggle: _toggle, onSignOut: _api.isDemo ? null : () => signOut(context)),
-          Expanded(child: pages),
-        ],
+    final scoped = AdminNavScope(nav: nav, child: pages);
+    if (!wide) return scoped;
+    // Big screens: search is a pop-up (pages, modules, features), opened anywhere with Ctrl / ⌘ + K. Each list keeps
+    // its own search for its records, above the list.
+    return CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.keyK, control: true): () => showCommandPalette(context, nav),
+        const SingleActivator(LogicalKeyboardKey.keyK, meta: true): () => showCommandPalette(context, nav),
+      },
+      child: Focus(
+        autofocus: true, // so the shortcut works before anything on the page has been clicked
+        child: Material(
+          color: const Color(0xFFF4F7F6),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              AdminSidebar(nav: nav, activeItemId: _active, collapsed: !_open, onToggle: _toggle, onSignOut: _api.isDemo ? null : () => signOut(context)),
+              Expanded(child: scoped),
+            ],
+          ),
+        ),
       ),
     );
   }

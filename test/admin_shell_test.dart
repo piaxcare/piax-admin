@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:piax_orders_admin/admin_modules/record_filter.dart';
 import 'package:piax_orders_admin/admin_modules/admin_shell.dart';
@@ -97,6 +98,36 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.getSize(find.byType(AdminSidebar)).width, 280);
     expect(inSidebar('Audit Logs'), findsOneWidget); // its section opened by itself
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('search is a Ctrl + K pop-up (no bar at the top); typing filters it and Enter opens the result', (tester) async {
+    await open(tester, {});
+    expect(find.byType(SearchBar), findsNothing); // no separate bar at the top
+    await tapInSidebar(tester, 'Website, App & Content');
+    await tapInSidebar(tester, 'Store Locations');
+    expect(find.byType(SearchBar), findsNothing);
+    expect(find.text('Search store locations'), findsOneWidget); // the page's own search, above its list
+
+    Future<void> ctrlK() async {
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyK);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+      await tester.pumpAndSettle();
+    }
+
+    await ctrlK();
+    expect(find.text('PAGES'), findsOneWidget); // the pop-up, pages first
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.text('PAGES'), findsNothing);
+
+    await ctrlK();
+    await tester.enterText(find.widgetWithText(TextField, 'Search pages, modules and features'), 'doctors');
+    await tester.pumpAndSettle();
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+    expect(find.text('Add doctor'), findsWidgets); // the doctors list opened
     expect(tester.takeException(), isNull);
   });
 }

@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../format.dart';
+import 'option_store.dart' show promptText;
 
 // Filtering for every list of records in the admin console (module lists and the menu's content pages), in one place:
 //   - a query: search across all fields, one filter per field (by the field's kind), and a sort;
@@ -351,21 +352,8 @@ class _FilterBarState extends State<FilterBar> {
   }
 
   Future<void> _saveView() async {
-    final name = TextEditingController();
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Save this view'),
-        content: TextField(controller: name, autofocus: true, decoration: const InputDecoration(labelText: 'Name', hintText: 'Overdue, high value'), onSubmitted: (_) => Navigator.pop(context, true)),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Save')),
-        ],
-      ),
-    );
-    final label = name.text.trim();
-    name.dispose();
-    if (ok != true || label.isEmpty) return;
+    final label = await promptText(context, title: 'Save this view', label: 'Name', hint: 'Overdue, high value', action: 'Save');
+    if (label == null || !mounted) return;
     await _storeViews([..._views.where((v) => v.$1 != label), (label, widget.query)]);
     if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('View “$label” saved.')));
   }

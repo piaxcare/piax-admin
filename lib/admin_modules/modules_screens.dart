@@ -14,6 +14,7 @@ import 'dashboard_widgets.dart' show greens;
 import 'insights.dart';
 import 'member_widgets.dart';
 import 'overview_screen.dart';
+import 'option_store.dart';
 import 'record_filter.dart';
 import 'repository.dart';
 import 'schema.dart';
@@ -270,13 +271,15 @@ class ModulesHomeScreenState extends State<ModulesHomeScreen> {
                           ),
                           const SizedBox(width: 24),
                           const Spacer(),
-                          Flexible(
-                            flex: 3,
-                            child: ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 380),
-                              child: AdminSearchBar(nav: _nav, hint: 'Search modules, features, pages'),
+                          // Inside the app frame the global search is in its top bar; on its own, here.
+                          if (widget.showSidebar)
+                            Flexible(
+                              flex: 3,
+                              child: ConstrainedBox(
+                                constraints: const BoxConstraints(maxWidth: 380),
+                                child: AdminSearchBar(nav: _nav, hint: 'Search modules, features, pages'),
+                              ),
                             ),
-                          ),
                           const SizedBox(width: 12),
                           if (repo != null)
                             _Bell(
@@ -526,9 +529,18 @@ class _ModuleListScreenState extends State<ModuleListScreen> {
 
   ModuleDef get m => widget.module;
 
+  void _menusChanged() => setState(() {});
+
+  @override
+  void dispose() {
+    OptionStore.instance.removeListener(_menusChanged);
+    super.dispose();
+  }
+
   @override
   void initState() {
     super.initState();
+    OptionStore.instance.addListener(_menusChanged); // dropdown menus edited in Settings or by "Other…"
     if (widget.startAdding && m.canCreate) WidgetsBinding.instance.addPostFrameCallback((_) => _add());
   }
 
@@ -537,7 +549,7 @@ class _ModuleListScreenState extends State<ModuleListScreen> {
     for (final f in m.fields)
       if (f.type != FieldType.image)
         switch (f.type) {
-          FieldType.choice => FilterField(f.key, f.label, FilterKind.choice, options: f.options),
+          FieldType.choice => FilterField(f.key, f.label, FilterKind.choice, options: OptionStore.instance.options('module:${m.key}.${f.key}', f.options)),
           FieldType.boolean => FilterField(f.key, f.label, FilterKind.boolean),
           FieldType.integer || FieldType.decimal => FilterField(f.key, f.label, FilterKind.number),
           FieldType.money => FilterField(f.key, f.label, FilterKind.number, money: true),
@@ -629,6 +641,7 @@ class _ModuleListScreenState extends State<ModuleListScreen> {
       backgroundColor: const Color(0xFFF2F6F5),
       appBar: AppBar(
         title: Text(m.title, style: const TextStyle(fontWeight: FontWeight.w600)),
+        actions: [...globalSearchActions(context), const SizedBox(width: 8)],
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
@@ -661,7 +674,9 @@ class _ModuleListScreenState extends State<ModuleListScreen> {
                 count: (draft) => _filter(draft).length,
                 noun: m.title.toLowerCase(),
                 quickField: m.statusField,
-                quickCounts: {for (final st in m.statuses) st: all.where((r) => '${r[m.statusField]}' == st).length},
+                quickCounts: {
+                  for (final st in OptionStore.instance.options('module:${m.key}.${m.statusField}', m.statuses)) st: all.where((r) => '${r[m.statusField]}' == st).length,
+                },
                 extraChips: [
                   if (_preset != null)
                     InputChip(
@@ -1646,19 +1661,17 @@ class _ModuleFormScreenState extends State<ModuleFormScreen> {
           ),
         );
       case FieldType.choice:
-        return DropdownButtonFormField<String>(
-          initialValue: f.options.contains(_values[f.key]) ? _values[f.key] as String : null,
-          isExpanded: true,
-          items: [
-            for (final o in f.options)
-              DropdownMenuItem(
-                value: o,
-                child: Text(o, overflow: TextOverflow.ellipsis),
-              ),
-          ],
-          onChanged: _busy ? null : (v) => setState(() => _values[f.key] = v),
+        // The menu with the team's own values, and "Other…" to add one.
+        return ChoiceDropdown(
+          optionKey: 'module:${m.key}.${f.key}',
+          where: m.title,
+          defaults: f.options,
+          value: _values[f.key] as String?,
+          label: f.label,
           decoration: decoration,
-          validator: (v) => f.required && v == null ? 'Choose a ${f.label.toLowerCase()}.' : null,
+          enabled: !_busy,
+          required: f.required,
+          onChanged: (v) => setState(() => _values[f.key] = v),
         );
       case FieldType.dateTime:
         return InkWell(

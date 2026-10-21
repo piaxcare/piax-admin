@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../admin_modules/admin_search.dart' show globalSearchActions;
 import '../api.dart';
 import '../format.dart';
 import '../models.dart';
@@ -142,6 +143,7 @@ class _RefundsScreenState extends State<RefundsScreen> {
         backgroundColor: const Color(0xFFF2F6F5),
         title: const Text('Refunds', style: TextStyle(fontWeight: FontWeight.w600)),
         actions: [
+          ...globalSearchActions(context),
           TextButton.icon(
             onPressed: _checking || orders == null ? null : _checkAll,
             icon: _checking

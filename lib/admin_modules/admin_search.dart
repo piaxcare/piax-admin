@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../format.dart';
 import 'schema.dart';
@@ -71,7 +72,10 @@ List<SearchEntry> adminSearchEntries(AdminNav nav) => [
 
 /// The search field: a Material 3 search bar that opens a full list of results grouped as Pages, Modules and Features.
 class AdminSearchBar extends StatelessWidget {
-  const AdminSearchBar({super.key, required this.nav, this.hint = 'Search features, modules and pages', this.compact = false});
+  const AdminSearchBar({super.key, required this.nav, this.hint = 'Search features, modules and pages', this.compact = false, this.controller});
+
+  /// Lets the app frame open it from the keyboard (Ctrl / ⌘ + K).
+  final SearchController? controller;
   final AdminNav nav;
   final String hint;
 
@@ -84,6 +88,7 @@ class AdminSearchBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final entries = adminSearchEntries(nav);
     return SearchAnchor(
+      searchController: controller,
       viewHintText: hint,
       viewBackgroundColor: Colors.white,
       isFullScreen: compact || MediaQuery.sizeOf(context).width < 600,
@@ -131,6 +136,185 @@ class AdminSearchBar extends StatelessWidget {
             ],
         ];
       },
+    );
+  }
+}
+
+/// The app's navigation for everything inside the app frame, so any page can offer the global search.
+class AdminNavScope extends InheritedWidget {
+  const AdminNavScope({super.key, required this.nav, required super.child});
+  final AdminNav nav;
+
+  static AdminNav? maybeOf(BuildContext context) => context.dependOnInheritedWidgetOfExactType<AdminNavScope>()?.nav;
+
+  @override
+  bool updateShouldNotify(AdminNavScope old) => !identical(old.nav, nav);
+}
+
+/// For a page's top bar on phones and small windows: the global search as an icon (big screens have it in the app
+/// frame's top bar, above every page). Nothing outside the app frame.
+List<Widget> globalSearchActions(BuildContext context) {
+  final nav = AdminNavScope.maybeOf(context);
+  if (nav == null || MediaQuery.sizeOf(context).width >= 1100) return const [];
+  return [AdminSearchBar(nav: nav, compact: true)];
+}
+
+// ================================================================ Command palette (Ctrl / ⌘ + K)
+
+/// Opens the search as a pop-up in the middle of the screen: type to filter pages, modules and features, ↑ ↓ to move,
+/// Enter to open, Esc to close. The same results as the search bar.
+Future<void> showCommandPalette(BuildContext context, AdminNav nav) async {
+  final chosen = await showDialog<SearchEntry>(
+    context: context,
+    barrierColor: const Color(0x590C1C19),
+    builder: (_) => _CommandPalette(entries: adminSearchEntries(nav)),
+  );
+  // After the pop-up has closed, so the page it opens isn't covered.
+  if (chosen != null) WidgetsBinding.instance.addPostFrameCallback((_) => chosen.go());
+}
+
+class _CommandPalette extends StatefulWidget {
+  const _CommandPalette({required this.entries});
+  final List<SearchEntry> entries;
+
+  @override
+  State<_CommandPalette> createState() => _CommandPaletteState();
+}
+
+class _CommandPaletteState extends State<_CommandPalette> {
+  final _query = TextEditingController();
+  final _scroll = ScrollController();
+  int _index = 0;
+
+  @override
+  void dispose() {
+    _query.dispose();
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  /// Best matches first; with nothing typed, the pages and modules.
+  List<SearchEntry> get _hits {
+    final q = _query.text;
+    final hits = [for (final e in widget.entries) if (e.score(q) > 0) e]..sort((a, b) => b.score(q).compareTo(a.score(q)));
+    final list = q.trim().isEmpty ? hits.where((e) => e.kind != SearchKind.feature).toList() : hits.take(40).toList();
+    // Grouped as shown: pages, modules, features.
+    return [for (final kind in SearchKind.values) ...list.where((e) => e.kind == kind)];
+  }
+
+  void _move(int by, int count) {
+    if (count == 0) return;
+    setState(() => _index = (_index + by) % count < 0 ? count - 1 : (_index + by) % count);
+    // Keep the highlighted row in view (rows are about 56 px, plus group labels).
+    final target = (_index * 56.0) - 120;
+    if (_scroll.hasClients) _scroll.animateTo(target.clamp(0, _scroll.position.maxScrollExtent), duration: const Duration(milliseconds: 120), curve: Curves.easeOut);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final hits = _hits;
+    if (_index >= hits.length) _index = hits.isEmpty ? 0 : hits.length - 1;
+    const labels = {SearchKind.page: 'PAGES', SearchKind.module: 'MODULES', SearchKind.feature: 'FEATURES'};
+    final size = MediaQuery.sizeOf(context);
+    return Align(
+      alignment: const Alignment(0, -0.6),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: 640, maxHeight: size.height * 0.7),
+          child: Material(
+            color: Colors.white,
+            elevation: 12,
+            shadowColor: const Color(0x330C1C19),
+            borderRadius: BorderRadius.circular(18),
+            clipBehavior: Clip.antiAlias,
+            child: CallbackShortcuts(
+              bindings: {
+                const SingleActivator(LogicalKeyboardKey.arrowDown): () => _move(1, hits.length),
+                const SingleActivator(LogicalKeyboardKey.arrowUp): () => _move(-1, hits.length),
+                const SingleActivator(LogicalKeyboardKey.enter): () {
+                  if (hits.isNotEmpty) Navigator.of(context).pop(hits[_index]);
+                },
+              },
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 10, 10, 10),
+                    child: Row(children: [
+                      const Icon(Icons.search, color: brand),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextField(
+                          controller: _query,
+                          autofocus: true,
+                          style: const TextStyle(fontSize: 17),
+                          decoration: const InputDecoration(
+                            hintText: 'Search pages, modules and features',
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            filled: false,
+                            isDense: true,
+                          ),
+                          onChanged: (_) => setState(() => _index = 0),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(border: Border.all(color: const Color(0xFFDCE6E3)), borderRadius: BorderRadius.circular(6)),
+                        child: const Text('Esc', style: TextStyle(color: Color(0xFF8A9A96), fontSize: 11.5)),
+                      ),
+                    ]),
+                  ),
+                  const Divider(height: 1),
+                  Flexible(
+                    child: hits.isEmpty
+                        ? const Padding(
+                            padding: EdgeInsets.all(28),
+                            child: Text('Nothing matches. Try a module name, like “doctors”, or an action, like “verify”.', textAlign: TextAlign.center, style: TextStyle(color: Color(0xFF5A6C68))),
+                          )
+                        : ListView(
+                            controller: _scroll,
+                            shrinkWrap: true,
+                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            children: [
+                              for (final (i, e) in hits.indexed) ...[
+                                if (i == 0 || hits[i - 1].kind != e.kind)
+                                  Padding(
+                                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+                                    child: Text(labels[e.kind]!, style: const TextStyle(color: Color(0xFF5B6B67), fontSize: 11.5, fontWeight: FontWeight.w600, letterSpacing: 1.4)),
+                                  ),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                                  child: ListTile(
+                                    selected: i == _index,
+                                    selectedTileColor: const Color(0xFFEFF7F4),
+                                    selectedColor: const Color(0xFF0C1C19),
+                                    leading: Icon(e.icon, color: brand),
+                                    title: Text(e.title, style: const TextStyle(fontWeight: FontWeight.w600)),
+                                    subtitle: Text(e.subtitle, maxLines: 1, overflow: TextOverflow.ellipsis),
+                                    trailing: i == _index ? const Icon(Icons.keyboard_return, size: 16, color: Color(0xFF8A9A96)) : null,
+                                    onTap: () => Navigator.of(context).pop(e),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                  ),
+                  const Divider(height: 1),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Row(children: [
+                      Text('↑ ↓ to move · Enter to open · Esc to close', style: TextStyle(color: Color(0xFF8A9A96), fontSize: 12)),
+                    ]),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

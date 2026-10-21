@@ -310,7 +310,7 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
                 padding: EdgeInsets.fromLTRB(pad, 24, pad, 0),
                 sliver: SliverList.list(
                   children: [
-                    if (widget.nav != null) ...[
+                    if (widget.nav != null && widget.showSidebar) ...[
                       Align(alignment: Alignment.centerLeft, child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 640), child: AdminSearchBar(nav: widget.nav!))),
                       const SizedBox(height: 18),
                     ],

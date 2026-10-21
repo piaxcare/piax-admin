@@ -173,6 +173,25 @@ const modules = <ModuleDef>[
     ],
   ),
   ModuleDef(
+    key: 'announcements', title: 'Announcement bar', singular: 'Announcement', group: 'Website', icon: Icons.campaign_outlined,
+    description: 'Short messages that scroll across the top of every page of the website: offers, delivery updates, launches.',
+    formIntro: 'One line for the scrolling bar above the website’s header. Demo data here: on the live website, announcements are managed on piax.co.in/admin.',
+    titleField: 'text', subtitleFields: ['linkLabel', 'startsAt', 'endsAt'], statusField: 'status',
+    fields: [
+      FieldDef('text', 'Message', FieldType.text, required: true, maxLength: 160, hint: 'Free delivery on orders above ₹499 this week', help: 'One short line. It scrolls, so keep it readable at a glance.'),
+      FieldDef('link', 'Link', FieldType.text, hint: '/shop', pattern: r'^(/\S*|https://\S+)$', patternMessage: 'A page on the site (starting with /) or a full https:// address.', help: 'Optional: where the message’s link goes.'),
+      FieldDef('linkLabel', 'Link text', FieldType.text, maxLength: 30, hint: 'Shop now'),
+      FieldDef('startsAt', 'Show from', FieldType.dateTime, help: 'Optional: it appears at this time.'),
+      FieldDef('endsAt', 'Show until', FieldType.dateTime, help: 'Optional: it comes down at this time.'),
+      FieldDef('order', 'Order', FieldType.integer, help: 'Lower numbers scroll first.'),
+      FieldDef('status', 'Status', FieldType.choice, options: ['Live', 'Paused'], help: 'Paused: kept but not shown.'),
+    ],
+    actions: [
+      ActionDef('Pause', Icons.pause_circle_outline, 'Paused', from: ['Live']),
+      ActionDef('Make live', Icons.play_circle_outline, 'Live', from: ['Paused']),
+    ],
+  ),
+  ModuleDef(
     key: 'products', title: 'Products & pads', singular: 'Product', group: 'Website', icon: Icons.inventory_2_outlined,
     description: 'The pads and packs sold on the website and in the app: details, price, stock, photos and search listing.',
     formIntro: 'Everything the shop needs to sell this product: what customers read, the price and tax, stock, photos, shipping and how it shows in Google. Saved products go live in the shop when their status is Active.',

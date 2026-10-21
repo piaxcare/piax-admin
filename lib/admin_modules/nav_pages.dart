@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../format.dart';
+import 'admin_search.dart' show globalSearchActions;
 import 'charts.dart';
 import 'dashboard_widgets.dart';
 import 'insights.dart' show Slice, Delta, HeadlineCard, chartPalette;
 import 'nav_config.dart';
+import 'option_store.dart';
 import 'record_filter.dart';
 import 'revenue_section.dart' show ComboChart;
 
@@ -68,6 +70,9 @@ const _machines = ['VM-CHN-01', 'VM-CHN-02', 'VM-CHN-03', 'VM-VLR-01', 'VM-RPT-0
 const _accounts = ['Apollo Clinics', 'Infosys Chennai', 'SRM University', 'Sri Ramachandra Hospital', 'TCS Siruseri', 'Saveetha College', 'Zoho Estancia', 'CMC Vellore'];
 const _severity = ['Critical', 'High', 'Medium', 'Low'];
 const _people = ['Kamal Raj', 'Salaudin Ahmed', 'Prakash', 'Pranav N', 'Henna Thabasum', 'Jones Rinaldin', 'Visanth S', 'Kavinaya D'];
+
+/// The team names offered for person columns (their dropdown menus start from these).
+const demoPeople = _people;
 const _reportFreq = ['Daily', 'Weekly', 'Monthly'];
 const _reportStatus = ['Ready', 'Running', 'Failed'];
 
@@ -577,6 +582,20 @@ class NavModulePage extends StatefulWidget {
 
 class _NavModulePageState extends State<NavModulePage> {
   late List<DemoRow> _rows = rowsFor(widget.itemId, widget.spec);
+  void _menusChanged() => setState(() {});
+
+  @override
+  void initState() {
+    super.initState();
+    OptionStore.instance.addListener(_menusChanged); // dropdown menus edited in Settings or by "Other…"
+  }
+
+  @override
+  void dispose() {
+    OptionStore.instance.removeListener(_menusChanged);
+    super.dispose();
+  }
+
   late RecordQuery _q = rememberedQuery('nav:${widget.itemId}');
   bool _all = false;
 
@@ -638,8 +657,8 @@ class _NavModulePageState extends State<NavModulePage> {
     for (final c in s.columns)
       switch (c.kind) {
         ColKind.id => FilterField(c.label, c.label, FilterKind.text),
-        ColKind.pick || ColKind.status => FilterField(c.label, c.label, FilterKind.choice, options: c.pool),
-        ColKind.person => FilterField(c.label, c.label, FilterKind.choice, options: _people),
+        ColKind.pick || ColKind.status => FilterField(c.label, c.label, FilterKind.choice, options: OptionStore.instance.options('nav:${widget.itemId}.${c.label}', c.pool)),
+        ColKind.person => FilterField(c.label, c.label, FilterKind.choice, options: OptionStore.instance.options('nav:${widget.itemId}.${c.label}', _people)),
         ColKind.money => FilterField(c.label, c.label, FilterKind.number, money: true),
         ColKind.number => FilterField(c.label, c.label, FilterKind.number, unit: c.unit),
         ColKind.percent => FilterField(c.label, c.label, FilterKind.number, unit: '%'),
@@ -674,7 +693,7 @@ class _NavModulePageState extends State<NavModulePage> {
       });
     }
     final result = await Navigator.of(context).push<_EditResult>(
-      MaterialPageRoute(fullscreenDialog: true, builder: (_) => DemoRowForm(spec: s, row: row)),
+      MaterialPageRoute(fullscreenDialog: true, builder: (_) => DemoRowForm(spec: s, row: row, pageKey: 'nav:${widget.itemId}')),
     );
     if (result != null && mounted) _apply(result, row);
   }
@@ -710,11 +729,6 @@ class _NavModulePageState extends State<NavModulePage> {
       _q = rememberedQuery('nav:${widget.itemId}');
       _all = false;
     }
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
   }
 
   List<DemoRow> get _shown => applyQuery(_rows, _q, _fields, _read);
@@ -836,7 +850,10 @@ class _NavModulePageState extends State<NavModulePage> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF2F6F5),
-      appBar: AppBar(title: Text(item.label, style: const TextStyle(fontWeight: FontWeight.w600))),
+      appBar: AppBar(
+        title: Text(item.label, style: const TextStyle(fontWeight: FontWeight.w600)),
+        actions: [...globalSearchActions(context), const SizedBox(width: 8)],
+      ),
       body: LayoutBuilder(
         builder: (context, box) {
           // Wide windows keep a side panel for the open record; the list gets the rest.
@@ -928,6 +945,7 @@ class _NavModulePageState extends State<NavModulePage> {
               ? DemoRowForm(
                   key: ValueKey('form-${_formRow?['ID'] ?? 'new'}'),
                   spec: s,
+                  pageKey: 'nav:${widget.itemId}',
                   row: _formRow,
                   onDone: (result) {
                     final row = _formRow;
@@ -1009,7 +1027,10 @@ class _NavModulePageState extends State<NavModulePage> {
           count: (draft) => applyQuery(_rows, draft, _fields, _read).length,
           noun: s.plural,
           quickField: statusCol?.label,
-          quickCounts: {if (statusCol != null) for (final st in statusCol.pool) st: _rows.where((r) => r[statusCol.label] == st).length},
+          quickCounts: {
+            if (statusCol != null)
+              for (final st in OptionStore.instance.options('nav:${widget.itemId}.${statusCol.label}', statusCol.pool)) st: _rows.where((r) => r[statusCol.label] == st).length,
+          },
         ),
         const SizedBox(height: 10),
       ],
@@ -1206,8 +1227,11 @@ class _EditResult {
 /// The add / edit form for one record of a content page, built from the page's columns: a list to choose from for
 /// fixed choices and people, a number box (₹ for money, % for percentages) for numbers, a date picker for dates.
 class DemoRowForm extends StatefulWidget {
-  const DemoRowForm({super.key, required this.spec, this.row, this.onDone});
+  const DemoRowForm({super.key, required this.spec, this.row, this.onDone, this.pageKey = 'nav:page'});
   final PageSpec spec;
+
+  /// The page the record belongs to ('nav:<item>'): names its dropdown menus.
+  final String pageKey;
 
   /// In a side panel: called with the result (null when closed without saving), instead of leaving a page.
   final void Function(_EditResult? result)? onDone;
@@ -1286,13 +1310,15 @@ class _DemoRowFormState extends State<DemoRowForm> {
     final decoration = InputDecoration(labelText: c.label, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)));
     switch (c.kind) {
       case ColKind.pick || ColKind.status || ColKind.person:
-        final options = c.kind == ColKind.person ? _people : c.pool;
-        final current = '${_values[c.label]}';
-        return DropdownButtonFormField<String>(
-          initialValue: options.contains(current) ? current : options.first,
-          isExpanded: true,
+        // The menu with the team's own values, and "Other…" to add one.
+        return ChoiceDropdown(
+          optionKey: '${widget.pageKey}.${c.label}',
+          where: s.plural[0].toUpperCase() + s.plural.substring(1),
+          defaults: c.kind == ColKind.person ? _people : c.pool,
+          value: '${_values[c.label]}',
+          label: c.label,
           decoration: decoration,
-          items: [for (final o in options) DropdownMenuItem(value: o, child: Text(o, overflow: TextOverflow.ellipsis))],
+          required: true,
           onChanged: (v) => setState(() => _values[c.label] = v),
         );
       case ColKind.date:

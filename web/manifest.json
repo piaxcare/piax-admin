@@ -1,11 +1,11 @@
 {
-    "name": "PIAX Orders",
-    "short_name": "PIAX Orders",
+    "name": "PIAX Admin",
+    "short_name": "PIAX Admin",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#F8FAFC",
     "theme_color": "#0B5B4E",
-    "description": "PIAX order desk: manage website orders.",
+    "description": "PIAX Admin: the admin console for PIAX orders, products, operations, content and settings.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

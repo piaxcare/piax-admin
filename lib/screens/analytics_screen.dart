@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../analytics.dart';
+import '../admin_modules/admin_search.dart' show globalSearchActions;
 import '../api.dart';
 import '../format.dart';
 import '../models.dart';
@@ -88,6 +89,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         backgroundColor: const Color(0xFFF2F6F5),
         title: const Text('Analytics', style: TextStyle(fontWeight: FontWeight.w600)),
         actions: [
+          ...globalSearchActions(context),
           IconButton(tooltip: 'Refresh', onPressed: _load, icon: const Icon(Icons.refresh)),
           const SizedBox(width: 8),
         ],
