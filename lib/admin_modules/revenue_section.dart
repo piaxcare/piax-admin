@@ -11,6 +11,7 @@ import 'dashboard_images.dart';
 import 'dashboard_widgets.dart';
 import 'insights.dart';
 import 'repository.dart';
+import 'package:piax_orders_admin/palette.dart';
 
 // Revenue and orders on the dashboard: live orders from the order desk when it has any, otherwise the dummy demo
 // orders (clearly labelled). Headline numbers for the chosen period with the change against the period before, a
@@ -87,13 +88,13 @@ const _statusLabels = {
 };
 
 const _statusColors = {
-  'placed': Color(0xFFD29B2B),
-  'confirmed': Color(0xFF8E79B0),
-  'packed': Color(0xFF4A90A4),
-  'shipped': Color(0xFF3E9A86),
-  'out_for_delivery': Color(0xFF0F766E),
-  'delivered': Color(0xFF0B5B4E),
-  'cancelled': Color(0xFFB3261E),
+  'placed': TColor(0xFFD29B2B),
+  'confirmed': TColor(0xFF8E79B0),
+  'packed': TColor(0xFF4A90A4),
+  'shipped': TColor(0xFF3E9A86),
+  'out_for_delivery': TColor(0xFF0F766E),
+  'delivered': TColor(0xFF0B5B4E),
+  'cancelled': TColor(0xFFB3261E),
 };
 
 class RevenueSection extends StatefulWidget {
@@ -109,7 +110,6 @@ class RevenueSection extends StatefulWidget {
 
 class _RevenueSectionState extends State<RevenueSection> {
   List<OrderPoint>? _points;
-  bool _live = false;
   int _days = 30;
 
   @override
@@ -120,19 +120,16 @@ class _RevenueSectionState extends State<RevenueSection> {
 
   Future<void> _load() async {
     List<OrderPoint> points = const [];
-    var live = false;
     try {
       final orders = await widget.repo.api.orders(status: 'all').timeout(const Duration(seconds: 8));
       if (orders.isNotEmpty) {
         points = [for (final o in orders) OrderPoint.fromOrder(o)];
-        // The app's demo server serves dummy orders: shown, but labelled as demo.
-        live = !widget.repo.api.isDemo;
       }
     } catch (_) {
       // No order desk to ask (offline, a demo build): the demo orders below.
     }
     if (points.isEmpty) points = [for (final o in widget.repo.records('ordersDemo')) OrderPoint.fromDemo(o)];
-    if (mounted) setState(() => (_points = points, _live = live));
+    if (mounted) setState(() => _points = points);
   }
 
   @override
@@ -255,8 +252,8 @@ class _RevenueSectionState extends State<RevenueSection> {
             const SizedBox(height: 14),
             Container(
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: const Color(0xFFEFF7F4), borderRadius: BorderRadius.circular(12)),
-              child: Text('$open open orders · ${period.where((p) => p.status == 'delivered').length} delivered in the period', style: const TextStyle(color: Color(0xFF26413B), fontSize: 12.5)),
+              decoration: BoxDecoration(color: const TColor(0xFFEFF7F4), borderRadius: BorderRadius.circular(12)),
+              child: Text('$open open orders · ${period.where((p) => p.status == 'delivered').length} delivered in the period', style: const TextStyle(color: TColor(0xFF26413B), fontSize: 12.5)),
             ),
           ])),
         );
@@ -274,11 +271,6 @@ class _RevenueSectionState extends State<RevenueSection> {
           children: [
             Wrap(spacing: 12, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center, alignment: WrapAlignment.spaceBetween, children: [
               const Text('Revenue & orders', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w600)),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(color: _live ? const Color(0xFFDDF3EC) : const Color(0xFFFFF4D6), borderRadius: BorderRadius.circular(999)),
-                child: Text(_live ? 'Live from the order desk' : 'Demo orders: no live orders to show', style: TextStyle(color: _live ? brand : const Color(0xFF7F5300), fontSize: 12, fontWeight: FontWeight.w600)),
-              ),
             ]),
             const SizedBox(height: 4),
             Text('The last $_days days against the $_days before.', style: const TextStyle(color: muted, fontSize: 13)),
@@ -330,8 +322,8 @@ class ComboChart extends StatelessWidget {
   final bool money;
 
   static const _axis = 46.0;
-  static const _teal = Color(0xFF0F8A6F);
-  static const _ink = Color(0xFF0B5B4E);
+  static const _teal = TColor(0xFF0F8A6F);
+  static const _ink = TColor(0xFF0B5B4E);
 
   @override
   Widget build(BuildContext context) {
@@ -352,7 +344,7 @@ class ComboChart extends StatelessWidget {
     final barWidth = math.min(24.0, n > 20 ? 8.0 : 18.0);
     Widget leftTitles(double v, TitleMeta meta, String Function(double) f) =>
         SideTitleWidget(meta: meta, child: Text(f(v), style: const TextStyle(color: muted, fontSize: 10.5)));
-    Widget caption(Widget key, String text) => Row(children: [key, const SizedBox(width: 6), Flexible(child: Text(text, style: const TextStyle(color: Color(0xFF34443F), fontSize: 12.5, fontWeight: FontWeight.w600)))]);
+    Widget caption(Widget key, String text) => Row(children: [key, const SizedBox(width: 6), Flexible(child: Text(text, style: const TextStyle(color: TColor(0xFF34443F), fontSize: 12.5, fontWeight: FontWeight.w600)))]);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -365,7 +357,7 @@ class ComboChart extends StatelessWidget {
             BarChartData(
               maxY: (topBar / barStep).ceil() * barStep,
               alignment: BarChartAlignment.spaceAround,
-              borderData: FlBorderData(show: true, border: const Border(bottom: BorderSide(color: Color(0xFFCBD5D1)))),
+              borderData: FlBorderData(show: true, border: const Border(bottom: BorderSide(color: TColor(0xFFCBD5D1)))),
               gridData: FlGridData(drawVerticalLine: false, horizontalInterval: barStep, getDrawingHorizontalLine: (_) => const FlLine(color: line, strokeWidth: 1)),
               titlesData: FlTitlesData(
                 topTitles: const AxisTitles(),
@@ -375,9 +367,9 @@ class ComboChart extends StatelessWidget {
               ),
               barTouchData: BarTouchData(
                 touchTooltipData: BarTouchTooltipData(
-                  getTooltipColor: (_) => const Color(0xFF1E293B),
+                  getTooltipColor: (_) => const TColor(0xFF1E293B),
                   getTooltipItem: (group, _, rod, _) =>
-                      BarTooltipItem('${label(group.x)}\n$barLabel ${value(rod.toY)}', const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                      BarTooltipItem('${label(group.x)}\n$barLabel ${value(rod.toY)}', const TextStyle(color: Color(0xFFFFFFFF), fontSize: 12, fontWeight: FontWeight.w600)),
                 ),
               ),
               barGroups: [
@@ -400,7 +392,7 @@ class ComboChart extends StatelessWidget {
               maxX: n - 0.5,
               minY: 0,
               maxY: (topCount / countStep).ceil() * countStep,
-              borderData: FlBorderData(show: true, border: const Border(bottom: BorderSide(color: Color(0xFFCBD5D1)))),
+              borderData: FlBorderData(show: true, border: const Border(bottom: BorderSide(color: TColor(0xFFCBD5D1)))),
               gridData: FlGridData(drawVerticalLine: false, horizontalInterval: countStep, getDrawingHorizontalLine: (_) => const FlLine(color: line, strokeWidth: 1)),
               titlesData: FlTitlesData(
                 topTitles: const AxisTitles(),
@@ -421,9 +413,9 @@ class ComboChart extends StatelessWidget {
               ),
               lineTouchData: LineTouchData(
                 touchTooltipData: LineTouchTooltipData(
-                  getTooltipColor: (_) => const Color(0xFF1E293B),
+                  getTooltipColor: (_) => const TColor(0xFF1E293B),
                   getTooltipItems: (spots) => [
-                    for (final s in spots) LineTooltipItem('${label(s.x.round())}\n$lineLabel ${s.y.toInt()}', const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                    for (final s in spots) LineTooltipItem('${label(s.x.round())}\n$lineLabel ${s.y.toInt()}', const TextStyle(color: Color(0xFFFFFFFF), fontSize: 12, fontWeight: FontWeight.w600)),
                   ],
                 ),
               ),

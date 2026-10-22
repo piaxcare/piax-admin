@@ -11,6 +11,7 @@ import 'insights.dart' show Delta, Slice, chartPalette, otherColor;
 import 'nav_pages.dart' show navPageSpecs, rowsFor;
 import 'repository.dart';
 import 'revenue_section.dart' show OrderPoint;
+import 'package:piax_orders_admin/palette.dart';
 
 // The Founder Overview's sales part: revenue first, then orders, with one set of filters (dates, channel, customer
 // segment, order status) over every number, chart and table here. Sections in between (alerts, operations, customers)
@@ -270,10 +271,10 @@ class _FounderDashboardState extends State<FounderDashboard> {
     final b = _Buckets(period, first, end);
     final kpis = [
       MiniStat(highlight: true, icon: Icons.payments_outlined, value: rupees(t.net), label: 'Net revenue', delta: _change(t.net, tp.net, cmp), trend: b.net),
-      MiniStat(icon: Icons.account_balance_wallet_outlined, tone: const Color(0xFF2B3A5C), value: rupees(t.collected), label: 'Cash collected', delta: _change(t.collected, tp.collected, cmp), trend: b.cash),
+      MiniStat(icon: Icons.account_balance_wallet_outlined, tone: const TColor(0xFF2B3A5C), value: rupees(t.collected), label: 'Cash collected', delta: _change(t.collected, tp.collected, cmp), trend: b.cash),
       MiniStat(
         icon: Icons.trending_up,
-        tone: const Color(0xFF3E5E3C),
+        tone: const TColor(0xFF3E5E3C),
         value: unitCost.isEmpty ? '—' : rupees(t.grossProfit),
         label: 'Gross profit',
         delta: unitCost.isEmpty
@@ -282,7 +283,7 @@ class _FounderDashboardState extends State<FounderDashboard> {
       ),
       MiniStat(
         icon: Icons.request_quote_outlined,
-        tone: const Color(0xFF8E4A30),
+        tone: const TColor(0xFF8E4A30),
         value: rupees(recv),
         label: 'Outstanding receivables',
         delta: Delta('${rupees(recvOverdue)} overdue', recvOverdue == 0, caption: '$recvCount unpaid B2B invoices'),
@@ -412,7 +413,7 @@ class _ChartBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.fromLTRB(20, 18, 20, 14),
-    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18), border: Border.all(color: line)),
+    decoration: BoxDecoration(color: TColor(0xFFFFFFFF), borderRadius: BorderRadius.circular(18), border: Border.all(color: line)),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(children: [
         Expanded(child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16.5, color: ink))),
@@ -494,9 +495,9 @@ class _Facts extends StatelessWidget {
     for (final (i, (label, value, note, fine)) in rows.indexed)
       Container(
         padding: const EdgeInsets.symmetric(vertical: 6),
-        decoration: BoxDecoration(border: i == 0 ? null : const Border(top: BorderSide(color: Color(0xFFEDF2F0)))),
+        decoration: BoxDecoration(border: i == 0 ? null : const Border(top: BorderSide(color: TColor(0xFFEDF2F0)))),
         child: Row(children: [
-          Icon(fine ? Icons.check_circle_outline : Icons.error_outline, size: 16, color: fine ? up : const Color(0xFF8A5A00)),
+          Icon(fine ? Icons.check_circle_outline : Icons.error_outline, size: 16, color: fine ? up : const TColor(0xFF8A5A00)),
           const SizedBox(width: 9),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -520,7 +521,7 @@ class _State extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(24),
-    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18), border: Border.all(color: line)),
+    decoration: BoxDecoration(color: TColor(0xFFFFFFFF), borderRadius: BorderRadius.circular(18), border: Border.all(color: line)),
     child: Column(children: [Icon(icon, color: muted), const SizedBox(height: 8), Text(text, textAlign: TextAlign.center, style: const TextStyle(color: muted)), ?action]),
   );
 }
@@ -548,13 +549,13 @@ class _FilterBar extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
           decoration: BoxDecoration(
-            color: selected.isEmpty ? Colors.white : const Color(0xFFDDF3EC),
-            border: Border.all(color: selected.isEmpty ? const Color(0xFFCBD5D1) : brand),
+            color: selected.isEmpty ? TColor(0xFFFFFFFF) : const TColor(0xFFDDF3EC),
+            border: Border.all(color: selected.isEmpty ? const TColor(0xFFCBD5D1) : brand),
             borderRadius: BorderRadius.circular(999),
           ),
           child: Row(mainAxisSize: MainAxisSize.min, children: [
             Text(selected.isEmpty ? '$label: all' : '$label: ${selected.length == 1 ? (names?[selected.single] ?? selected.single) : '${selected.length} selected'}',
-                style: TextStyle(color: selected.isEmpty ? const Color(0xFF34443F) : brand, fontWeight: FontWeight.w600, fontSize: 13)),
+                style: TextStyle(color: selected.isEmpty ? const TColor(0xFF34443F) : brand, fontWeight: FontWeight.w600, fontSize: 13)),
             const SizedBox(width: 4),
             const Icon(Icons.keyboard_arrow_down, size: 18),
           ]),
@@ -567,7 +568,7 @@ class _FilterBar extends StatelessWidget {
     final active = f.channels.isNotEmpty || f.segments.isNotEmpty || f.statuses.isNotEmpty;
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18), border: Border.all(color: line)),
+      decoration: BoxDecoration(color: TColor(0xFFFFFFFF), borderRadius: BorderRadius.circular(18), border: Border.all(color: line)),
       child: Wrap(spacing: 8, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
         for (final r in DateRange.values)
           ChoiceChip(
@@ -587,11 +588,6 @@ class _FilterBar extends StatelessWidget {
         _multi(context, 'Segment', segments, f.segments, (v) => onChanged(f.copyWith(segments: v))),
         _multi(context, 'Status', _statusLabels.keys.toList(), f.statuses, (v) => onChanged(f.copyWith(statuses: v)), names: _statusLabels),
         if (active) TextButton(onPressed: () => onChanged(SalesFilter(range: f.range, from: f.from, to: f.to)), child: const Text('Clear filters')),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(color: live ? const Color(0xFFDDF3EC) : const Color(0xFFFFF4D6), borderRadius: BorderRadius.circular(999)),
-          child: Text(live ? 'Live orders' : 'Demo data', style: TextStyle(color: live ? brand : const Color(0xFF7F5300), fontSize: 12, fontWeight: FontWeight.w600)),
-        ),
       ]),
     );
   }
@@ -635,7 +631,7 @@ class _Matrix extends StatelessWidget {
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 5),
             child: Row(children: [
-              SizedBox(width: 92, child: Text(c, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12.5, color: Color(0xFF34443F)))),
+              SizedBox(width: 92, child: Text(c, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12.5, color: TColor(0xFF34443F)))),
               Expanded(
                 child: FractionallySizedBox(
                   alignment: Alignment.centerLeft,
@@ -668,7 +664,7 @@ class _Matrix extends StatelessWidget {
             ]),
           );
         }(),
-      const Divider(height: 18, color: Color(0xFFEDF2F0)),
+      const Divider(height: 18, color: TColor(0xFFEDF2F0)),
       Wrap(spacing: 16, runSpacing: 6, children: [
         for (final s in segments)
           if (sum((k) => k.$2 == s).$2 > 0)
@@ -702,12 +698,12 @@ class _OrdersPerformance extends StatelessWidget {
     final inProgress = orders.where((o) => const {'confirmed', 'packed', 'shipped', 'out_for_delivery'}.contains(o.status)).length;
     final tiles = [
       MiniStat(highlight: true, icon: Icons.receipt_long_outlined, value: number.format(t.count), label: 'Orders', delta: _change(t.count, p.count, cmp), trend: counts, onTap: onOpenOrders),
-      MiniStat(icon: Icons.shopping_bag_outlined, tone: const Color(0xFF5B3F73), value: rupees(t.average), label: 'Average order', delta: _change(t.average, p.average, cmp)),
-      MiniStat(icon: Icons.inventory_2_outlined, tone: const Color(0xFF2B3A5C), value: number.format(t.units), label: 'Boxes sold', delta: _change(t.units, p.units, cmp)),
-      MiniStat(icon: Icons.cancel_outlined, tone: const Color(0xFFB3261E), value: '${t.cancelRate.toStringAsFixed(1)}%', label: 'Cancelled', delta: Delta('${t.cancelled} of ${t.count}', t.cancelRate < 10, caption: 'refunds sent ${rupees(t.refunds)}')),
+      MiniStat(icon: Icons.shopping_bag_outlined, tone: const TColor(0xFF5B3F73), value: rupees(t.average), label: 'Average order', delta: _change(t.average, p.average, cmp)),
+      MiniStat(icon: Icons.inventory_2_outlined, tone: const TColor(0xFF2B3A5C), value: number.format(t.units), label: 'Boxes sold', delta: _change(t.units, p.units, cmp)),
+      MiniStat(icon: Icons.cancel_outlined, tone: const TColor(0xFFB3261E), value: '${t.cancelRate.toStringAsFixed(1)}%', label: 'Cancelled', delta: Delta('${t.cancelled} of ${t.count}', t.cancelRate < 10, caption: 'refunds sent ${rupees(t.refunds)}')),
       MiniStat(
         icon: Icons.local_shipping_outlined,
-        tone: const Color(0xFF8A5A00),
+        tone: const TColor(0xFF8A5A00),
         value: number.format(inProgress),
         label: 'In progress',
         hint: 'To pack, packed or on the way',
@@ -715,7 +711,7 @@ class _OrdersPerformance extends StatelessWidget {
       ),
       MiniStat(
         icon: Icons.check_circle_outline,
-        tone: const Color(0xFF3E5E3C),
+        tone: const TColor(0xFF3E5E3C),
         value: number.format(delivered),
         label: 'Delivered',
         hint: t.count == 0 ? 'No orders yet' : '${(delivered * 100 / t.count).round()}% of orders',
@@ -723,7 +719,7 @@ class _OrdersPerformance extends StatelessWidget {
     ];
     final statusSlices = [
       for (final (i, e) in _statusLabels.entries.indexed)
-        Slice(e.value, orders.where((o) => o.status == e.key).length, e.key == 'cancelled' ? const Color(0xFFD03B3B) : e.key == 'placed' ? const Color(0xFFE39A00) : greens[math.min(i, 4)]),
+        Slice(e.value, orders.where((o) => o.status == e.key).length, e.key == 'cancelled' ? const TColor(0xFFD03B3B) : e.key == 'placed' ? const TColor(0xFFE39A00) : greens[math.min(i, 4)]),
     ];
     final units = <String, int>{}, revenue = <String, int>{};
     for (final o in orders.where((o) => o.status != 'placed' && o.status != 'cancelled')) {
@@ -769,10 +765,10 @@ class _Transactions extends StatelessWidget {
     Widget chip(String status) {
       final bad = status == 'cancelled', waiting = status == 'placed';
       final (bg, fg) = bad
-          ? (const Color(0xFFF3E3E3), const Color(0xFF8B2E2E))
+          ? (const TColor(0xFFF3E3E3), const TColor(0xFF8B2E2E))
           : waiting
-          ? (const Color(0xFFFFF4D6), const Color(0xFF8A5A00))
-          : (const Color(0xFFDDF3EC), brand);
+          ? (const TColor(0xFFFFF4D6), const TColor(0xFF8A5A00))
+          : (const TColor(0xFFDDF3EC), brand);
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
         decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(999)),
@@ -782,7 +778,7 @@ class _Transactions extends StatelessWidget {
 
     final table = wide
         ? Material(
-            color: Colors.white,
+            color: TColor(0xFFFFFFFF),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18), side: const BorderSide(color: line)),
             clipBehavior: Clip.antiAlias,
             child: LayoutBuilder(
@@ -791,8 +787,8 @@ class _Transactions extends StatelessWidget {
                 child: ConstrainedBox(
                   constraints: BoxConstraints(minWidth: box.maxWidth),
                   child: DataTable(
-                    headingRowColor: const WidgetStatePropertyAll(Color(0xFFF4F8F6)),
-                    headingTextStyle: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF34443F), fontSize: 13),
+                    headingRowColor: const WidgetStatePropertyAll(TColor(0xFFF4F8F6)),
+                    headingTextStyle: const TextStyle(fontWeight: FontWeight.w600, color: TColor(0xFF34443F), fontSize: 13),
                     columns: const [
                       DataColumn(label: Text('Date')),
                       DataColumn(label: Text('Order')),
@@ -824,7 +820,7 @@ class _Transactions extends StatelessWidget {
               Container(
                 margin: const EdgeInsets.only(bottom: 10),
                 padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: line)),
+                decoration: BoxDecoration(color: TColor(0xFFFFFFFF), borderRadius: BorderRadius.circular(16), border: Border.all(color: line)),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Row(children: [Expanded(child: Text(o.id, style: const TextStyle(fontWeight: FontWeight.w600))), Text(rupees(o.total), style: const TextStyle(fontWeight: FontWeight.w600))]),
                   const SizedBox(height: 6),

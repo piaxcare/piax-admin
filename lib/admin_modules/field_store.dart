@@ -8,6 +8,9 @@ import '../format.dart';
 import 'option_store.dart';
 import 'schema.dart';
 
+import 'package:piax_orders_admin/palette.dart';
+import 'package:piax_orders_admin/app_layout.dart';
+
 // The team's own input fields on each sidebar page: added, renamed, made required, given choices, reordered or
 // removed in the "Edit fields" panel on the right of the page. They show in the page's add and edit forms and on each
 // record, after the built-in fields. Like the dropdown menus (option_store.dart), they're kept on this device
@@ -73,9 +76,8 @@ class BuiltinOverride {
 
   Map<String, dynamic> toJson() => {if (label != null) 'label': label, if (help != null) 'help': help, if (required != null) 'required': required, if (hidden) 'hidden': true};
 
-  static BuiltinOverride fromJson(Object? j) => j is Map
-      ? BuiltinOverride(label: j['label'] as String?, help: j['help'] as String?, required: j['required'] as bool?, hidden: j['hidden'] == true)
-      : const BuiltinOverride();
+  static BuiltinOverride fromJson(Object? j) =>
+      j is Map ? BuiltinOverride(label: j['label'] as String?, help: j['help'] as String?, required: j['required'] as bool?, hidden: j['hidden'] == true) : const BuiltinOverride();
 }
 
 /// A built-in field as the Edit fields panel offers it: what can be changed depends on what the page needs from it.
@@ -144,8 +146,18 @@ class FieldStore extends ChangeNotifier {
     notifyListeners();
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_prefsKey, jsonEncode({for (final e in _pages.entries) e.key: [for (final f in e.value) f.toJson()]}));
-      await prefs.setString(_builtinKey, jsonEncode({for (final e in _builtin.entries) e.key: {for (final o in e.value.entries) o.key: o.value.toJson()}}));
+      await prefs.setString(
+        _prefsKey,
+        jsonEncode({
+          for (final e in _pages.entries) e.key: [for (final f in e.value) f.toJson()],
+        }),
+      );
+      await prefs.setString(
+        _builtinKey,
+        jsonEncode({
+          for (final e in _builtin.entries) e.key: {for (final o in e.value.entries) o.key: o.value.toJson()},
+        }),
+      );
       await prefs.setString(_orderKey, jsonEncode(_order));
     } catch (_) {
       // Not saved on this device; the change still holds until the app closes.
@@ -196,7 +208,10 @@ class FieldStore extends ChangeNotifier {
 
   Future<void> remove(String page, String id) async {
     await load();
-    _pages[page] = [for (final f in fields(page)) if (f.id != id) f];
+    _pages[page] = [
+      for (final f in fields(page))
+        if (f.id != id) f,
+    ];
     await _save();
   }
 
@@ -318,17 +333,19 @@ Future<void> showFieldEditor(
     context: context,
     barrierDismissible: true,
     barrierLabel: 'Close',
-    barrierColor: const Color(0x400C1C19),
+    barrierColor: const TColor(0x400C1C19),
     transitionDuration: MediaQuery.disableAnimationsOf(context) ? Duration.zero : const Duration(milliseconds: 220),
     pageBuilder: (context, _, _) => Align(
       alignment: Alignment.centerRight,
       child: Material(
-        color: const Color(0xFFF7FAF9),
+        color: const TColor(0xFFF7FAF9),
         elevation: 12,
         child: SizedBox(
           width: math.min(460.0, MediaQuery.sizeOf(context).width),
           height: double.infinity,
-          child: SafeArea(child: _FieldEditor(page: page, title: title, builtIn: builtIn, onRenamed: onRenamed)),
+          child: SafeArea(
+            child: _FieldEditor(page: page, title: title, builtIn: builtIn, onRenamed: onRenamed),
+          ),
         ),
       ),
     ),
@@ -355,12 +372,19 @@ class EditFieldsButton extends StatelessWidget {
   );
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(right: 4),
-    child: MediaQuery.sizeOf(context).width >= 700
-        ? FilledButton.icon(onPressed: onPressed, style: _style, icon: const Icon(Icons.tune, size: 18), label: const Text('Edit fields'))
-        : IconButton.filled(tooltip: 'Edit fields', onPressed: onPressed, style: IconButton.styleFrom(backgroundColor: brand, foregroundColor: Colors.white), icon: const Icon(Icons.tune)),
-  );
+  Widget build(BuildContext context) => !AppLayout.instance.editFields
+      ? const SizedBox.shrink()
+      : Padding(
+          padding: const EdgeInsets.only(right: 4),
+          child: MediaQuery.sizeOf(context).width >= 700
+              ? FilledButton.icon(onPressed: onPressed, style: _style, icon: const Icon(Icons.tune, size: 18), label: const Text('Edit fields'))
+              : IconButton.filled(
+                  tooltip: 'Edit fields',
+                  onPressed: onPressed,
+                  style: IconButton.styleFrom(backgroundColor: brand, foregroundColor: Colors.white),
+                  icon: const Icon(Icons.tune),
+                ),
+        );
 }
 
 class _FieldEditor extends StatefulWidget {
@@ -414,7 +438,11 @@ class _FieldEditorState extends State<_FieldEditor> {
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Keep it')),
-          FilledButton(style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error), onPressed: () => Navigator.pop(context, true), child: const Text('Delete')),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
         ],
       ),
     );
@@ -431,7 +459,11 @@ class _FieldEditorState extends State<_FieldEditor> {
         content: const Text('It goes from the forms and record pages. Values already filled in are kept with the records, and come back if you add the field again.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Keep it')),
-          FilledButton(style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error), onPressed: () => Navigator.pop(context, true), child: const Text('Remove')),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Remove'),
+          ),
         ],
       ),
     );
@@ -441,54 +473,81 @@ class _FieldEditorState extends State<_FieldEditor> {
   @override
   Widget build(BuildContext context) {
     final form = _adding || _editing != null || _builtinEditing != null;
-    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      Padding(
-        padding: const EdgeInsets.fromLTRB(18, 12, 8, 8),
-        child: Row(children: [
-          if (form) IconButton(tooltip: 'Back to the fields', onPressed: () => setState(() => (_adding = false, _editing = null, _builtinEditing = null)), icon: const Icon(Icons.arrow_back)),
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(form ? (_adding ? 'Add a field' : _builtinEditing != null ? 'Edit built-in field' : 'Edit field') : 'Fields', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-              Text(widget.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 12.5)),
-            ]),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(18, 12, 8, 8),
+          child: Row(
+            children: [
+              if (form)
+                IconButton(
+                  tooltip: 'Back to the fields',
+                  onPressed: () => setState(() => (_adding = false, _editing = null, _builtinEditing = null)),
+                  icon: const Icon(Icons.arrow_back),
+                ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      form
+                          ? (_adding
+                                ? 'Add a field'
+                                : _builtinEditing != null
+                                ? 'Edit built-in field'
+                                : 'Edit field')
+                          : 'Fields',
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                    ),
+                    Text(
+                      widget.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: TColor(0xFF5A6C68), fontSize: 12.5),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(tooltip: 'Close', onPressed: () => Navigator.of(context).pop(), icon: const Icon(Icons.close)),
+            ],
           ),
-          IconButton(tooltip: 'Close', onPressed: () => Navigator.of(context).pop(), icon: const Icon(Icons.close)),
-        ]),
-      ),
-      const Divider(height: 1),
-      Expanded(
-        child: _builtinEditing != null
-            ? _BuiltinForm(
-                key: ValueKey('builtin-${_builtinEditing!.key}'),
-                page: widget.page,
-                field: _builtinEditing!,
-                taken: {..._taken}..remove(_nameOf(_builtinEditing!).toLowerCase()),
-                onDone: (message) {
-                  setState(() => _builtinEditing = null);
-                  ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text(message)));
-                },
-              )
-            : form
-            ? _FieldForm(
-                key: ValueKey(_editing?.id ?? 'new'),
-                field: _editing,
-                taken: {..._taken}..remove(_editing?.label.toLowerCase()),
-                onSave: (f) async {
-                  final before = _editing;
-                  if (before == null) {
-                    await store.add(widget.page, f);
-                  } else {
-                    await store.update(widget.page, f);
-                    if (before.label != f.label) widget.onRenamed?.call(before.label, f.label);
-                  }
-                  if (!mounted) return;
-                  setState(() => (_adding = false, _editing = null));
-                  ScaffoldMessenger.maybeOf(this.context)?.showSnackBar(SnackBar(content: Text(before == null ? 'Field “${f.label}” added.' : 'Field saved.')));
-                },
-              )
-            : _list(),
-      ),
-    ]);
+        ),
+        const Divider(height: 1),
+        Expanded(
+          child: _builtinEditing != null
+              ? _BuiltinForm(
+                  key: ValueKey('builtin-${_builtinEditing!.key}'),
+                  page: widget.page,
+                  field: _builtinEditing!,
+                  taken: {..._taken}..remove(_nameOf(_builtinEditing!).toLowerCase()),
+                  onDone: (message) {
+                    setState(() => _builtinEditing = null);
+                    ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text(message)));
+                  },
+                )
+              : form
+              ? _FieldForm(
+                  key: ValueKey(_editing?.id ?? 'new'),
+                  field: _editing,
+                  taken: {..._taken}..remove(_editing?.label.toLowerCase()),
+                  onSave: (f) async {
+                    final before = _editing;
+                    if (before == null) {
+                      await store.add(widget.page, f);
+                    } else {
+                      await store.update(widget.page, f);
+                      if (before.label != f.label) widget.onRenamed?.call(before.label, f.label);
+                    }
+                    if (!mounted) return;
+                    setState(() => (_adding = false, _editing = null));
+                    ScaffoldMessenger.maybeOf(this.context)?.showSnackBar(SnackBar(content: Text(before == null ? 'Field “${f.label}” added.' : 'Field saved.')));
+                  },
+                )
+              : _list(),
+        ),
+      ],
+    );
   }
 
   /// The page's fields in their current order: built-in ones (not deleted) and the team's, as one list.
@@ -507,7 +566,8 @@ class _FieldEditorState extends State<_FieldEditor> {
     // Deleted built-in fields keep their place at the end, ready to come back.
     await store.setOrder(widget.page, [
       for (final x in list) x.key,
-      for (final b in widget.builtIn) if (store.builtin(widget.page, b.key).hidden) builtinOrderKey(b.key),
+      for (final b in widget.builtIn)
+        if (store.builtin(widget.page, b.key).hidden) builtinOrderKey(b.key),
     ]);
   }
 
@@ -518,112 +578,159 @@ class _FieldEditorState extends State<_FieldEditor> {
     return Container(
       key: ValueKey(e.key),
       margin: const EdgeInsets.only(bottom: 6),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE6EEEB))),
+      decoration: BoxDecoration(
+        color: TColor(0xFFFFFFFF),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const TColor(0xFFE6EEEB)),
+      ),
       child: ListTile(
         dense: true,
         contentPadding: const EdgeInsets.only(left: 6, right: 4),
         leading: ReorderableDragStartListener(
           index: i,
-          child: Tooltip(message: 'Drag to move $name', child: const Padding(padding: EdgeInsets.all(6), child: Icon(Icons.drag_indicator, color: Color(0xFF9AAEA9)))),
+          child: Tooltip(
+            message: 'Drag to move $name',
+            child: const Padding(
+              padding: EdgeInsets.all(6),
+              child: Icon(Icons.drag_indicator, color: TColor(0xFF9AAEA9)),
+            ),
+          ),
         ),
-        title: Row(children: [
-          Flexible(child: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600))),
-          const SizedBox(width: 6),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-            decoration: BoxDecoration(color: b != null ? const Color(0xFFEEF2F1) : const Color(0xFFDDF3EC), borderRadius: BorderRadius.circular(999)),
-            child: Text(b != null ? 'Built-in' : 'Yours', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: b != null ? const Color(0xFF475569) : brand)),
-          ),
-        ]),
-        subtitle: Text(b != null
-            ? [b.kind, if (o!.required ?? b.required) 'required', if (o.label != null) 'was “${b.label}”' else if (!o.isEmpty) 'changed'].join(' · ')
-            : [f!.type.label, if (f.required) 'required', if (f.type == CustomType.choice) '${f.options.length} choices'].join(' · ')),
-        trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-          IconButton(
-            tooltip: 'Edit $name',
-            visualDensity: VisualDensity.compact,
-            icon: const Icon(Icons.edit_outlined, size: 19),
-            onPressed: () => setState(() => b != null ? _builtinEditing = b : _editing = f),
-          ),
-          IconButton(
-            tooltip: b != null ? 'Delete $name' : 'Remove $name',
-            visualDensity: VisualDensity.compact,
-            icon: const Icon(Icons.delete_outline, size: 19),
-            onPressed: () => b != null ? _deleteBuiltin(b) : _delete(f!),
-          ),
-          PopupMenuButton<int>(
-            tooltip: 'Move $name',
-            icon: const Icon(Icons.swap_vert, size: 19),
-            onSelected: (to) => _move(i, to),
-            itemBuilder: (_) => [
-              PopupMenuItem(value: 0, enabled: i > 0, child: const Text('Move to top')),
-              PopupMenuItem(value: i - 1, enabled: i > 0, child: const Text('Move up')),
-              PopupMenuItem(value: i + 1, enabled: i < count - 1, child: const Text('Move down')),
-              PopupMenuItem(value: count - 1, enabled: i < count - 1, child: const Text('Move to bottom')),
-            ],
-          ),
-        ]),
+        title: Row(
+          children: [
+            Flexible(
+              child: Text(
+                name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+              decoration: BoxDecoration(color: b != null ? const TColor(0xFFEEF2F1) : const TColor(0xFFDDF3EC), borderRadius: BorderRadius.circular(999)),
+              child: Text(
+                b != null ? 'Built-in' : 'Yours',
+                style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: b != null ? const TColor(0xFF475569) : brand),
+              ),
+            ),
+          ],
+        ),
+        subtitle: Text(
+          b != null
+              ? [b.kind, if (o!.required ?? b.required) 'required', if (o.label != null) 'was “${b.label}”' else if (!o.isEmpty) 'changed'].join(' · ')
+              : [f!.type.label, if (f.required) 'required', if (f.type == CustomType.choice) '${f.options.length} choices'].join(' · '),
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              tooltip: 'Edit $name',
+              visualDensity: VisualDensity.compact,
+              icon: const Icon(Icons.edit_outlined, size: 19),
+              onPressed: () => setState(() => b != null ? _builtinEditing = b : _editing = f),
+            ),
+            IconButton(
+              tooltip: b != null ? 'Delete $name' : 'Remove $name',
+              visualDensity: VisualDensity.compact,
+              icon: const Icon(Icons.delete_outline, size: 19),
+              onPressed: () => b != null ? _deleteBuiltin(b) : _delete(f!),
+            ),
+            PopupMenuButton<int>(
+              tooltip: 'Move $name',
+              icon: const Icon(Icons.swap_vert, size: 19),
+              onSelected: (to) => _move(i, to),
+              itemBuilder: (_) => [
+                PopupMenuItem(value: 0, enabled: i > 0, child: const Text('Move to top')),
+                PopupMenuItem(value: i - 1, enabled: i > 0, child: const Text('Move up')),
+                PopupMenuItem(value: i + 1, enabled: i < count - 1, child: const Text('Move down')),
+                PopupMenuItem(value: count - 1, enabled: i < count - 1, child: const Text('Move to bottom')),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _list() {
     final entries = _entries;
-    final deleted = [for (final b in widget.builtIn) if (store.builtin(widget.page, b.key).hidden) b];
+    final deleted = [
+      for (final b in widget.builtIn)
+        if (store.builtin(widget.page, b.key).hidden) b,
+    ];
     final reordered = store.order(widget.page).isNotEmpty;
-    const head = TextStyle(color: Color(0xFF5A6C68), fontSize: 11.5, fontWeight: FontWeight.w600, letterSpacing: .8);
-    return ListView(padding: const EdgeInsets.fromLTRB(16, 14, 16, 24), children: [
-      FilledButton.icon(onPressed: () => setState(() => _adding = true), icon: const Icon(Icons.add), label: const Text('Add a field')),
-      const SizedBox(height: 18),
-      Row(children: [
-        Expanded(child: Text('FIELDS (${entries.length})', style: head)),
-        if (reordered)
-          TextButton.icon(
-            onPressed: () => store.resetOrder(widget.page),
-            style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
-            icon: const Icon(Icons.restart_alt, size: 16),
-            label: const Text('Original order'),
+    const head = TextStyle(color: TColor(0xFF5A6C68), fontSize: 11.5, fontWeight: FontWeight.w600, letterSpacing: .8);
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
+      children: [
+        FilledButton.icon(onPressed: () => setState(() => _adding = true), icon: const Icon(Icons.add), label: const Text('Add a field')),
+        const SizedBox(height: 18),
+        Row(
+          children: [
+            Expanded(child: Text('FIELDS (${entries.length})', style: head)),
+            if (reordered)
+              TextButton.icon(
+                onPressed: () => store.resetOrder(widget.page),
+                style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                icon: const Icon(Icons.restart_alt, size: 16),
+                label: const Text('Original order'),
+              ),
+          ],
+        ),
+        const Padding(
+          padding: EdgeInsets.only(bottom: 8),
+          child: Text(
+            'Drag ⋮⋮ (or use ⇅) to set the order: the table’s columns, the form and each record follow it.',
+            style: TextStyle(color: TColor(0xFF5A6C68), fontSize: 12, height: 1.4),
           ),
-      ]),
-      const Padding(
-        padding: EdgeInsets.only(bottom: 8),
-        child: Text('Drag ⋮⋮ (or use ⇅) to set the order: the table’s columns, the form and each record follow it.', style: TextStyle(color: Color(0xFF5A6C68), fontSize: 12, height: 1.4)),
-      ),
-      ReorderableListView(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        buildDefaultDragHandles: false,
-        onReorderItem: _move,
-        children: [for (final (i, e) in entries.indexed) _row(e, i, entries.length)],
-      ),
-      if (deleted.isNotEmpty) ...[
-        const SizedBox(height: 14),
-        Text('DELETED FIELDS (${deleted.length})', style: head),
-        const SizedBox(height: 6),
-        for (final b in deleted)
-          Container(
-            margin: const EdgeInsets.only(bottom: 6),
-            decoration: BoxDecoration(color: const Color(0xFFF1F4F3), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE6EEEB))),
-            child: ListTile(
-              dense: true,
-              leading: const Icon(Icons.delete_outline, size: 18, color: Color(0xFF9AAEA9)),
-              title: Text(_nameOf(b), style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF8A9A96), decoration: TextDecoration.lineThrough)),
-              subtitle: Text('${b.kind} · values kept'),
-              trailing: TextButton.icon(
-                onPressed: () {
-                  final o = store.builtin(widget.page, b.key);
-                  store.setBuiltin(widget.page, b.key, BuiltinOverride(label: o.label, help: o.help, required: o.required));
-                },
-                icon: const Icon(Icons.restore, size: 18),
-                label: Text('Restore', semanticsLabel: 'Restore ${_nameOf(b)}'),
+        ),
+        ReorderableListView(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          buildDefaultDragHandles: false,
+          onReorderItem: _move,
+          children: [for (final (i, e) in entries.indexed) _row(e, i, entries.length)],
+        ),
+        if (deleted.isNotEmpty) ...[
+          const SizedBox(height: 14),
+          Text('DELETED FIELDS (${deleted.length})', style: head),
+          const SizedBox(height: 6),
+          for (final b in deleted)
+            Container(
+              margin: const EdgeInsets.only(bottom: 6),
+              decoration: BoxDecoration(
+                color: const TColor(0xFFF1F4F3),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const TColor(0xFFE6EEEB)),
+              ),
+              child: ListTile(
+                dense: true,
+                leading: const Icon(Icons.delete_outline, size: 18, color: TColor(0xFF9AAEA9)),
+                title: Text(
+                  _nameOf(b),
+                  style: const TextStyle(fontWeight: FontWeight.w600, color: TColor(0xFF8A9A96), decoration: TextDecoration.lineThrough),
+                ),
+                subtitle: Text('${b.kind} · values kept'),
+                trailing: TextButton.icon(
+                  onPressed: () {
+                    final o = store.builtin(widget.page, b.key);
+                    store.setBuiltin(widget.page, b.key, BuiltinOverride(label: o.label, help: o.help, required: o.required));
+                  },
+                  icon: const Icon(Icons.restore, size: 18),
+                  label: Text('Restore', semanticsLabel: 'Restore ${_nameOf(b)}'),
+                ),
               ),
             ),
-          ),
+        ],
+        const SizedBox(height: 10),
+        const Text(
+          'Built-in fields keep their kind (the page’s numbers and charts rely on it). Any of them can be renamed or deleted, required ones too; deleting keeps the values already saved, so Restore brings them back.',
+          style: TextStyle(color: TColor(0xFF8A9A96), fontSize: 12, height: 1.4),
+        ),
       ],
-      const SizedBox(height: 10),
-      const Text('Built-in fields keep their kind (the page’s numbers and charts rely on it). Any of them can be renamed or deleted, required ones too; deleting keeps the values already saved, so Restore brings them back.',
-          style: TextStyle(color: Color(0xFF8A9A96), fontSize: 12, height: 1.4)),
-    ]);
+    );
   }
 }
 
@@ -665,7 +772,10 @@ class _FieldFormState extends State<_FieldForm> {
     super.dispose();
   }
 
-  List<String> get _choices => [for (final l in _options.text.split('\n')) if (l.trim().isNotEmpty) l.trim()].fold<List<String>>([], (a, o) => a.any((x) => x.toLowerCase() == o.toLowerCase()) ? a : [...a, o]);
+  List<String> get _choices => [
+    for (final l in _options.text.split('\n'))
+      if (l.trim().isNotEmpty) l.trim(),
+  ].fold<List<String>>([], (a, o) => a.any((x) => x.toLowerCase() == o.toLowerCase()) ? a : [...a, o]);
 
   Future<void> _save() async {
     if (_busy || !(_form.currentState?.validate() ?? false)) return;
@@ -690,62 +800,92 @@ class _FieldFormState extends State<_FieldForm> {
     final border = OutlineInputBorder(borderRadius: BorderRadius.circular(12));
     return Form(
       key: _form,
-      child: ListView(padding: const EdgeInsets.fromLTRB(16, 16, 16, 24), children: [
-        TextFormField(
-          controller: _label,
-          autofocus: widget.field == null,
-          style: const TextStyle(fontSize: 16),
-          decoration: InputDecoration(labelText: 'Field name *', hintText: 'e.g. Reviewer, Batch number, Signed copy', border: border, filled: true, fillColor: Colors.white),
-          validator: (v) {
-            final t = (v ?? '').trim();
-            if (t.isEmpty) return 'Name the field.';
-            if (t.length > 40) return 'Keep it to 40 characters.';
-            if (widget.taken.contains(t.toLowerCase())) return 'This page already has a field with that name.';
-            return null;
-          },
-        ),
-        const SizedBox(height: 14),
-        DropdownButtonFormField<CustomType>(
-          initialValue: _type,
-          decoration: InputDecoration(labelText: 'Kind of input', border: border, filled: true, fillColor: Colors.white),
-          items: [
-            for (final t in CustomType.values) DropdownMenuItem(value: t, child: Row(children: [Icon(t.icon, size: 18, color: brand), const SizedBox(width: 10), Text(t.label)])),
-          ],
-          onChanged: (t) => setState(() => _type = t ?? _type),
-        ),
-        if (widget.field != null && widget.field!.type != _type)
-          const Padding(
-            padding: EdgeInsets.only(top: 6, left: 4),
-            child: Text('Values already filled in may not fit the new kind; check them after saving.', style: TextStyle(color: Color(0xFF8A5A00), fontSize: 12)),
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        children: [
+          TextFormField(
+            controller: _label,
+            autofocus: widget.field == null,
+            style: const TextStyle(fontSize: 16),
+            decoration: InputDecoration(
+              labelText: 'Field name *',
+              hintText: 'e.g. Reviewer, Batch number, Signed copy',
+              border: border,
+              filled: true,
+              fillColor: TColor(0xFFFFFFFF),
+            ),
+            validator: (v) {
+              final t = (v ?? '').trim();
+              if (t.isEmpty) return 'Name the field.';
+              if (t.length > 40) return 'Keep it to 40 characters.';
+              if (widget.taken.contains(t.toLowerCase())) return 'This page already has a field with that name.';
+              return null;
+            },
           ),
-        if (_type == CustomType.choice) ...[
+          const SizedBox(height: 14),
+          DropdownButtonFormField<CustomType>(
+            initialValue: _type,
+            decoration: InputDecoration(labelText: 'Kind of input', border: border, filled: true, fillColor: TColor(0xFFFFFFFF)),
+            items: [
+              for (final t in CustomType.values)
+                DropdownMenuItem(
+                  value: t,
+                  child: Row(
+                    children: [
+                      Icon(t.icon, size: 18, color: brand),
+                      const SizedBox(width: 10),
+                      Text(t.label),
+                    ],
+                  ),
+                ),
+            ],
+            onChanged: (t) => setState(() => _type = t ?? _type),
+          ),
+          if (widget.field != null && widget.field!.type != _type)
+            const Padding(
+              padding: EdgeInsets.only(top: 6, left: 4),
+              child: Text('Values already filled in may not fit the new kind; check them after saving.', style: TextStyle(color: TColor(0xFF8A5A00), fontSize: 12)),
+            ),
+          if (_type == CustomType.choice) ...[
+            const SizedBox(height: 14),
+            TextFormField(
+              controller: _options,
+              minLines: 3,
+              maxLines: 8,
+              style: const TextStyle(fontSize: 16),
+              decoration: InputDecoration(
+                labelText: 'Choices *',
+                helperText: 'One per line, in the order they should appear.',
+                border: border,
+                filled: true,
+                fillColor: TColor(0xFFFFFFFF),
+                alignLabelWithHint: true,
+              ),
+              validator: (_) => _choices.length < 2 ? 'Give at least two choices.' : null,
+            ),
+          ],
           const SizedBox(height: 14),
           TextFormField(
-            controller: _options,
-            minLines: 3,
-            maxLines: 8,
+            controller: _help,
             style: const TextStyle(fontSize: 16),
-            decoration: InputDecoration(labelText: 'Choices *', helperText: 'One per line, in the order they should appear.', border: border, filled: true, fillColor: Colors.white, alignLabelWithHint: true),
-            validator: (_) => _choices.length < 2 ? 'Give at least two choices.' : null,
+            maxLength: 140,
+            decoration: InputDecoration(labelText: 'Hint under the box', hintText: 'What to enter, and why', border: border, filled: true, fillColor: TColor(0xFFFFFFFF)),
+          ),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            value: _required,
+            onChanged: (v) => setState(() => _required = v),
+            title: const Text('Required', style: TextStyle(fontWeight: FontWeight.w600)),
+            subtitle: const Text('Forms can’t be saved without it.'),
+          ),
+          const SizedBox(height: 10),
+          FilledButton.icon(
+            onPressed: _busy ? null : _save,
+            icon: Icon(widget.field == null ? Icons.add : Icons.check),
+            label: Text(widget.field == null ? 'Add field' : 'Save field'),
           ),
         ],
-        const SizedBox(height: 14),
-        TextFormField(
-          controller: _help,
-          style: const TextStyle(fontSize: 16),
-          maxLength: 140,
-          decoration: InputDecoration(labelText: 'Hint under the box', hintText: 'What to enter, and why', border: border, filled: true, fillColor: Colors.white),
-        ),
-        SwitchListTile(
-          contentPadding: EdgeInsets.zero,
-          value: _required,
-          onChanged: (v) => setState(() => _required = v),
-          title: const Text('Required', style: TextStyle(fontWeight: FontWeight.w600)),
-          subtitle: const Text('Forms can’t be saved without it.'),
-        ),
-        const SizedBox(height: 10),
-        FilledButton.icon(onPressed: _busy ? null : _save, icon: Icon(widget.field == null ? Icons.add : Icons.check), label: Text(widget.field == null ? 'Add field' : 'Save field')),
-      ]),
+      ),
     );
   }
 }
@@ -783,7 +923,10 @@ class _BuiltinFormState extends State<_BuiltinForm> {
     super.dispose();
   }
 
-  List<String> get _list => [for (final l in _choices.text.split('\n')) if (l.trim().isNotEmpty) l.trim()].fold<List<String>>([], (a, o) => a.any((x) => x.toLowerCase() == o.toLowerCase()) ? a : [...a, o]);
+  List<String> get _list => [
+    for (final l in _choices.text.split('\n'))
+      if (l.trim().isNotEmpty) l.trim(),
+  ].fold<List<String>>([], (a, o) => a.any((x) => x.toLowerCase() == o.toLowerCase()) ? a : [...a, o]);
 
   Future<void> _save() async {
     if (!(_form.currentState?.validate() ?? false)) return;
@@ -816,60 +959,76 @@ class _BuiltinFormState extends State<_BuiltinForm> {
     final border = OutlineInputBorder(borderRadius: BorderRadius.circular(12));
     return Form(
       key: _form,
-      child: ListView(padding: const EdgeInsets.fromLTRB(16, 16, 16, 24), children: [
-        TextFormField(
-          controller: _label,
-          style: const TextStyle(fontSize: 16),
-          decoration: InputDecoration(labelText: 'Field name *', helperText: 'Built in as “${b.label}”.', border: border, filled: true, fillColor: Colors.white),
-          validator: (v) {
-            final t = (v ?? '').trim();
-            if (t.isEmpty) return 'Name the field.';
-            if (t.length > 40) return 'Keep it to 40 characters.';
-            if (widget.taken.contains(t.toLowerCase())) return 'This page already has a field with that name.';
-            return null;
-          },
-        ),
-        const SizedBox(height: 14),
-        InputDecorator(
-          decoration: InputDecoration(labelText: 'Kind of input', border: border, filled: true, fillColor: const Color(0xFFF1F4F3), helperText: 'Fixed for built-in fields.'),
-          child: Row(children: [const Icon(Icons.lock_outline, size: 16, color: Color(0xFF8A9A96)), const SizedBox(width: 8), Text(b.kind)]),
-        ),
-        if (b.choicesKey != null) ...[
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        children: [
+          TextFormField(
+            controller: _label,
+            style: const TextStyle(fontSize: 16),
+            decoration: InputDecoration(labelText: 'Field name *', helperText: 'Built in as “${b.label}”.', border: border, filled: true, fillColor: TColor(0xFFFFFFFF)),
+            validator: (v) {
+              final t = (v ?? '').trim();
+              if (t.isEmpty) return 'Name the field.';
+              if (t.length > 40) return 'Keep it to 40 characters.';
+              if (widget.taken.contains(t.toLowerCase())) return 'This page already has a field with that name.';
+              return null;
+            },
+          ),
+          const SizedBox(height: 14),
+          InputDecorator(
+            decoration: InputDecoration(labelText: 'Kind of input', border: border, filled: true, fillColor: const TColor(0xFFF1F4F3), helperText: 'Fixed for built-in fields.'),
+            child: Row(
+              children: [
+                const Icon(Icons.lock_outline, size: 16, color: TColor(0xFF8A9A96)),
+                const SizedBox(width: 8),
+                Text(b.kind),
+              ],
+            ),
+          ),
+          if (b.choicesKey != null) ...[
+            const SizedBox(height: 14),
+            TextFormField(
+              controller: _choices,
+              minLines: 3,
+              maxLines: 10,
+              style: const TextStyle(fontSize: 16),
+              decoration: InputDecoration(
+                labelText: 'Choices *',
+                helperText: 'One per line, in order. Records keep the value they have.',
+                border: border,
+                filled: true,
+                fillColor: TColor(0xFFFFFFFF),
+                alignLabelWithHint: true,
+              ),
+              validator: (_) => _list.isEmpty ? 'Give at least one choice.' : null,
+            ),
+          ],
           const SizedBox(height: 14),
           TextFormField(
-            controller: _choices,
-            minLines: 3,
-            maxLines: 10,
+            controller: _help,
+            maxLength: 140,
             style: const TextStyle(fontSize: 16),
-            decoration: InputDecoration(labelText: 'Choices *', helperText: 'One per line, in order. Records keep the value they have.', border: border, filled: true, fillColor: Colors.white, alignLabelWithHint: true),
-            validator: (_) => _list.isEmpty ? 'Give at least one choice.' : null,
+            decoration: InputDecoration(labelText: 'Hint under the box', border: border, filled: true, fillColor: TColor(0xFFFFFFFF)),
           ),
+          if (b.canToggleRequired)
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              value: _required,
+              onChanged: (v) => setState(() => _required = v),
+              title: const Text('Required', style: TextStyle(fontWeight: FontWeight.w600)),
+              subtitle: const Text('Forms can’t be saved without it.'),
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Text(b.required ? 'Always required: the page needs it.' : 'Optional.', style: const TextStyle(color: TColor(0xFF5A6C68), fontSize: 12.5)),
+            ),
+          const SizedBox(height: 10),
+          FilledButton.icon(onPressed: _save, icon: const Icon(Icons.check), label: const Text('Save field')),
+          const SizedBox(height: 8),
+          TextButton.icon(onPressed: _reset, icon: const Icon(Icons.restart_alt), label: const Text('Back to original')),
         ],
-        const SizedBox(height: 14),
-        TextFormField(
-          controller: _help,
-          maxLength: 140,
-          style: const TextStyle(fontSize: 16),
-          decoration: InputDecoration(labelText: 'Hint under the box', border: border, filled: true, fillColor: Colors.white),
-        ),
-        if (b.canToggleRequired)
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            value: _required,
-            onChanged: (v) => setState(() => _required = v),
-            title: const Text('Required', style: TextStyle(fontWeight: FontWeight.w600)),
-            subtitle: const Text('Forms can’t be saved without it.'),
-          )
-        else
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Text(b.required ? 'Always required: the page needs it.' : 'Optional.', style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 12.5)),
-          ),
-        const SizedBox(height: 10),
-        FilledButton.icon(onPressed: _save, icon: const Icon(Icons.check), label: const Text('Save field')),
-        const SizedBox(height: 8),
-        TextButton.icon(onPressed: _reset, icon: const Icon(Icons.restart_alt), label: const Text('Back to original')),
-      ]),
+      ),
     );
   }
 }

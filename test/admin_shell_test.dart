@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:piax_orders_admin/admin_modules/record_filter.dart';
 import 'package:piax_orders_admin/admin_modules/admin_shell.dart';
+import 'package:piax_orders_admin/admin_modules/clickup_nav.dart';
 import 'package:piax_orders_admin/admin_modules/nav_config.dart';
 import 'package:piax_orders_admin/admin_modules/nav_pages.dart';
 import 'package:piax_orders_admin/admin_modules/nav_widgets.dart' show PageTree;
@@ -23,9 +24,19 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  Finder inSidebar(String text) => find.descendant(of: find.byType(AdminSidebar), matching: find.text(text));
+  Finder inSidebar(String text) => find.descendant(of: find.byType(ClickSidebar), matching: find.text(text));
 
+  /// A section name taps its icon on the rail (its pages fill the panel); a page name taps it in the panel.
   Future<void> tapInSidebar(WidgetTester tester, String text) async {
+    final section = navSections.where((s) => s.label == text).firstOrNull;
+    if (section != null) {
+      final icon = find.descendant(of: find.byType(ClickRail), matching: find.byIcon(section.icon)).first;
+      await tester.ensureVisible(icon);
+      await tester.pumpAndSettle();
+      await tester.tap(icon);
+      await tester.pumpAndSettle();
+      return;
+    }
     await tester.ensureVisible(inSidebar(text));
     await tester.pumpAndSettle();
     await tester.tap(inSidebar(text));
@@ -41,16 +52,17 @@ void main() {
     expect(ids.toSet(), hasLength(ids.length));
   });
 
-  testWidgets('opens on the Founder Overview with every section, and each section holds all its items', (tester) async {
+  testWidgets('opens on the Founder Overview; the rail has every section, and each section lists all its pages', (tester) async {
     await open(tester, {});
     expect(find.text('Subscription income'), findsOneWidget);
     for (final s in navSections) {
-      expect(inSidebar(s.label), findsOneWidget);
+      expect(find.descendant(of: find.byType(ClickRail), matching: find.text(s.label)), findsWidgets);
     }
-    expect(inSidebar('Founder Overview'), findsOneWidget); // its section is open: it's the current page
+    expect(inSidebar('Founder Overview'), findsOneWidget); // Home lists it
 
     for (final s in navSections) {
-      if (inSidebar(s.items.first.label).evaluate().isEmpty) await tapInSidebar(tester, s.label); // open it (if not already)
+      await tapInSidebar(tester, s.label);
+      expect(inSidebar(s.label), findsOneWidget); // the panel's title
       for (final item in s.items) {
         expect(inSidebar(item.label), findsOneWidget, reason: '${s.label} › ${item.label}');
       }
@@ -58,18 +70,13 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('sections toggle independently; a built item opens with the sidebar still beside it', (tester) async {
+  testWidgets('a rail section fills the panel; a built page opens with the panel still beside it', (tester) async {
     await open(tester, {});
     await tapInSidebar(tester, 'Website, App & Content');
-    expect(inSidebar('Founder Overview'), findsOneWidget); // opening another section leaves this one open
+    expect(inSidebar('Founder Overview'), findsNothing); // the panel now holds this section only
     await tapInSidebar(tester, 'Store Locations');
     expect(find.text('Add store'), findsWidgets);
-    expect(find.byType(AdminSidebar), findsOneWidget);
-    expect(inSidebar('Founder Overview'), findsOneWidget);
-    expect(inSidebar('Store Locations'), findsOneWidget);
-
-    await tapInSidebar(tester, 'Executive Command Centre');
-    expect(inSidebar('Founder Overview'), findsNothing); // only the tapped section folds
+    expect(find.byType(ClickSidebar), findsOneWidget);
     expect(inSidebar('Store Locations'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
@@ -79,9 +86,8 @@ void main() {
     await tapInSidebar(tester, 'Vending Machine Operations');
     await tapInSidebar(tester, 'Machine Register & Asset Passport');
     expect(find.byType(NavModulePage), findsOneWidget);
-    expect(find.text('Demo data'), findsOneWidget);
     expect(find.text('06 Vending Machine Operations'), findsOneWidget); // the page tree
-    expect(find.byType(AdminSidebar), findsOneWidget);
+    expect(find.byType(ClickSidebar), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -93,11 +99,12 @@ void main() {
     expect(titles('Founder Overview'), 1);
 
     await tapInSidebar(tester, 'Website, App & Content');
-    for (final name in ['Website CMS', 'Blogs & Education Hub', 'Reviews & Publishing Queue', 'Product Pages & Catalogue']) {
+    for (final name in ['Website CMS', 'Blogs & Education Hub', 'Reviews & Publishing Queue']) {
       await tapInSidebar(tester, name);
       expect(titles(name), 1, reason: name); // two items on the articles module each keep their own name
     }
-    await tapInSidebar(tester, 'Business Health & KPIs'); // its section is still open
+    await tapInSidebar(tester, 'Executive Command Centre');
+    await tapInSidebar(tester, 'Business Health & KPIs');
     expect(titles('Business Health & KPIs'), 1);
     expect(tester.takeException(), isNull);
   });
@@ -127,20 +134,14 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('“folded” setting: pages open with the icon rail; a section icon lists its pages', (tester) async {
+  testWidgets('“folded” setting: pages open with only the icon rail; the menu button brings the sidebar back', (tester) async {
     await open(tester, {'sidebar_on_new_page': 'closed'});
-    expect(tester.getSize(find.byType(AdminSidebar)).width, 76);
-    await tester.tap(find.byTooltip('12 Technology, IAM & Integrations'));
+    expect(find.byType(ClickSidebar), findsNothing);
+    expect(find.byType(ClickRail), findsOneWidget);
+    await tester.tap(find.descendant(of: find.byType(ClickRail), matching: find.byIcon(Icons.home_outlined)));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Audit Logs'));
-    await tester.pumpAndSettle();
-    expect(find.text('Audit log'), findsWidgets);
-    expect(tester.getSize(find.byType(AdminSidebar)).width, 76); // still folded on the new page
-
-    await tester.tap(find.byTooltip('Open the sidebar'));
-    await tester.pumpAndSettle();
-    expect(tester.getSize(find.byType(AdminSidebar)).width, 280);
-    expect(inSidebar('Audit Logs'), findsOneWidget); // its section opened by itself
+    expect(tester.getSize(find.byType(ClickSidebar)).width, 264);
+    expect(find.byType(ClickSidebar), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

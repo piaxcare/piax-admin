@@ -8,6 +8,8 @@ import '../models.dart';
 import '../whatsapp.dart';
 import '../widgets/brand.dart';
 import 'login_screen.dart' show signOut;
+import 'package:piax_orders_admin/palette.dart';
+import 'package:piax_orders_admin/admin_modules/admin_search.dart' show globalSearchActions;
 
 /// One order: its step and actions, the customer's contact and delivery address, the items, payment and timeline.
 /// As its own page it pops `true` when the order was changed, so the list refreshes. [embedded] shows it inside the
@@ -293,7 +295,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               const SizedBox(height: 10),
               Container(
                 padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: const Color(0xFFE7F6EE), borderRadius: BorderRadius.circular(12)),
+                decoration: BoxDecoration(color: const TColor(0xFFE7F6EE), borderRadius: BorderRadius.circular(12)),
                 child: Text(message.textFor(order, details: details), style: const TextStyle(fontSize: 14, height: 1.4)),
               ),
             ],
@@ -372,6 +374,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         leading: widget.embedded ? IconButton(tooltip: 'Close', icon: const Icon(Icons.close), onPressed: widget.onClose) : null,
         title: Text(order?.id ?? widget.orderId, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 18)),
         actions: [
+          ...globalSearchActions(context),
           IconButton(
             tooltip: 'Copy order number',
             icon: const Icon(Icons.copy_outlined),
@@ -526,8 +529,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       final r = p.refund;
       final verified = r?.processed == true;
       return _Panel(
-        color: verified ? const Color(0xFFE3EDE2) : const Color(0xFFE1EAF7),
-        ink: verified ? const Color(0xFF2F5A2C) : const Color(0xFF2B3A5C),
+        color: verified ? const TColor(0xFFE3EDE2) : const TColor(0xFFE1EAF7),
+        ink: verified ? const TColor(0xFF2F5A2C) : const TColor(0xFF2B3A5C),
         icon: verified ? Icons.verified_outlined : Icons.hourglass_top,
         title: 'Refunded ${rupees(r?.amount ?? order.totals.total)}${r == null ? '' : ' on ${dateTime(r.at)}'}',
         text: r == null
@@ -565,8 +568,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     }
     if (p.status == 'refunding') {
       return const _Panel(
-        color: Color(0xFFFFF4D6),
-        ink: Color(0xFF6B4600),
+        color: TColor(0xFFFFF4D6),
+        ink: TColor(0xFF6B4600),
         icon: Icons.hourglass_top,
         title: 'Refund being sent',
         text: 'Razorpay is processing it. Pull down to refresh.',
@@ -574,8 +577,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     }
     if (!order.needsRefund) return const SizedBox.shrink();
     return _Panel(
-      color: const Color(0xFFFFF4D6),
-      ink: const Color(0xFF6B4600),
+      color: const TColor(0xFFFFF4D6),
+      ink: const TColor(0xFF6B4600),
       icon: Icons.currency_rupee,
       title: 'Refund due: ${rupees(order.totals.total)}',
       text: p.failedRefund != null
@@ -649,7 +652,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           children: [
             CircleAvatar(
               radius: 24,
-              backgroundColor: const Color(0xFFDDF3EC),
+              backgroundColor: const TColor(0xFFDDF3EC),
               child: Text(
                 _initials(name),
                 style: const TextStyle(color: brand, fontWeight: FontWeight.w600, fontSize: 17),
@@ -789,7 +792,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                   ),
                 ),
                 StatusBadge(past.status),
-                const Icon(Icons.chevron_right, color: Color(0xFF9AAEA9)),
+                const Icon(Icons.chevron_right, color: TColor(0xFF9AAEA9)),
               ],
             ),
           ),
@@ -863,43 +866,43 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     final p = order.payment;
     final (Color bg, Color fg, IconData icon, String title, String text) = switch ((p.method, p.status)) {
       ('cod', 'paid') => (
-        const Color(0xFFE3EDE2),
-        const Color(0xFF3E5E3C),
+        const TColor(0xFFE3EDE2),
+        const TColor(0xFF3E5E3C),
         Icons.check_circle_outline,
         'Cash collected',
         'Cash on delivery, already collected.',
       ),
       ('cod', _) => (
-        const Color(0xFFFFF4D6),
-        const Color(0xFF6B4600),
+        const TColor(0xFFFFF4D6),
+        const TColor(0xFF6B4600),
         Icons.payments_outlined,
         'Collect ${rupees(order.totals.total)} in cash',
         'Cash on delivery: the customer pays at the door.',
       ),
       (_, 'paid') => (
-        const Color(0xFFE3EDE2),
-        const Color(0xFF3E5E3C),
+        const TColor(0xFFE3EDE2),
+        const TColor(0xFF3E5E3C),
         Icons.verified_outlined,
         'Prepaid: nothing to collect',
         'Paid online. Don’t take any money at the door.',
       ),
       (_, 'refunded') => (
-        const Color(0xFFF3E3E3),
-        const Color(0xFF8B2E2E),
+        const TColor(0xFFF3E3E3),
+        const TColor(0xFF8B2E2E),
         Icons.undo,
         'Refunded',
         'Cancelled and refunded. Don’t deliver.',
       ),
       (_, 'refund_pending') => (
-        const Color(0xFFF3E3E3),
-        const Color(0xFF8B2E2E),
+        const TColor(0xFFF3E3E3),
+        const TColor(0xFF8B2E2E),
         Icons.undo,
         'Refund pending',
         'Paid online, refund due. Don’t deliver.',
       ),
       _ => (
-        const Color(0xFFF3E3E3),
-        const Color(0xFF8B2E2E),
+        const TColor(0xFFF3E3E3),
+        const TColor(0xFF8B2E2E),
         Icons.hourglass_empty,
         'Not paid yet',
         'Wait for the online payment before sending this.',
@@ -1023,7 +1026,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   };
 }
 
-const _muted = TextStyle(color: Color(0xFF5B6B67), fontSize: 13.5);
+const _muted = TextStyle(color: TColor(0xFF5B6B67), fontSize: 13.5);
 
 class _Section extends StatelessWidget {
   const _Section({required this.children, this.title, this.trailing});
@@ -1073,10 +1076,10 @@ class _Line extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: const Color(0xFF5B6B67)),
+          Icon(icon, size: 18, color: const TColor(0xFF5B6B67)),
           const SizedBox(width: 10),
           Expanded(child: Text(text, style: const TextStyle(fontSize: 14.5))),
-          if (onTap != null) const Icon(Icons.copy_outlined, size: 16, color: Color(0xFF9AAEA9)),
+          if (onTap != null) const Icon(Icons.copy_outlined, size: 16, color: TColor(0xFF9AAEA9)),
         ],
       ),
     ),
@@ -1115,7 +1118,7 @@ class _Field extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.only(top: 2),
-          child: Icon(icon, size: 20, color: const Color(0xFF5B6B67)),
+          child: Icon(icon, size: 20, color: const TColor(0xFF5B6B67)),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -1124,7 +1127,7 @@ class _Field extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: const TextStyle(color: Color(0xFF5B6B67), fontSize: 12.5, fontWeight: FontWeight.w500),
+                style: const TextStyle(color: TColor(0xFF5B6B67), fontSize: 12.5, fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 2),
               SelectableText(
@@ -1172,7 +1175,7 @@ class _Pill extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-    decoration: BoxDecoration(color: const Color(0xFFDDF3EC), borderRadius: BorderRadius.circular(999)),
+    decoration: BoxDecoration(color: const TColor(0xFFDDF3EC), borderRadius: BorderRadius.circular(999)),
     child: Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -1195,13 +1198,13 @@ class _Figure extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-    decoration: BoxDecoration(color: const Color(0xFFF2F6F5), borderRadius: BorderRadius.circular(12)),
+    decoration: BoxDecoration(color: const TColor(0xFFF2F6F5), borderRadius: BorderRadius.circular(12)),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(value, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
-        Text(label, style: const TextStyle(color: Color(0xFF5B6B67), fontSize: 12)),
+        Text(label, style: const TextStyle(color: TColor(0xFF5B6B67), fontSize: 12)),
       ],
     ),
   );
@@ -1218,10 +1221,10 @@ class _Note extends StatelessWidget {
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 18, color: const Color(0xFF5B6B67)),
+        Icon(icon, size: 18, color: const TColor(0xFF5B6B67)),
         const SizedBox(width: 10),
         Expanded(
-          child: Text(text, style: const TextStyle(color: Color(0xFF5B6B67), fontSize: 13.5, height: 1.35)),
+          child: Text(text, style: const TextStyle(color: TColor(0xFF5B6B67), fontSize: 13.5, height: 1.35)),
         ),
       ],
     ),
@@ -1534,7 +1537,7 @@ class _ComposeSheetState extends State<_ComposeSheet> {
         if (widget.justMarked != null) ...[
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(color: const Color(0xFFDDF3EC), borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(color: const TColor(0xFFDDF3EC), borderRadius: BorderRadius.circular(12)),
             child: Row(
               children: [
                 const Icon(Icons.check_circle, color: brand, size: 20),

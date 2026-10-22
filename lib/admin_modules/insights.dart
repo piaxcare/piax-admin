@@ -5,6 +5,7 @@ import '../format.dart';
 import 'dashboard_images.dart';
 import 'repository.dart';
 import 'schema.dart';
+import 'package:piax_orders_admin/palette.dart';
 
 // Turns the Admin modules' records into things an admin can read at a glance: how many of each status, totals and
 // averages of every number, how a field splits (by city, category, plan…), what happened recently or is coming up,
@@ -17,18 +18,47 @@ import 'schema.dart';
 /// white, so charts using it always carry labels or a legend. Red is left out on purpose: it means "stopped" (status).
 /// More than six parts fold into "Other".
 const chartPalette = [
-  Color(0xFF0F8A6F), // teal (brand)
-  Color(0xFF5B4BD1), // violet
-  Color(0xFFE8692F), // orange
-  Color(0xFF2A78D6), // blue
-  Color(0xFFE39A00), // yellow
-  Color(0xFFD9558A), // pink
+  TColor(0xFF0F8A6F), // teal (brand)
+  TColor(0xFF5B4BD1), // violet
+  TColor(0xFFE8692F), // orange
+  TColor(0xFF2A78D6), // blue
+  TColor(0xFFE39A00), // yellow
+  TColor(0xFFD9558A), // pink
 ];
 
 /// "Other" (the parts past the sixth) and empty tracks: a quiet grey.
-const otherColor = Color(0xFFB8C4C1);
+const otherColor = TColor(0xFFB8C4C1);
 
 /// One part of a whole: a status, a city, a category…
+/// The slices with a different colour for each part: a colour already used (or a shade family) gets the next unused
+/// palette colour, so no two parts of one chart look alike. "Other" keeps its grey.
+List<Slice> distinctSlices(List<Slice> slices) {
+  final used = <int>{};
+  var next = 0;
+  Color fresh() {
+    for (var i = 0; i < chartPalette.length; i++) {
+      final c = chartPalette[(next + i) % chartPalette.length];
+      if (!used.contains(c.toARGB32())) {
+        next += i + 1;
+        return c;
+      }
+    }
+    return chartPalette[next++ % chartPalette.length];
+  }
+
+  return [
+    for (final s in slices)
+      if (s.label == 'Other')
+        s
+      else
+        () {
+          final c = used.contains(s.color.toARGB32()) ? fresh() : s.color;
+          used.add(c.toARGB32());
+          return identical(c, s.color) ? s : Slice(s.label, s.count, c, image: s.image);
+        }(),
+  ];
+}
+
 class Slice {
   const Slice(this.label, this.count, this.color, {this.image});
   final String label;
@@ -102,13 +132,11 @@ num? _num(Object? v) => v is num ? v : num.tryParse('${v ?? ''}');
 /// Status colours follow the status chips (green good, amber waiting, red stopped); two statuses sharing a tone get
 /// lighter shades so the chart keeps them apart.
 List<Slice> statusSlices(ModuleDef m, List<Map<String, dynamic>> records) {
-  final used = <Color, int>{};
   return [
     for (final s in m.statuses)
       () {
         final base = statusTone(s).$2;
-        final k = used.update(base, (n) => n + 1, ifAbsent: () => 0);
-        return Slice(s, records.where((r) => '${r[m.statusField]}' == s).length, Color.lerp(base, Colors.white, 0.32 * k)!);
+        return Slice(s, records.where((r) => '${r[m.statusField]}' == s).length, base);
       }(),
   ];
 }
@@ -189,7 +217,7 @@ ModuleInsight analyse(ModuleDef m, List<Map<String, dynamic>> records, {DateTime
 // ================================================================ Overview: headline numbers and attention list
 
 class Kpi {
-  const Kpi({required this.label, required this.value, required this.caption, required this.icon, required this.module, this.color = const Color(0xFF0B5B4E), this.image});
+  const Kpi({required this.label, required this.value, required this.caption, required this.icon, required this.module, this.color = const TColor(0xFF0B5B4E), this.image});
   final String label, value, caption;
   final IconData icon;
 
@@ -379,9 +407,9 @@ List<HeadlineCard> headlineCards(ModuleRepository repo, {DateTime? now}) {
   for (final m in modules.where((m) => m.statusField != null)) {
     for (final r in repo.records(m.key)) {
       final tone = statusTone('${r[m.statusField]}').$2;
-      if (tone == const Color(0xFF0B5B4E)) {
+      if (tone == const TColor(0xFF0B5B4E)) {
         good++;
-      } else if (tone == const Color(0xFF8A5A00)) {
+      } else if (tone == const TColor(0xFF8A5A00)) {
         waiting++;
       } else {
         stopped++;

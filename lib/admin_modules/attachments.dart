@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../format.dart';
+import 'package:piax_orders_admin/palette.dart';
 
 // Files attached to a record: SOPs, certificates, contracts, invoices, lab reports and the like. The upload field in
 // the add and edit forms picks them from the device (file_picker); the record keeps each file's name, size and type.
@@ -101,10 +102,10 @@ IconData fileIcon(String ext) => switch (ext) {
 };
 
 Color _fileTone(String ext) => switch (ext) {
-  'pdf' => const Color(0xFFB3261E),
-  'doc' || 'docx' => const Color(0xFF2D5F80),
-  'xls' || 'xlsx' || 'csv' => const Color(0xFF0F766E),
-  _ => const Color(0xFF5B3F73),
+  'pdf' => const TColor(0xFFB3261E),
+  'doc' || 'docx' => const TColor(0xFF2D5F80),
+  'xls' || 'xlsx' || 'csv' => const TColor(0xFF0F766E),
+  _ => const TColor(0xFF5B3F73),
 };
 
 /// The upload field of a form: a dashed drop area with "Choose files", what it takes, then the files chosen, each
@@ -194,9 +195,9 @@ class _AttachmentEditorState extends State<_AttachmentEditor> {
   @override
   Widget build(BuildContext context) {
     final error = widget.error;
-    final border = error != null ? Theme.of(context).colorScheme.error : const Color(0xFFB9CCC6);
+    final border = error != null ? Theme.of(context).colorScheme.error : const TColor(0xFFB9CCC6);
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      Text('${widget.label}${widget.required ? ' *' : ''}', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5, color: Color(0xFF26413B))),
+      Text('${widget.label}${widget.required ? ' *' : ''}', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5, color: TColor(0xFF26413B))),
       const SizedBox(height: 6),
       CustomPaint(
         painter: _DashedBorder(border),
@@ -209,7 +210,7 @@ class _AttachmentEditorState extends State<_AttachmentEditor> {
               Container(
                 width: 40,
                 height: 40,
-                decoration: BoxDecoration(color: const Color(0xFFE3F2EC), borderRadius: BorderRadius.circular(10)),
+                decoration: BoxDecoration(color: const TColor(0xFFE3F2EC), borderRadius: BorderRadius.circular(10)),
                 child: _busy ? const Padding(padding: EdgeInsets.all(10), child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.upload_file, color: brand),
               ),
               const SizedBox(width: 12),
@@ -218,14 +219,14 @@ class _AttachmentEditorState extends State<_AttachmentEditor> {
                   Text(widget.files.isEmpty || widget.multiple ? (widget.multiple ? 'Choose files to upload' : 'Choose a file to upload') : 'Replace the file',
                       style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5, color: brand)),
                   const SizedBox(height: 2),
-                  Text(acceptedLabel(widget.types), style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 12)),
+                  Text(acceptedLabel(widget.types), style: const TextStyle(color: TColor(0xFF5A6C68), fontSize: 12)),
                 ]),
               ),
             ]),
           ),
         ),
       ),
-      if (widget.help != null) Padding(padding: const EdgeInsets.only(top: 6, left: 2), child: Text(widget.help!, style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 12))),
+      if (widget.help != null) Padding(padding: const EdgeInsets.only(top: 6, left: 2), child: Text(widget.help!, style: const TextStyle(color: TColor(0xFF5A6C68), fontSize: 12))),
       if (error != null) Padding(padding: const EdgeInsets.only(top: 6, left: 2), child: Text(error, style: TextStyle(color: Theme.of(context).colorScheme.error, fontSize: 12))),
       if (widget.files.isNotEmpty) ...[
         const SizedBox(height: 8),
@@ -262,7 +263,7 @@ Future<void> downloadAttachment(BuildContext context, Attachment f) async {
   final bytes = f.bytes;
   final messenger = ScaffoldMessenger.maybeOf(context);
   if (bytes == null) {
-    messenger?.showSnackBar(SnackBar(content: Text(f.demo ? '${f.name} is a demo file: there’s no file to download.' : 'Upload ${f.name} again to download it (files are kept only while the app is open).')));
+    messenger?.showSnackBar(SnackBar(content: Text(f.demo ? '${f.name} is a sample file: there’s no file to download.' : 'Upload ${f.name} again to download it (files are kept only while the app is open).')));
     return;
   }
   try {
@@ -282,7 +283,7 @@ class AttachmentList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (files.isEmpty) return const Text('No files yet.', style: TextStyle(color: Color(0xFF8A9A96), fontSize: 13));
+    if (files.isEmpty) return const Text('No files yet.', style: TextStyle(color: TColor(0xFF8A9A96), fontSize: 13));
     final date = DateFormat('d MMM yyyy');
     final ready = [for (final f in files) if (f.bytes != null) f];
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -290,7 +291,7 @@ class AttachmentList extends StatelessWidget {
         Container(
           margin: const EdgeInsets.only(bottom: 6),
           padding: const EdgeInsets.fromLTRB(10, 8, 4, 8),
-          decoration: BoxDecoration(color: const Color(0xFFF7FAF9), borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFFE6EEEB))),
+          decoration: BoxDecoration(color: const TColor(0xFFF7FAF9), borderRadius: BorderRadius.circular(10), border: Border.all(color: const TColor(0xFFE6EEEB))),
           child: Row(children: [
             Icon(fileIcon(f.extension), size: 22, color: _fileTone(f.extension)),
             const SizedBox(width: 10),
@@ -299,14 +300,14 @@ class AttachmentList extends StatelessWidget {
                 Text(f.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
                 Text(
                   [if (f.size != null) fileSize(f.size), 'added ${date.format(f.addedAt)}', if (f.demo) 'demo file'].join(' · '),
-                  style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 11.5),
+                  style: const TextStyle(color: TColor(0xFF5A6C68), fontSize: 11.5),
                 ),
               ]),
             ),
             IconButton(
               tooltip: f.bytes != null ? 'Download ${f.name}' : f.demo ? 'Demo file: nothing to download' : 'Upload again to download',
               visualDensity: VisualDensity.compact,
-              icon: Icon(Icons.download_outlined, size: 19, color: f.bytes != null ? brand : const Color(0xFFB4C2BE)),
+              icon: Icon(Icons.download_outlined, size: 19, color: f.bytes != null ? brand : const TColor(0xFFB4C2BE)),
               onPressed: () => downloadAttachment(context, f),
             ),
             if (f.uri != null && f.bytes != null)

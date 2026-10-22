@@ -8,21 +8,22 @@ import '../format.dart';
 import 'dashboard_images.dart';
 import 'charts.dart' show SegmentRing;
 import 'insights.dart';
+import 'package:piax_orders_admin/palette.dart';
 
 // The dashboard's building blocks, laid out like a modern commerce admin (big stat cards with a change badge, an
 // activity line chart with a period picker, a half-circle gauge, a ring with a list, progress bars, a step funnel and
 // a share bar), in the app's own colours and font: PIAX brand green in shades, no new typeface.
 
-const ink = Color(0xFF0C1C19);
-const muted = Color(0xFF5A6C68);
-const line = Color(0xFFE6EEEB);
-const up = Color(0xFF0F8A5F);
-const down = Color(0xFFB3261E);
+const ink = TColor(0xFF0C1C19);
+const muted = TColor(0xFF5A6C68);
+const line = TColor(0xFFE6EEEB);
+const up = TColor(0xFF0F8A5F);
+const down = TColor(0xFFB3261E);
 
 /// Brand green, darkest to lightest: the one-colour family the charts use.
 /// For ordered steps only (funnel stages, star ratings), darkest first; checked as an ordinal ramp (one hue, even
 /// steps, the lightest still 2.2:1 on white). The last one is a background tint for tracks, never a data colour.
-const greens = [Color(0xFF0B5B4E), Color(0xFF0F766E), Color(0xFF2E8F7B), Color(0xFF4FA48F), Color(0xFF79BBA8), Color(0xFFDCEFE8)];
+const greens = [TColor(0xFF0B5B4E), TColor(0xFF0F766E), TColor(0xFF2E8F7B), TColor(0xFF4FA48F), TColor(0xFF79BBA8), TColor(0xFFDCEFE8)];
 
 /// A white dashboard card: title on the left, an optional control on the right, then the content.
 class DashCard extends StatelessWidget {
@@ -36,7 +37,7 @@ class DashCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     padding: padding,
-    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18), border: Border.all(color: line)),
+    decoration: BoxDecoration(color: TColor(0xFFFFFFFF), borderRadius: BorderRadius.circular(18), border: Border.all(color: line)),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -109,8 +110,8 @@ class HeadlineStatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-    color: highlight ? const Color(0xFFDDF3EC) : Colors.white,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18), side: BorderSide(color: highlight ? const Color(0xFFBFE3D6) : line)),
+    color: highlight ? const TColor(0xFFDDF3EC) : TColor(0xFFFFFFFF),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18), side: BorderSide(color: highlight ? const TColor(0xFFBFE3D6) : line)),
     child: InkWell(
       borderRadius: BorderRadius.circular(18),
       onTap: onTap,
@@ -121,16 +122,16 @@ class HeadlineStatCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Expanded(child: Text(card.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFF34443F), fontSize: 14))),
+                Expanded(child: Text(card.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: TColor(0xFF34443F), fontSize: 14))),
                 Container(
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: highlight ? brand : Colors.white,
+                    color: highlight ? brand : const TColor(0xFFFFFFFF),
                     borderRadius: BorderRadius.circular(10),
                     border: highlight ? null : Border.all(color: line),
                   ),
-                  child: Icon(card.icon, size: 19, color: highlight ? Colors.white : const Color(0xFF34443F)),
+                  child: Icon(card.icon, size: 19, color: highlight ? Colors.white : const TColor(0xFF34443F)),
                 ),
               ],
             ),
@@ -174,9 +175,9 @@ class PillPicker<T> extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(color: brand, borderRadius: BorderRadius.circular(10)),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Text(label(value), style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+        Text(label(value), style: const TextStyle(color: Color(0xFFFFFFFF), fontSize: 13, fontWeight: FontWeight.w600)),
         const SizedBox(width: 4),
-        const Icon(Icons.keyboard_arrow_down, color: Colors.white, size: 18),
+        const Icon(Icons.keyboard_arrow_down, color: Color(0xFFFFFFFF), size: 18),
       ]),
     ),
   );
@@ -266,7 +267,7 @@ class _ActivityCardState extends State<ActivityCard> {
                         ),
                     ],
                     touchTooltipData: LineTouchTooltipData(
-                      getTooltipColor: (_) => Colors.white,
+                      getTooltipColor: (_) => TColor(0xFFFFFFFF),
                       tooltipBorder: const BorderSide(color: line),
                       tooltipBorderRadius: BorderRadius.circular(10),
                       getTooltipItems: (spots) => [
@@ -366,9 +367,9 @@ class SplitStat extends StatelessWidget {
       ),
     );
     return Container(
-      decoration: BoxDecoration(color: const Color(0xFFEFF7F4), borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(color: const TColor(0xFFEFF7F4), borderRadius: BorderRadius.circular(12)),
       child: IntrinsicHeight(
-        child: Row(children: [half(left), const VerticalDivider(width: 1, color: Colors.white, thickness: 2), half(right)]),
+        child: Row(children: [half(left), const VerticalDivider(width: 1, color: TColor(0xFFFFFFFF), thickness: 2), half(right)]),
       ),
     );
   }
@@ -384,6 +385,7 @@ class RingWithList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final slices = distinctSlices(this.slices);
     return Column(
       children: [
         SizedBox(
@@ -406,7 +408,7 @@ class RingWithList extends StatelessWidget {
               Container(width: 9, height: 9, decoration: BoxDecoration(color: s.color, borderRadius: BorderRadius.circular(2.5))),
               const SizedBox(width: 10),
               if (s.image != null) ...[AssetThumb(s.image!, size: 26, radius: 7, fit: BoxFit.contain), const SizedBox(width: 8)],
-              Expanded(child: Text(s.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFF34443F), fontSize: 13.5))),
+              Expanded(child: Text(s.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: TColor(0xFF34443F), fontSize: 13.5))),
               Text(format?.call(s.count) ?? '${s.count}', style: const TextStyle(color: ink, fontSize: 13.5, fontWeight: FontWeight.w600)),
             ]),
           ),
@@ -422,6 +424,7 @@ class ProgressRows extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final slices = distinctSlices(this.slices);
     final total = math.max(1, slices.fold<int>(0, (a, s) => a + s.count));
     return Column(
       children: [
@@ -430,7 +433,7 @@ class ProgressRows extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 14),
             child: Column(children: [
               Row(children: [
-                Expanded(child: Text(s.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFF34443F), fontSize: 13.5))),
+                Expanded(child: Text(s.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: TColor(0xFF34443F), fontSize: 13.5))),
                 Text('${(s.count * 100 / total).toStringAsFixed(s.count * 100 % total == 0 ? 0 : 1)}%', style: const TextStyle(color: ink, fontSize: 13.5, fontWeight: FontWeight.w600)),
               ]),
               const SizedBox(height: 7),
@@ -501,7 +504,7 @@ class FunnelChart extends StatelessWidget {
                           child: Container(
                             decoration: BoxDecoration(
                               // Stages in one hue, darkest first; "Blocked" in the status red, with its label.
-                              color: s.bad ? const Color(0xFFD03B3B) : greens[math.min(i, greens.length - 2)],
+                              color: s.bad ? const TColor(0xFFD03B3B) : greens[math.min(i, greens.length - 2)],
                               borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
                             ),
                           ),
@@ -525,6 +528,7 @@ class ShareBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final slices = distinctSlices(this.slices);
     final shown = [for (final s in slices) if (s.count > 0) s];
     final total = math.max(1, shown.fold<int>(0, (a, s) => a + s.count));
     return Column(
@@ -551,7 +555,7 @@ class ShareBar extends StatelessWidget {
             child: Row(children: [
               Container(width: 9, height: 9, decoration: BoxDecoration(color: s.color, borderRadius: BorderRadius.circular(2.5))),
               const SizedBox(width: 10),
-              Expanded(child: Text(s.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFF34443F), fontSize: 13.5))),
+              Expanded(child: Text(s.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: TColor(0xFF34443F), fontSize: 13.5))),
               Text('${(s.count * 100 / total).round()}%', style: const TextStyle(color: ink, fontSize: 13.5, fontWeight: FontWeight.w600)),
             ]),
           ),
@@ -632,8 +636,8 @@ class MiniStat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-    color: highlight ? const Color(0xFFDDF3EC) : Colors.white,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18), side: BorderSide(color: highlight ? const Color(0xFFBFE3D6) : line)),
+    color: highlight ? const TColor(0xFFDDF3EC) : TColor(0xFFFFFFFF),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18), side: BorderSide(color: highlight ? const TColor(0xFFBFE3D6) : line)),
     child: InkWell(
       borderRadius: BorderRadius.circular(18),
       onTap: onTap,
@@ -641,12 +645,12 @@ class MiniStat extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(20, 18, 18, 16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
-            Expanded(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFF34443F), fontSize: 14))),
+            Expanded(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: TColor(0xFF34443F), fontSize: 14))),
             Container(
               width: 36,
               height: 36,
-              decoration: BoxDecoration(color: highlight ? brand : Colors.white, borderRadius: BorderRadius.circular(10), border: highlight ? null : Border.all(color: line)),
-              child: Icon(icon, size: 19, color: highlight ? Colors.white : const Color(0xFF34443F)),
+              decoration: BoxDecoration(color: highlight ? brand : const TColor(0xFFFFFFFF), borderRadius: BorderRadius.circular(10), border: highlight ? null : Border.all(color: line)),
+              child: Icon(icon, size: 19, color: highlight ? Colors.white : const TColor(0xFF34443F)),
             ),
           ]),
           const Spacer(),
@@ -769,7 +773,7 @@ class AreaTrend extends StatelessWidget {
               ),
           ],
           touchTooltipData: LineTouchTooltipData(
-            getTooltipColor: (_) => Colors.white,
+            getTooltipColor: (_) => TColor(0xFFFFFFFF),
             tooltipBorder: const BorderSide(color: line),
             tooltipBorderRadius: BorderRadius.circular(10),
             fitInsideHorizontally: true,
@@ -811,6 +815,7 @@ class SplitBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final slices = distinctSlices(this.slices);
     final shown = [for (final s in slices) if (s.count > 0) s];
     final total = shown.fold<int>(0, (a, s) => a + s.count);
     if (total == 0) return const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Text('Nothing to show yet.', style: TextStyle(color: muted)));
@@ -840,7 +845,7 @@ class SplitBar extends StatelessWidget {
               Container(width: 9, height: 9, decoration: BoxDecoration(color: s.color, borderRadius: BorderRadius.circular(2.5))),
               const SizedBox(width: 10),
               if (s.image != null) ...[AssetThumb(s.image!, size: 26, radius: 7, fit: BoxFit.contain), const SizedBox(width: 8)],
-              Expanded(child: Text(s.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFF34443F), fontSize: 13.5))),
+              Expanded(child: Text(s.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: TColor(0xFF34443F), fontSize: 13.5))),
               Text(format?.call(s.count) ?? '${s.count}', style: const TextStyle(color: ink, fontSize: 13.5, fontWeight: FontWeight.w600)),
               SizedBox(width: 46, child: Text('${(s.count * 100 / total).round()}%', textAlign: TextAlign.right, style: const TextStyle(color: muted, fontSize: 12.5))),
             ]),
@@ -861,7 +866,7 @@ class SmallCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
-    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18), border: Border.all(color: line)),
+    decoration: BoxDecoration(color: TColor(0xFFFFFFFF), borderRadius: BorderRadius.circular(18), border: Border.all(color: line)),
     child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
       Row(children: [
         Expanded(child: Text(title, style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.w600, color: ink))),

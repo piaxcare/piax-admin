@@ -12,6 +12,7 @@ import '../session.dart';
 import '../widgets/brand.dart';
 import 'order_detail_screen.dart';
 import 'orders_screen.dart' show OrderFilter;
+import 'package:piax_orders_admin/palette.dart';
 
 /// Screen widths where the dashboard takes over from the phone list, and where the order opens beside the table.
 const dashboardMinWidth = 700.0;
@@ -212,7 +213,7 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
         final contentWidth = expanded ? fullWidth : panelWidth;
         const slide = Duration(milliseconds: 260);
         return Scaffold(
-          backgroundColor: const Color(0xFFF2F6F5),
+          backgroundColor: const TColor(0xFFF2F6F5),
           body: SafeArea(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -267,7 +268,7 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
                     clipBehavior: Clip.hardEdge,
                     decoration: const BoxDecoration(
                       color: mist,
-                      border: Border(left: BorderSide(color: Color(0xFFE1E8E6))),
+                      border: Border(left: BorderSide(color: TColor(0xFFE1E8E6))),
                     ),
                     onEnd: () {
                       if (widget.selectedId == null && _lastSelected != null) setState(() => _lastSelected = null);
@@ -326,8 +327,8 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
                     const SizedBox(height: 18),
                     if (widget.defaultPassword) ...[
                       _Banner(
-                        color: const Color(0xFFFFF4D6),
-                        ink: const Color(0xFF6B4600),
+                        color: const TColor(0xFFFFF4D6),
+                        ink: const TColor(0xFF6B4600),
                         icon: Icons.warning_amber_rounded,
                         text: 'You’re using the default password. Anyone who knows admin / admin can see customer details.',
                         action: 'Change it',
@@ -337,7 +338,7 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
                     ],
                     if (widget.fresh.isNotEmpty) ...[
                       _Banner(
-                        color: const Color(0xFFDDF3EC),
+                        color: const TColor(0xFFDDF3EC),
                         ink: brand,
                         icon: Icons.notifications_active_outlined,
                         text: widget.fresh.length == 1
@@ -350,8 +351,8 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
                     ],
                     if (stats.refundsDue > 0) ...[
                       _Banner(
-                        color: const Color(0xFFFFF4D6),
-                        ink: const Color(0xFF6B4600),
+                        color: const TColor(0xFFFFF4D6),
+                        ink: const TColor(0xFF6B4600),
                         icon: Icons.currency_exchange,
                         text: stats.refundsDue == 1
                             ? '1 cancelled order is waiting for its refund (${rupees(stats.refundsDueAmount)}).'
@@ -374,9 +375,9 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
                   child: Container(
                     clipBehavior: Clip.antiAlias,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: TColor(0xFFFFFFFF),
                       borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: const Color(0xFFE1E8E6)),
+                      border: Border.all(color: const TColor(0xFFE1E8E6)),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -440,11 +441,11 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
               children: [
                 Text(
                   menuTitle(context, 'Orders', page: AppPage.orders),
-                  style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w600, color: Color(0xFF0C1C19), letterSpacing: -.5),
+                  style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w600, color: TColor(0xFF0C1C19), letterSpacing: -.5),
                 ),
                 Text(
                   '${weekdayDate(now)} · updated ${timeOnly(_updatedAt)}',
-                  style: const TextStyle(color: Color(0xFF5B6B67), fontSize: 14),
+                  style: const TextStyle(color: TColor(0xFF5B6B67), fontSize: 14),
                 ),
               ],
             ),
@@ -464,14 +465,14 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
                   prefixIcon: const Icon(Icons.search),
                   isDense: true,
                   filled: true,
-                  fillColor: Colors.white,
+                  fillColor: TColor(0xFFFFFFFF),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(999),
-                    borderSide: const BorderSide(color: Color(0xFFDCE5E2)),
+                    borderSide: const BorderSide(color: TColor(0xFFDCE5E2)),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(999),
-                    borderSide: const BorderSide(color: Color(0xFFDCE5E2)),
+                    borderSide: const BorderSide(color: TColor(0xFFDCE5E2)),
                   ),
                   suffixIcon: widget.search.text.isEmpty
                       ? null
@@ -499,7 +500,7 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
     final tiles = [
       _Stat(
         icon: Icons.inventory_2_outlined,
-        tone: const Color(0xFF0B5B4E),
+        tone: const TColor(0xFF0B5B4E),
         value: '${s.toPack}',
         label: 'To pack',
         hint: 'Paid, waiting to be packed',
@@ -507,7 +508,7 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
       ),
       _Stat(
         icon: Icons.local_shipping_outlined,
-        tone: const Color(0xFF5B3F73),
+        tone: const TColor(0xFF5B3F73),
         value: '${s.readyToShip}',
         label: 'Ready to ship',
         hint: 'Packed, hand to courier',
@@ -515,7 +516,7 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
       ),
       _Stat(
         icon: Icons.route_outlined,
-        tone: const Color(0xFF2B3A5C),
+        tone: const TColor(0xFF2B3A5C),
         value: '${s.inTransit}',
         label: 'On the way',
         hint: 'Shipped or out for delivery',
@@ -523,7 +524,7 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
       ),
       _Stat(
         icon: Icons.check_circle_outline,
-        tone: const Color(0xFF3E5E3C),
+        tone: const TColor(0xFF3E5E3C),
         value: '${s.deliveredToday}',
         label: 'Delivered today',
         hint: 'Reached the customer',
@@ -531,7 +532,7 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
       ),
       _Stat(
         icon: Icons.hourglass_empty,
-        tone: const Color(0xFF8A5A00),
+        tone: const TColor(0xFF8A5A00),
         value: '${s.awaitingPayment}',
         label: 'Awaiting payment',
         hint: 'Checkout not paid yet',
@@ -539,7 +540,7 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
       ),
       _Stat(
         icon: Icons.currency_rupee,
-        tone: const Color(0xFF8E4A30),
+        tone: const TColor(0xFF8E4A30),
         value: rupees(s.revenue7d),
         label: 'Sales, 7 days',
         hint: 'Orders not cancelled',
@@ -591,10 +592,10 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
       children: [
         const Text(
           'All orders',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Color(0xFF0C1C19)),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: TColor(0xFF0C1C19)),
         ),
         const SizedBox(width: 12),
-        Text('${widget.orders.length} shown', style: const TextStyle(color: Color(0xFF5B6B67), fontSize: 13.5)),
+        Text('${widget.orders.length} shown', style: const TextStyle(color: TColor(0xFF5B6B67), fontSize: 13.5)),
         const SizedBox(width: 16),
         Expanded(
           child: SingleChildScrollView(
@@ -639,12 +640,12 @@ class _Sidebar extends StatelessWidget {
     Widget heading(String text) => wide
         ? Padding(
             padding: const EdgeInsets.fromLTRB(14, 16, 8, 6),
-            child: Text(text.toUpperCase(), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFF8DB8AE), fontSize: 10.5, fontWeight: FontWeight.w600, letterSpacing: 1.4)),
+            child: Text(text.toUpperCase(), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: TColor(0xFF8DB8AE), fontSize: 10.5, fontWeight: FontWeight.w600, letterSpacing: 1.4)),
           )
-        : const Padding(padding: EdgeInsets.symmetric(vertical: 8, horizontal: 14), child: Divider(height: 1, color: Color(0x33FFFFFF)));
+        : const Padding(padding: EdgeInsets.symmetric(vertical: 8, horizontal: 14), child: Divider(height: 1, color: TColor(0x33FFFFFF)));
 
     Widget item(IconData icon, String label, {bool active = false, VoidCallback? onTap, bool compact = false}) {
-      final color = active ? Colors.white : const Color(0xFFB9D6CF);
+      final color = active ? Colors.white : const TColor(0xFFB9D6CF);
       final child = Container(
         height: compact ? 38 : 46,
         padding: EdgeInsets.symmetric(horizontal: wide ? 14 : 0),
@@ -683,7 +684,7 @@ class _Sidebar extends StatelessWidget {
       width: wide ? 228 : 76,
       padding: const EdgeInsets.fromLTRB(12, 20, 12, 16),
       decoration: const BoxDecoration(
-        gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0xFF0B5B4E), Color(0xFF083F37)]),
+        gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [TColor(0xFF0B5B4E), TColor(0xFF083F37)]),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -702,7 +703,7 @@ class _Sidebar extends StatelessWidget {
                         SizedBox(height: 6),
                         Text(
                           'ORDER DESK',
-                          style: TextStyle(color: Color(0xFFB9D6CF), fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 2),
+                          style: TextStyle(color: TColor(0xFFB9D6CF), fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 2),
                         ),
                       ],
                     ),
@@ -711,7 +712,7 @@ class _Sidebar extends StatelessWidget {
                 IconButton(
                   tooltip: 'Close the sidebar',
                   onPressed: onClose,
-                  icon: const Icon(Icons.keyboard_double_arrow_left, color: Color(0xFFB9D6CF)),
+                  icon: const Icon(Icons.keyboard_double_arrow_left, color: TColor(0xFFB9D6CF)),
                 ),
               ],
             )
@@ -720,7 +721,7 @@ class _Sidebar extends StatelessWidget {
               width: 44,
               height: 44,
               padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+              decoration: BoxDecoration(color: TColor(0xFFFFFFFF), borderRadius: BorderRadius.circular(12)),
               child: Image.asset('assets/brand/icon.png', fit: BoxFit.contain, semanticLabel: 'PIAX'),
             ),
           if (!wide) ...[
@@ -729,7 +730,7 @@ class _Sidebar extends StatelessWidget {
               child: IconButton(
                 tooltip: 'Close the sidebar',
                 onPressed: onClose,
-                icon: const Icon(Icons.keyboard_double_arrow_left, color: Color(0xFFB9D6CF)),
+                icon: const Icon(Icons.keyboard_double_arrow_left, color: TColor(0xFFB9D6CF)),
               ),
             ),
           ],
@@ -762,7 +763,7 @@ class _Sidebar extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 10, left: 4),
               child: Text(
                 server.replaceFirst(RegExp(r'^https?://'), ''),
-                style: const TextStyle(color: Color(0xFF8DB8AE), fontSize: 12),
+                style: const TextStyle(color: TColor(0xFF8DB8AE), fontSize: 12),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -796,7 +797,7 @@ class _Stat extends StatelessWidget {
   );
 
   Widget _tile(bool roomy) => Material(
-    color: Colors.white,
+    color: TColor(0xFFFFFFFF),
     borderRadius: BorderRadius.circular(16),
     child: InkWell(
       borderRadius: BorderRadius.circular(16),
@@ -805,7 +806,7 @@ class _Stat extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFE1E8E6)),
+          border: Border.all(color: const TColor(0xFFE1E8E6)),
         ),
         child: Row(
           children: [
@@ -826,7 +827,7 @@ class _Stat extends StatelessWidget {
                     alignment: Alignment.centerLeft,
                     child: Text(
                       value,
-                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w600, color: Color(0xFF0C1C19), height: 1.1),
+                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w600, color: TColor(0xFF0C1C19), height: 1.1),
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -834,19 +835,19 @@ class _Stat extends StatelessWidget {
                     label,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5, color: Color(0xFF0C1C19)),
+                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5, color: TColor(0xFF0C1C19)),
                   ),
                   if (roomy)
                     Text(
                       hint,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: Color(0xFF5B6B67), fontSize: 12),
+                      style: const TextStyle(color: TColor(0xFF5B6B67), fontSize: 12),
                     ),
                 ],
               ),
             ),
-            if (onTap != null && roomy) const Icon(Icons.chevron_right, size: 18, color: Color(0xFF9AAEA9)),
+            if (onTap != null && roomy) const Icon(Icons.chevron_right, size: 18, color: TColor(0xFF9AAEA9)),
           ],
         ),
       ),
@@ -865,9 +866,9 @@ class _WeekChart extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: TColor(0xFFFFFFFF),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE1E8E6)),
+        border: Border.all(color: const TColor(0xFFE1E8E6)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -877,10 +878,10 @@ class _WeekChart extends StatelessWidget {
               const Expanded(
                 child: Text(
                   'Orders, last 7 days',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15.5, color: Color(0xFF0C1C19)),
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15.5, color: TColor(0xFF0C1C19)),
                 ),
               ),
-              Text('$total total', style: const TextStyle(color: Color(0xFF5B6B67), fontSize: 13)),
+              Text('$total total', style: const TextStyle(color: TColor(0xFF5B6B67), fontSize: 13)),
             ],
           ),
           const SizedBox(height: 14),
@@ -901,7 +902,7 @@ class _WeekChart extends StatelessWidget {
                           children: [
                             Text(
                               '${stats.perDay[i]}',
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF5B6B67)),
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: TColor(0xFF5B6B67)),
                             ),
                             const SizedBox(height: 4),
                             Flexible(
@@ -913,7 +914,7 @@ class _WeekChart extends StatelessWidget {
                                     gradient: LinearGradient(
                                       begin: Alignment.topCenter,
                                       end: Alignment.bottomCenter,
-                                      colors: i == 6 ? [brand2, brand] : [const Color(0xFFB7DDD3), const Color(0xFF9CCFC2)],
+                                      colors: i == 6 ? [brand2, brand] : [const TColor(0xFFB7DDD3), const TColor(0xFF9CCFC2)],
                                     ),
                                   ),
                                 ),
@@ -927,7 +928,7 @@ class _WeekChart extends StatelessWidget {
                                 maxLines: 1,
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: i == 6 ? brand : const Color(0xFF5B6B67),
+                                  color: i == 6 ? brand : const TColor(0xFF5B6B67),
                                   fontWeight: i == 6 ? FontWeight.w600 : FontWeight.w500,
                                 ),
                               ),
@@ -997,7 +998,7 @@ class _TableColumns {
 }
 
 const _rowPadding = EdgeInsets.symmetric(horizontal: 18);
-const _headStyle = TextStyle(color: Color(0xFF5B6B67), fontSize: 12.5, fontWeight: FontWeight.w600, letterSpacing: .4);
+const _headStyle = TextStyle(color: TColor(0xFF5B6B67), fontSize: 12.5, fontWeight: FontWeight.w600, letterSpacing: .4);
 
 class _TableHeader extends StatelessWidget {
   const _TableHeader({required this.columns, required this.sortBy, required this.ascending, required this.onSort});
@@ -1022,7 +1023,7 @@ class _TableHeader extends StatelessWidget {
             Icon(
               sortBy == by ? (ascending ? Icons.arrow_upward : Icons.arrow_downward) : Icons.unfold_more,
               size: 14,
-              color: sortBy == by ? brand : const Color(0xFF9AAEA9),
+              color: sortBy == by ? brand : const TColor(0xFF9AAEA9),
             ),
           ],
         ),
@@ -1032,8 +1033,8 @@ class _TableHeader extends StatelessWidget {
       height: 46,
       padding: _rowPadding,
       decoration: const BoxDecoration(
-        color: Color(0xFFF8FAF9),
-        border: Border(bottom: BorderSide(color: Color(0xFFE1E8E6))),
+        color: TColor(0xFFF8FAF9),
+        border: Border(bottom: BorderSide(color: TColor(0xFFE1E8E6))),
       ),
       child: Row(
         children: [
@@ -1077,30 +1078,30 @@ class _TableRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const ink = Color(0xFF0C1C19);
-    const muted = Color(0xFF5B6B67);
+    const ink = TColor(0xFF0C1C19);
+    const muted = TColor(0xFF5B6B67);
     final payment = order.payment;
     final (payText, payColor) = switch ((payment.method, payment.status)) {
-      ('cod', 'paid') => ('Cash · collected', const Color(0xFF3E5E3C)),
-      ('cod', _) => ('Cash on delivery', const Color(0xFF8A5A00)),
-      (_, 'paid') => ('Paid online', const Color(0xFF3E5E3C)),
-      (_, 'refund_pending') => ('Refund pending', const Color(0xFF8B2E2E)),
-      (_, 'refunding') => ('Refund being sent', const Color(0xFF8A5A00)),
-      (_, 'refunded') => ('Refunded', const Color(0xFF5B6B67)),
-      (_, 'failed') => ('Payment failed', const Color(0xFF8B2E2E)),
-      _ => ('Not paid yet', const Color(0xFF8A5A00)),
+      ('cod', 'paid') => ('Cash · collected', const TColor(0xFF3E5E3C)),
+      ('cod', _) => ('Cash on delivery', const TColor(0xFF8A5A00)),
+      (_, 'paid') => ('Paid online', const TColor(0xFF3E5E3C)),
+      (_, 'refund_pending') => ('Refund pending', const TColor(0xFF8B2E2E)),
+      (_, 'refunding') => ('Refund being sent', const TColor(0xFF8A5A00)),
+      (_, 'refunded') => ('Refunded', const TColor(0xFF5B6B67)),
+      (_, 'failed') => ('Payment failed', const TColor(0xFF8B2E2E)),
+      _ => ('Not paid yet', const TColor(0xFF8A5A00)),
     };
     final place = [order.address.city, order.address.pincode].where((p) => p.isNotEmpty).join(' · ');
     return Material(
-      color: selected ? const Color(0xFFE6F4EF) : Colors.white,
+      color: selected ? const TColor(0xFFE6F4EF) : TColor(0xFFFFFFFF),
       child: InkWell(
         onTap: onTap,
-        hoverColor: const Color(0xFFF2F8F6),
+        hoverColor: const TColor(0xFFF2F8F6),
         child: Container(
           height: 64,
           padding: _rowPadding,
           decoration: BoxDecoration(
-            border: divider ? const Border(bottom: BorderSide(color: Color(0xFFEDF2F0))) : null,
+            border: divider ? const Border(bottom: BorderSide(color: TColor(0xFFEDF2F0))) : null,
             // The open order's green edge.
             gradient: selected
                 ? const LinearGradient(colors: [brand, brand, Colors.transparent, Colors.transparent], stops: [0, .004, .004, 1])
@@ -1118,7 +1119,7 @@ class _TableRow extends StatelessWidget {
                         decoration: BoxDecoration(color: brand, borderRadius: BorderRadius.circular(6)),
                         child: const Text(
                           'NEW',
-                          style: TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.w600),
+                          style: TextStyle(color: Color(0xFFFFFFFF), fontSize: 10.5, fontWeight: FontWeight.w600),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -1228,12 +1229,12 @@ class _TableMessage extends StatelessWidget {
     padding: const EdgeInsets.all(40),
     child: Column(
       children: [
-        Icon(icon, size: 36, color: const Color(0xFF9AAEA9)),
+        Icon(icon, size: 36, color: const TColor(0xFF9AAEA9)),
         const SizedBox(height: 10),
         Text(
           text,
           textAlign: TextAlign.center,
-          style: const TextStyle(color: Color(0xFF5B6B67), fontSize: 15),
+          style: const TextStyle(color: TColor(0xFF5B6B67), fontSize: 15),
         ),
       ],
     ),

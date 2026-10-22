@@ -8,6 +8,7 @@ import '../format.dart';
 import 'charts.dart';
 import 'dashboard_widgets.dart' show greens, ink, muted, line;
 import 'insights.dart';
+import 'package:piax_orders_admin/palette.dart';
 
 // Members, made easy to read: a card with a letter avatar, who they are, badges (subscriber, repeat buyer, blocked)
 // and their order numbers; and, on the member's page, a profile with numbers and charts: how their orders ended,
@@ -37,7 +38,7 @@ class LetterAvatar extends StatelessWidget {
       ),
       child: Text(
         letter,
-        style: TextStyle(color: Colors.white, fontSize: size * 0.42, fontWeight: FontWeight.w600),
+        style: TextStyle(color: Color(0xFFFFFFFF), fontSize: size * 0.42, fontWeight: FontWeight.w600),
       ),
     );
   }
@@ -68,10 +69,10 @@ class _Badge extends StatelessWidget {
 }
 
 List<Widget> memberBadges(Map<String, dynamic> m) => [
-  if (isSubscriber(m)) const _Badge('Subscriber', Icons.card_membership_outlined, Color(0xFF0B5B4E), Color(0xFFDDF3EC)),
-  if (isRepeatBuyer(m)) const _Badge('Repeat buyer', Icons.repeat, Color(0xFF5B4A86), Color(0xFFEDE7F6)),
-  if (_n(m['orders']) == 0) const _Badge('No orders yet', Icons.hourglass_empty, Color(0xFF475569), Color(0xFFEEF2F1)),
-  if (m['status'] == 'Blocked') const _Badge('Blocked', Icons.block, Color(0xFF8B2E2E), Color(0xFFF3E3E3)),
+  if (isSubscriber(m)) const _Badge('Subscriber', Icons.card_membership_outlined, TColor(0xFF0B5B4E), TColor(0xFFDDF3EC)),
+  if (isRepeatBuyer(m)) const _Badge('Repeat buyer', Icons.repeat, TColor(0xFF5B4A86), TColor(0xFFEDE7F6)),
+  if (_n(m['orders']) == 0) const _Badge('No orders yet', Icons.hourglass_empty, TColor(0xFF475569), TColor(0xFFEEF2F1)),
+  if (m['status'] == 'Blocked') const _Badge('Blocked', Icons.block, TColor(0xFF8B2E2E), TColor(0xFFF3E3E3)),
 ];
 
 /// The member's card in the list: avatar, name, email and city, badges, and their order numbers at a glance.
@@ -101,7 +102,7 @@ class MemberCard extends StatelessWidget {
       ),
     );
     return Material(
-      color: Colors.white,
+      color: TColor(0xFFFFFFFF),
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
@@ -144,7 +145,7 @@ class MemberCard extends StatelessWidget {
                   if (onEdit != null)
                     IconButton(tooltip: 'Edit member', icon: const Icon(Icons.edit_outlined, size: 19), onPressed: onEdit, visualDensity: VisualDensity.compact)
                   else
-                    const Icon(Icons.chevron_right, color: Color(0xFF94A3B8)),
+                    const Icon(Icons.chevron_right, color: TColor(0xFF94A3B8)),
                 ],
               ),
               const SizedBox(height: 10),
@@ -152,13 +153,13 @@ class MemberCard extends StatelessWidget {
               const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.symmetric(vertical: 8),
-                decoration: BoxDecoration(color: const Color(0xFFF7FAF9), borderRadius: BorderRadius.circular(12)),
+                decoration: BoxDecoration(color: const TColor(0xFFF7FAF9), borderRadius: BorderRadius.circular(12)),
                 child: Row(
                   children: [
                     stat('Orders', m['orders'], ink),
                     stat('Delivered', m['delivered'], greens[0]),
-                    stat('Cancelled', m['cancelled'], const Color(0xFFB3261E)),
-                    stat('Refunded', m['refunded'], const Color(0xFF8A5A00)),
+                    stat('Cancelled', m['cancelled'], const TColor(0xFFB3261E)),
+                    stat('Refunded', m['refunded'], const TColor(0xFF8A5A00)),
                   ],
                 ),
               ),
@@ -191,9 +192,9 @@ class MemberProfile extends StatelessWidget {
     final now = DateTime.now();
     String month(int i) => DateFormat('MMM').format(DateTime(now.year, now.month - (5 - i)));
 
-    Widget tile(String label, String value, IconData icon, {Color color = const Color(0xFF0B5B4E)}) => Container(
+    Widget tile(String label, String value, IconData icon, {Color color = const TColor(0xFF0B5B4E)}) => Container(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: const Color(0xFFF7FAF9), borderRadius: BorderRadius.circular(14)),
+      decoration: BoxDecoration(color: const TColor(0xFFF7FAF9), borderRadius: BorderRadius.circular(14)),
       child: Row(
         children: [
           Container(
@@ -235,7 +236,7 @@ class MemberProfile extends StatelessWidget {
         Slice('On the way', moving, chartPalette[3]),
         // Checked together (all pairs): teal, blue, yellow, status red.
         Slice('Cancelled, refunded', refunded, chartPalette[4]),
-        Slice('Cancelled, not refunded', cancelled - refunded, const Color(0xFFD03B3B)),
+        Slice('Cancelled, not refunded', cancelled - refunded, const TColor(0xFFD03B3B)),
       ],
       centerLabel: 'orders',
       size: 140,
@@ -286,8 +287,8 @@ class MemberProfile extends StatelessWidget {
                 ),
                 barTouchData: BarTouchData(
                   touchTooltipData: BarTouchTooltipData(
-                    getTooltipColor: (_) => const Color(0xFF1E293B),
-                    getTooltipItem: (group, _, rod, _) => BarTooltipItem('${month(group.x)}: ${rod.toY.toInt()} orders', const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                    getTooltipColor: (_) => const TColor(0xFF1E293B),
+                    getTooltipItem: (group, _, rod, _) => BarTooltipItem('${month(group.x)}: ${rod.toY.toInt()} orders', const TextStyle(color: Color(0xFFFFFFFF), fontSize: 12, fontWeight: FontWeight.w600)),
                   ),
                 ),
                 barGroups: [
@@ -314,14 +315,14 @@ class MemberProfile extends StatelessWidget {
         final tiles = [
           tile('Orders placed', '$orders', Icons.receipt_long_outlined, color: ink),
           tile('Delivered', '$delivered', Icons.local_shipping_outlined),
-          tile('Cancelled', '$cancelled', Icons.cancel_outlined, color: const Color(0xFFB3261E)),
-          tile('Refunded', '$refunded', Icons.currency_exchange, color: const Color(0xFF8A5A00)),
+          tile('Cancelled', '$cancelled', Icons.cancel_outlined, color: const TColor(0xFFB3261E)),
+          tile('Refunded', '$refunded', Icons.currency_exchange, color: const TColor(0xFF8A5A00)),
           tile('Total spent', rupees(spent.round()), Icons.payments_outlined),
-          tile('Average order', rupees(average.round()), Icons.shopping_bag_outlined, color: const Color(0xFF5B4A86)),
+          tile('Average order', rupees(average.round()), Icons.shopping_bag_outlined, color: const TColor(0xFF5B4A86)),
         ];
         final cols = box.maxWidth >= 900 ? 3 : 2;
         final card = BoxDecoration(
-          color: Colors.white,
+          color: TColor(0xFFFFFFFF),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: line),
         );
@@ -366,7 +367,7 @@ class MemberProfile extends StatelessWidget {
                       if (m['paymentMethod'] != null) 'usually pays by ${m['paymentMethod']}',
                       if (isSubscriber(m)) 'on the ${m['plan']} plan',
                     ].join(' · '),
-                    style: const TextStyle(color: Color(0xFF34443F), fontSize: 13),
+                    style: const TextStyle(color: TColor(0xFF34443F), fontSize: 13),
                   ),
                 ],
               ),

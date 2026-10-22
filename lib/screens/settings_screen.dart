@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../admin_modules/nav_config.dart' show AppPage;
 
+import '../admin_modules/clickup_nav.dart' show LayoutSettings, NavCustomizer;
 import '../admin_modules/menu_options_screen.dart';
 import '../admin_modules/admin_search.dart' show globalSearchActions;
 import '../admin_modules/nav_widgets.dart' show PageTreeSlot, menuTitle;
@@ -11,6 +12,7 @@ import '../models.dart';
 import '../session.dart';
 import '../widgets/brand.dart';
 import 'login_screen.dart' show signOut;
+import 'package:piax_orders_admin/palette.dart';
 
 /// The sign-in details: change the username or password (each needs the current password). A change signs out every
 /// other device, and this one carries on with the new session, which is handed back to the orders list on close.
@@ -107,18 +109,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           children: [
                             if (account.defaultPassword) ...[
                               Material(
-                                color: const Color(0xFFFFF4D6),
+                                color: const TColor(0xFFFFF4D6),
                                 borderRadius: BorderRadius.circular(16),
                                 child: const Padding(
                                   padding: EdgeInsets.all(14),
                                   child: Row(
                                     children: [
-                                      Icon(Icons.warning_amber_rounded, color: Color(0xFF8A5A00)),
+                                      Icon(Icons.warning_amber_rounded, color: TColor(0xFF8A5A00)),
                                       SizedBox(width: 12),
                                       Expanded(
                                         child: Text(
                                           'You’re still using the default password. Change it below so only your team can see customer details.',
-                                          style: TextStyle(color: Color(0xFF6B4600), fontSize: 14),
+                                          style: TextStyle(color: TColor(0xFF6B4600), fontSize: 14),
                                         ),
                                       ),
                                     ],
@@ -140,7 +142,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         backgroundColor: Colors.white.withValues(alpha: .16),
                                         child: Text(
                                           account.username.isEmpty ? '?' : account.username[0].toUpperCase(),
-                                          style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w600),
+                                          style: const TextStyle(color: Color(0xFFFFFFFF), fontSize: 24, fontWeight: FontWeight.w600),
                                         ),
                                       ),
                                       const SizedBox(width: 16),
@@ -153,7 +155,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                             Text(
                                               account.username,
                                               overflow: TextOverflow.ellipsis,
-                                              style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w600),
+                                              style: const TextStyle(color: Color(0xFFFFFFFF), fontSize: 22, fontWeight: FontWeight.w600),
                                             ),
                                             Text(
                                               '${account.updatedAt == null ? 'Sign-in never changed' : 'Last changed ${dateTime(account.updatedAt!)}'} · ${_api.base.replaceFirst(RegExp(r'^https?://'), '')}',
@@ -172,7 +174,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             if (widget.api.isDemo)
                               const Text(
                                 'This app runs on dummy data without signing in, so there’s no username or password to change here.',
-                                style: TextStyle(color: Color(0xFF5A6C68), fontSize: 13.5),
+                                style: TextStyle(color: TColor(0xFF5A6C68), fontSize: 13.5),
                               )
                             else if (wide)
                               IntrinsicHeight(
@@ -193,12 +195,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             const SizedBox(height: 16),
                             const _SidebarBehaviour(),
                             const SizedBox(height: 16),
+                            const _Card(title: 'Layout & features', children: [LayoutSettings()]),
+                            const SizedBox(height: 16),
+                            const _Card(title: 'Navigation', children: [NavCustomizer()]),
+                            const SizedBox(height: 16),
                             _Card(
                               title: 'Dropdown menus',
                               children: [
                                 const Text(
                                   'Edit the values in the dropdowns of every add and edit form: add, rename, reorder or remove them, or go back to the defaults.',
-                                  style: TextStyle(color: Color(0xFF5A6C68), fontSize: 13.5),
+                                  style: TextStyle(color: TColor(0xFF5A6C68), fontSize: 13.5),
                                 ),
                                 const SizedBox(height: 12),
                                 Align(
@@ -351,7 +357,7 @@ class _SidebarBehaviourState extends State<_SidebarBehaviour> {
     return _Card(
       title: 'Sidebar',
       children: [
-        const Text('When a new page opens, the sidebar is…', style: TextStyle(color: Color(0xFF5A6C68), fontSize: 13.5)),
+        const Text('When a new page opens, the sidebar is…', style: TextStyle(color: TColor(0xFF5A6C68), fontSize: 13.5)),
         const SizedBox(height: 12),
         SegmentedButton<String>(
           showSelectedIcon: false,
@@ -363,9 +369,9 @@ class _SidebarBehaviourState extends State<_SidebarBehaviour> {
           },
         ),
         const SizedBox(height: 10),
-        Text(_choices.firstWhere((c) => c.$1 == mode).$4, style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 13)),
+        Text(_choices.firstWhere((c) => c.$1 == mode).$4, style: const TextStyle(color: TColor(0xFF5A6C68), fontSize: 13)),
         const SizedBox(height: 4),
-        const Text('You can always open or fold it with the arrows at its top. On phones the sidebar is the menu button’s side drawer.', style: TextStyle(color: Color(0xFF8A9A96), fontSize: 12.5)),
+        const Text('You can always open or fold it with the arrows at its top. On phones the sidebar is the menu button’s side drawer.', style: TextStyle(color: TColor(0xFF8A9A96), fontSize: 12.5)),
       ],
     );
   }
@@ -431,7 +437,7 @@ class _PasswordFormState extends State<_PasswordForm> {
       const SizedBox(height: 8),
       const Text(
         'Changing the password signs out the app on every other device.',
-        style: TextStyle(color: Color(0xFF5B6B67), fontSize: 13),
+        style: TextStyle(color: TColor(0xFF5B6B67), fontSize: 13),
       ),
       const SizedBox(height: 14),
       FilledButton(onPressed: _busy ? null : _submit, child: Text(_busy ? 'Saving…' : 'Save password')),

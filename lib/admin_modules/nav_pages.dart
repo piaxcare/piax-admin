@@ -14,6 +14,7 @@ import 'nav_config.dart';
 import 'nav_widgets.dart' show PageTreeSlot;
 import 'option_store.dart';
 import 'record_filter.dart';
+import 'package:piax_orders_admin/palette.dart';
 
 // The content of the console's menu pages that have no screen of their own yet: one page template, filled from a
 // short spec per page (what it tracks, its columns and the range of each), with dummy rows made from the page's id so
@@ -653,10 +654,10 @@ String _weighted(math.Random r, List<String> pool) {
     'Retired', 'Delayed', 'Empty', 'Loss-making', 'Not allowed', 'Missed', 'Update failed', 'Over budget', 'Negative', 'Shortfall', 'Below target', 'Unprofitable',
     'Weak', 'Revoked', 'Discontinued', 'Suppressed', 'Ended',
   };
-  if (good.contains(status)) return (const Color(0xFFDDF3EC), const Color(0xFF0B5B4E));
-  if (stopped.contains(status)) return (const Color(0xFFF3E3E3), const Color(0xFF8B2E2E));
-  if (waiting.contains(status)) return (const Color(0xFFFFF4D6), const Color(0xFF8A5A00));
-  return (const Color(0xFFEEF2F1), const Color(0xFF475569));
+  if (good.contains(status)) return (const TColor(0xFFDDF3EC), const TColor(0xFF0B5B4E));
+  if (stopped.contains(status)) return (const TColor(0xFFF3E3E3), const TColor(0xFF8B2E2E));
+  if (waiting.contains(status)) return (const TColor(0xFFFFF4D6), const TColor(0xFF8A5A00));
+  return (const TColor(0xFFEEF2F1), const TColor(0xFF475569));
 }
 
 String _cell(Col c, Object? v) {
@@ -733,7 +734,7 @@ class _NavModulePageState extends State<NavModulePage> {
     if (_split) return setState(() => _selected = identical(_selected, row) ? null : row);
     await Navigator.of(context).push(MaterialPageRoute(
       builder: (_) => Scaffold(
-        backgroundColor: const Color(0xFFF2F6F5),
+        backgroundColor: const TColor(0xFFF2F6F5),
         appBar: AppBar(title: Text('${row['ID']}', style: const TextStyle(fontWeight: FontWeight.w600))),
         body: StatefulBuilder(
           builder: (context, refresh) => RowDetail(
@@ -758,7 +759,7 @@ class _NavModulePageState extends State<NavModulePage> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text('Delete ${row['ID']}?'),
-        content: Text('This ${s.entity.toLowerCase()} is removed from the demo data.'),
+        content: Text('This ${s.entity.toLowerCase()} is removed.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Keep it')),
           FilledButton(style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error), onPressed: () => Navigator.pop(context, true), child: const Text('Delete')),
@@ -905,8 +906,8 @@ class _NavModulePageState extends State<NavModulePage> {
         statusCounts[st] = data.where((r) => r[statusCol.label] == st).length;
       }
     }
-    final bad = statusCounts.entries.where((e) => demoTone(e.key).$2 == const Color(0xFF8B2E2E)).fold(0, (a, e) => a + e.value);
-    final waiting = statusCounts.entries.where((e) => demoTone(e.key).$2 == const Color(0xFF8A5A00)).fold(0, (a, e) => a + e.value);
+    final bad = statusCounts.entries.where((e) => demoTone(e.key).$2 == const TColor(0xFF8B2E2E)).fold(0, (a, e) => a + e.value);
+    final waiting = statusCounts.entries.where((e) => demoTone(e.key).$2 == const TColor(0xFF8A5A00)).fold(0, (a, e) => a + e.value);
     final moneySum = moneyCol == null ? 0 : data.fold<int>(0, (a, r) => a + (r[moneyCol.label] as int));
     final numAvg = numCol == null ? 0.0 : data.fold<int>(0, (a, r) => a + (r[numCol.label] as int)) / math.max(1, total);
     final cards = <HeadlineCard>[
@@ -946,13 +947,11 @@ class _NavModulePageState extends State<NavModulePage> {
     String weekLabel(int i) => DateFormat('d MMM').format(start.add(Duration(days: 7 * i)));
 
     // Status colours (green done, amber waiting, red stopped); statuses sharing a tone step lighter, 30% apart.
-    final seen = <Color, int>{};
     final statusSlices = [
       for (final e in statusCounts.entries)
         () {
           final base = demoTone(e.key).$2;
-          final k = seen.update(base, (n) => n + 1, ifAbsent: () => 0);
-          return Slice(e.key, e.value, Color.lerp(base, Colors.white, 0.3 * k)!);
+          return Slice(e.key, e.value, base);
         }(),
     ];
     final byPick = <String, int>{};
@@ -990,22 +989,13 @@ class _NavModulePageState extends State<NavModulePage> {
     ];
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F6F5),
+      backgroundColor: const TColor(0xFFF2F6F5),
       appBar: AppBar(
         title: Text(item.label, style: const TextStyle(fontWeight: FontWeight.w600)),
         actions: [
-          EditFieldsButton(onPressed: _editFields),
-          const SizedBox(width: 6),
-          Tooltip(
-            message: s.about,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(color: const Color(0xFFFFF4D6), borderRadius: BorderRadius.circular(999)),
-              child: const Text('Demo data', style: TextStyle(color: Color(0xFF7F5300), fontSize: 12, fontWeight: FontWeight.w600)),
-            ),
-          ),
-          const SizedBox(width: 8),
           ...globalSearchActions(context),
+          const SizedBox(width: 8),
+          EditFieldsButton(onPressed: _editFields),
           const SizedBox(width: 8),
         ],
       ),
@@ -1033,7 +1023,7 @@ class _NavModulePageState extends State<NavModulePage> {
                           '${groupCol == null ? '' : breakdownText(weekGroups[i], title: 'By ${groupCol.name.toLowerCase()}', format: moneyCol == null ? null : rupees)}',
                   ],
                 );
-          const tones = [brand, Color(0xFF2B3A5C), Color(0xFF5B3F73), Color(0xFF8A5A00)];
+          const tones = [brand, TColor(0xFF2B3A5C), TColor(0xFF5B3F73), TColor(0xFF8A5A00)];
           final tiles = [
             for (final (i, c) in cards.indexed)
               MiniStat(
@@ -1064,7 +1054,7 @@ class _NavModulePageState extends State<NavModulePage> {
                     child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       const Padding(padding: EdgeInsets.only(top: 5), child: Icon(Icons.circle, size: 7, color: brand)),
                       const SizedBox(width: 10),
-                      Expanded(child: Text(h, style: const TextStyle(color: Color(0xFF26413B), fontSize: 13, height: 1.4))),
+                      Expanded(child: Text(h, style: const TextStyle(color: TColor(0xFF26413B), fontSize: 13, height: 1.4))),
                     ]),
                   ),
               ]),
@@ -1124,7 +1114,7 @@ class _NavModulePageState extends State<NavModulePage> {
               expanded: true,
               onToggle: () => setState(() => _panelExpanded = false),
               child: ColoredBox(
-                color: const Color(0xFFF7FAF9),
+                color: const TColor(0xFFF7FAF9),
                 child: Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 960), child: panelBody)),
               ),
             );
@@ -1136,7 +1126,7 @@ class _NavModulePageState extends State<NavModulePage> {
               curve: Curves.easeOutCubic,
               width: panelBody == null ? 0 : 460,
               clipBehavior: Clip.hardEdge,
-              decoration: const BoxDecoration(color: Color(0xFFF7FAF9), border: Border(left: BorderSide(color: Color(0xFFE1E8E6)))),
+              decoration: const BoxDecoration(color: TColor(0xFFF7FAF9), border: Border(left: BorderSide(color: TColor(0xFFE1E8E6)))),
               child: panelBody == null
                   ? const SizedBox.shrink()
                   : PanelScope(
@@ -1160,7 +1150,7 @@ class _NavModulePageState extends State<NavModulePage> {
       children: [
         Text('All ${s.plural}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
         const SizedBox(height: 4),
-        const Text('Tap a row to see it in full, then edit or delete it.', style: TextStyle(color: Color(0xFF5A6C68), fontSize: 12.5)),
+        const Text('Tap a row to see it in full, then edit or delete it.', style: TextStyle(color: TColor(0xFF5A6C68), fontSize: 12.5)),
         const SizedBox(height: 12),
         FilterBar(
           pageKey: 'nav:${widget.itemId}',
@@ -1191,11 +1181,11 @@ class _NavModulePageState extends State<NavModulePage> {
 
     final Widget body;
     if (shown.isEmpty) {
-      body = const Padding(padding: EdgeInsets.symmetric(vertical: 40), child: Center(child: Text('Nothing matches. Try another search or filter.', style: TextStyle(color: Color(0xFF5A6C68)))));
+      body = const Padding(padding: EdgeInsets.symmetric(vertical: 40), child: Center(child: Text('Nothing matches. Try another search or filter.', style: TextStyle(color: TColor(0xFF5A6C68)))));
     } else if (medium) {
       body = Material(
-        color: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18), side: const BorderSide(color: Color(0xFFE6EEEB))),
+        color: TColor(0xFFFFFFFF),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18), side: const BorderSide(color: TColor(0xFFE6EEEB))),
         clipBehavior: Clip.antiAlias,
         // At least as wide as the card, so the table fills it; wider tables scroll sideways.
         child: LayoutBuilder(
@@ -1210,8 +1200,8 @@ class _NavModulePageState extends State<NavModulePage> {
               return i < 0 ? null : i;
             }(),
             sortAscending: _q.ascending,
-            headingRowColor: const WidgetStatePropertyAll(Color(0xFFF4F8F6)),
-            headingTextStyle: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF34443F), fontSize: 13),
+            headingRowColor: const WidgetStatePropertyAll(TColor(0xFFF4F8F6)),
+            headingTextStyle: const TextStyle(fontWeight: FontWeight.w600, color: TColor(0xFF34443F), fontSize: 13),
             columns: [
               for (final c in s.columns)
                 if (!c.hidden)
@@ -1246,8 +1236,8 @@ class _NavModulePageState extends State<NavModulePage> {
           Padding(
             padding: const EdgeInsets.only(bottom: 10),
             child: Material(
-              color: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: Color(0xFFE6EEEB))),
+              color: TColor(0xFFFFFFFF),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: TColor(0xFFE6EEEB))),
               child: InkWell(
               borderRadius: BorderRadius.circular(16),
               onTap: () => _open(row),
@@ -1263,7 +1253,7 @@ class _NavModulePageState extends State<NavModulePage> {
                   Padding(
                     padding: const EdgeInsets.only(bottom: 3),
                     child: Row(children: [
-                      SizedBox(width: 130, child: Text(c.name, style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 12.5))),
+                      SizedBox(width: 130, child: Text(c.name, style: const TextStyle(color: TColor(0xFF5A6C68), fontSize: 12.5))),
                       Expanded(child: Text(_cell(c, row[c.label]), style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600))),
                     ]),
                   ),
@@ -1397,7 +1387,7 @@ class _DemoRowFormState extends State<DemoRowForm> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text('Delete ${widget.row!['ID']}?'),
-        content: Text('This ${s.entity.toLowerCase()} is removed from the demo data.'),
+        content: Text('This ${s.entity.toLowerCase()} is removed.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Keep it')),
           FilledButton(style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error), onPressed: () => Navigator.pop(context, true), child: const Text('Delete')),
@@ -1484,7 +1474,7 @@ class _DemoRowFormState extends State<DemoRowForm> {
   Widget build(BuildContext context) {
     final editing = widget.row != null;
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F6F5),
+      backgroundColor: const TColor(0xFFF2F6F5),
       appBar: AppBar(
         automaticallyImplyLeading: widget.onDone == null,
         title: Text(editing ? 'Edit ${widget.row!['ID']}' : 'Add ${s.entity.toLowerCase()}', style: const TextStyle(fontWeight: FontWeight.w600)),
@@ -1509,16 +1499,16 @@ class _DemoRowFormState extends State<DemoRowForm> {
               children: [
                 Container(
                   padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(color: const Color(0xFFEFF7F4), borderRadius: BorderRadius.circular(16)),
+                  decoration: BoxDecoration(color: const TColor(0xFFEFF7F4), borderRadius: BorderRadius.circular(16)),
                   child: Text(
                     '${s.about} ${editing ? 'Changes' : 'New ${s.plural}'} stay while the app is open (demo data).',
-                    style: const TextStyle(color: Color(0xFF26413B), fontSize: 13.5, height: 1.4),
+                    style: const TextStyle(color: TColor(0xFF26413B), fontSize: 13.5, height: 1.4),
                   ),
                 ),
                 const SizedBox(height: 16),
                 Container(
                   padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFFE6EEEB))),
+                  decoration: BoxDecoration(color: TColor(0xFFFFFFFF), borderRadius: BorderRadius.circular(20), border: Border.all(color: const TColor(0xFFE6EEEB))),
                   child: LayoutBuilder(
                     builder: (context, box) {
                       final two = box.maxWidth >= 560;
@@ -1566,7 +1556,7 @@ class RowDetail extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
       children: [
         Row(children: [
-          Expanded(child: Text('${row['ID']}', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600, color: Color(0xFF0C1C19)))),
+          Expanded(child: Text('${row['ID']}', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600, color: TColor(0xFF0C1C19)))),
           ?panelExpandButton(context),
           if (onClose != null) IconButton(tooltip: 'Close', icon: const Icon(Icons.close), onPressed: onClose),
         ]),
@@ -1578,8 +1568,8 @@ class RowDetail extends StatelessWidget {
               decoration: BoxDecoration(color: demoTone(status).$1, borderRadius: BorderRadius.circular(999)),
               child: Text(status, style: TextStyle(color: demoTone(status).$2, fontSize: 12.5, fontWeight: FontWeight.w600)),
             ),
-          Text(spec.entity, style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 13)),
-          if (modified != null) Text('· changed ${DateFormat('d MMM, h:mm a').format(modified)}', style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 13)),
+          Text(spec.entity, style: const TextStyle(color: TColor(0xFF5A6C68), fontSize: 13)),
+          if (modified != null) Text('· changed ${DateFormat('d MMM, h:mm a').format(modified)}', style: const TextStyle(color: TColor(0xFF5A6C68), fontSize: 13)),
         ]),
         const SizedBox(height: 16),
         Row(children: [
@@ -1590,31 +1580,29 @@ class RowDetail extends StatelessWidget {
               onPressed: onDelete,
               icon: const Icon(Icons.delete_outline, size: 18),
               label: const Text('Delete'),
-              style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFFB3261E), side: const BorderSide(color: Color(0xFFF0B8B3))),
+              style: OutlinedButton.styleFrom(foregroundColor: const TColor(0xFFB3261E), side: const BorderSide(color: TColor(0xFFF0B8B3))),
             ),
           ),
         ]),
         const SizedBox(height: 18),
         Container(
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFFE6EEEB))),
+          decoration: BoxDecoration(color: TColor(0xFFFFFFFF), borderRadius: BorderRadius.circular(16), border: Border.all(color: const TColor(0xFFE6EEEB))),
           child: Column(children: [
             for (final (i, c) in spec.columns.where((c) => c.kind != ColKind.id && c.kind != ColKind.status && !c.hidden).indexed)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(border: i == 0 ? null : const Border(top: BorderSide(color: Color(0xFFEDF2F0)))),
+                decoration: BoxDecoration(border: i == 0 ? null : const Border(top: BorderSide(color: TColor(0xFFEDF2F0)))),
                 child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  SizedBox(width: 150, child: Text(c.name, style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 13))),
+                  SizedBox(width: 150, child: Text(c.name, style: const TextStyle(color: TColor(0xFF5A6C68), fontSize: 13))),
                   Expanded(
                     child: c.kind == ColKind.file
                         ? AttachmentList(files: attachmentsOf(row[c.label]))
-                        : SelectableText(_cell(c, row[c.label]), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF0C1C19))),
+                        : SelectableText(_cell(c, row[c.label]), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: TColor(0xFF0C1C19))),
                   ),
                 ]),
               ),
           ]),
         ),
-        const SizedBox(height: 12),
-        const Text('Demo data: changes stay while the app is open.', style: TextStyle(color: Color(0xFF8A9A96), fontSize: 12)),
       ],
     );
   }
@@ -1631,7 +1619,7 @@ class _WeekBars extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.fromLTRB(20, 18, 20, 14),
-    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18), border: Border.all(color: line)),
+    decoration: BoxDecoration(color: TColor(0xFFFFFFFF), borderRadius: BorderRadius.circular(18), border: Border.all(color: line)),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(children: [
         Expanded(child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16.5, color: ink))),
@@ -1651,11 +1639,11 @@ class _FileCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final files = attachmentsOf(value);
-    if (files.isEmpty) return const Text('Missing', style: TextStyle(color: Color(0xFF8A9A96), fontStyle: FontStyle.italic));
+    if (files.isEmpty) return const Text('Missing', style: TextStyle(color: TColor(0xFF8A9A96), fontStyle: FontStyle.italic));
     return Tooltip(
       message: files.map((f) => f.name).join('\n'),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Icon(fileIcon(files.first.extension), size: 16, color: const Color(0xFF2D5F80)),
+        Icon(fileIcon(files.first.extension), size: 16, color: const TColor(0xFF2D5F80)),
         const SizedBox(width: 5),
         ConstrainedBox(constraints: const BoxConstraints(maxWidth: 190), child: Text(attachmentsSummary(files), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w500))),
       ]),

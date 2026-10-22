@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import 'models.dart';
+import 'package:piax_orders_admin/palette.dart';
 
 final _rupees = NumberFormat.decimalPattern('en_IN');
 String rupees(int amount) => '₹${_rupees.format(amount)}';
@@ -26,19 +27,19 @@ String ago(DateTime at) {
 }
 
 // PIAX brand colours (the website's --color-brand family and the soft tone palette).
-const brand = Color(0xFF0B5B4E);
-const brand2 = Color(0xFF0F766E);
-const mist = Color(0xFFF8FAFC);
+const brand = TColor(0xFF0B5B4E);
+const brand2 = TColor(0xFF0F766E);
+const mist = TColor(0xFFF8FAFC);
 
 /// Background and text colour for a status badge.
 (Color, Color) statusColors(OrderStatus status) => switch (status) {
-  OrderStatus.placed => (const Color(0xFFFFF4D6), const Color(0xFF8A5A00)),
-  OrderStatus.confirmed => (const Color(0xFFDDF3EC), brand),
-  OrderStatus.packed => (const Color(0xFFEDE6F3), const Color(0xFF5B3F73)),
-  OrderStatus.shipped => (const Color(0xFFE1EAF7), const Color(0xFF2B3A5C)),
-  OrderStatus.outForDelivery => (const Color(0xFFF7E6DE), const Color(0xFF8E4A30)),
-  OrderStatus.delivered => (const Color(0xFFE3EDE2), const Color(0xFF3E5E3C)),
-  OrderStatus.cancelled => (const Color(0xFFF3E3E3), const Color(0xFF8B2E2E)),
+  OrderStatus.placed => (const TColor(0xFFFFF4D6), const TColor(0xFF8A5A00)),
+  OrderStatus.confirmed => (const TColor(0xFFDDF3EC), brand),
+  OrderStatus.packed => (const TColor(0xFFEDE6F3), const TColor(0xFF5B3F73)),
+  OrderStatus.shipped => (const TColor(0xFFE1EAF7), const TColor(0xFF2B3A5C)),
+  OrderStatus.outForDelivery => (const TColor(0xFFF7E6DE), const TColor(0xFF8E4A30)),
+  OrderStatus.delivered => (const TColor(0xFFE3EDE2), const TColor(0xFF3E5E3C)),
+  OrderStatus.cancelled => (const TColor(0xFFF3E3E3), const TColor(0xFF8B2E2E)),
 };
 
 class StatusBadge extends StatelessWidget {

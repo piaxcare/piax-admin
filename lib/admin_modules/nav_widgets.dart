@@ -5,6 +5,8 @@ import 'admin_search.dart';
 import 'nav_config.dart';
 import 'site_builder.dart';
 import 'nav_pages.dart';
+import 'package:piax_orders_admin/palette.dart';
+import 'package:piax_orders_admin/app_layout.dart';
 
 // The navigation pieces built from nav_config.dart: the section tree (sidebar and phone drawer), the folded icon rail,
 // what opening an item does, and the demonstration page for items not built yet.
@@ -35,21 +37,21 @@ void openNavItem(BuildContext context, AdminNav nav, NavItem item, {NavigatorSta
 /// Colours for the dark (sidebar) and light (drawer) versions of the tree.
 class _NavColors {
   const _NavColors.dark()
-    : text = const Color(0xFFB9D6CF),
+    : text = const TColor(0xFFB9D6CF),
       strong = Colors.white,
-      number = const Color(0xFF8DB8AE),
-      activeBg = const Color(0x1FFFFFFF),
+      number = const TColor(0xFF8DB8AE),
+      activeBg = const TColor(0x1FFFFFFF),
       activeFg = Colors.white,
-      guide = const Color(0x33FFFFFF),
-      focus = const Color(0x29FFFFFF);
+      guide = const TColor(0x33FFFFFF),
+      focus = const TColor(0x29FFFFFF);
   const _NavColors.light()
-    : text = const Color(0xFF34443F),
-      strong = const Color(0xFF0C1C19),
-      number = const Color(0xFF8A9A96),
-      activeBg = const Color(0xFFDDF3EC),
+    : text = const TColor(0xFF34443F),
+      strong = const TColor(0xFF0C1C19),
+      number = const TColor(0xFF8A9A96),
+      activeBg = const TColor(0xFFDDF3EC),
       activeFg = brand,
-      guide = const Color(0xFFDCE6E3),
-      focus = const Color(0x1A0B5B4E);
+      guide = const TColor(0xFFDCE6E3),
+      focus = const TColor(0x1A0B5B4E);
   final Color text, strong, number, activeBg, activeFg, guide, focus;
 }
 
@@ -212,7 +214,7 @@ class NavRail extends StatelessWidget {
               offset: const Offset(64, 0),
               onSelected: (item) => openNavItem(context, nav, item),
               itemBuilder: (_) => [
-                PopupMenuItem<NavItem>(enabled: false, child: Text('${s.numbered}  ${s.label}', style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF0C1C19)))),
+                PopupMenuItem<NavItem>(enabled: false, child: Text('${s.numbered}  ${s.label}', style: const TextStyle(fontWeight: FontWeight.w600, color: TColor(0xFF0C1C19)))),
                 for (final item in s.items)
                   PopupMenuItem<NavItem>(
                     value: item,
@@ -223,7 +225,7 @@ class NavRail extends StatelessWidget {
                 height: 44,
                 decoration: BoxDecoration(color: activeSection == s.id ? Colors.white.withValues(alpha: .12) : null, borderRadius: BorderRadius.circular(12)),
                 alignment: Alignment.center,
-                child: Icon(s.icon, size: 21, color: activeSection == s.id ? Colors.white : const Color(0xFFB9D6CF)),
+                child: Icon(s.icon, size: 21, color: activeSection == s.id ? Colors.white : const TColor(0xFFB9D6CF)),
               ),
             ),
           ),
@@ -251,7 +253,7 @@ class NavDemoPage extends StatelessWidget {
     }
     final (section, item) = found;
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F6F5),
+      backgroundColor: const TColor(0xFFF2F6F5),
       appBar: AppBar(title: Text(item.label, style: const TextStyle(fontWeight: FontWeight.w600))),
       body: Center(
         child: ConstrainedBox(
@@ -262,36 +264,30 @@ class NavDemoPage extends StatelessWidget {
               const PageTreeSlot(),
               Container(
                 padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFFE6EEEB))),
+                decoration: BoxDecoration(color: TColor(0xFFFFFFFF), borderRadius: BorderRadius.circular(20), border: Border.all(color: const TColor(0xFFE6EEEB))),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Row(children: [
                     Container(
                       width: 48,
                       height: 48,
-                      decoration: BoxDecoration(color: const Color(0xFFD8EEE3), borderRadius: BorderRadius.circular(14)),
+                      decoration: BoxDecoration(color: const TColor(0xFFD8EEE3), borderRadius: BorderRadius.circular(14)),
                       child: Icon(section.icon, color: brand),
                     ),
                     const SizedBox(width: 14),
-                    Expanded(child: Text(item.label, style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w600, color: Color(0xFF0C1C19)))),
+                    Expanded(child: Text(item.label, style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w600, color: TColor(0xFF0C1C19)))),
                   ]),
                   const SizedBox(height: 14),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(color: const Color(0xFFFFF4D6), borderRadius: BorderRadius.circular(999)),
-                    child: const Text('Demonstration page: not built yet', style: TextStyle(color: Color(0xFF7F5300), fontSize: 12, fontWeight: FontWeight.w600)),
-                  ),
-                  const SizedBox(height: 12),
                   Text(
                     'This page belongs to ${section.label}, which ${section.purpose[0].toLowerCase()}${section.purpose.substring(1)} '
                     'It has no screen or data yet; nothing here is live.',
-                    style: const TextStyle(color: Color(0xFF34443F), fontSize: 14, height: 1.45),
+                    style: const TextStyle(color: TColor(0xFF34443F), fontSize: 14, height: 1.45),
                   ),
                 ]),
               ),
               const SizedBox(height: 14),
               Material(
-                color: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: const BorderSide(color: Color(0xFFE6EEEB))),
+                color: TColor(0xFFFFFFFF),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: const BorderSide(color: TColor(0xFFE6EEEB))),
                 child: Padding(
                 padding: const EdgeInsets.all(18),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -330,8 +326,8 @@ class PageTree extends StatelessWidget {
   final String? itemId;
   final String? fallback;
 
-  static const _muted = Color(0xFF5A6C68);
-  static const _ink = Color(0xFF0C1C19);
+  static const _muted = TColor(0xFF5A6C68);
+  static const _ink = TColor(0xFF0C1C19);
 
   void _open(BuildContext context, NavItem item) => openNavItem(context, nav, item);
 
@@ -348,7 +344,7 @@ class PageTree extends StatelessWidget {
     ),
   );
 
-  static const _sep = Icon(Icons.chevron_right, size: 16, color: Color(0xFF8A9A96));
+  static const _sep = Icon(Icons.chevron_right, size: 16, color: TColor(0xFF8A9A96));
 
   @override
   Widget build(BuildContext context) {
@@ -407,7 +403,7 @@ class PageTreeSlot extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scope = context.dependOnInheritedWidgetOfExactType<PageTreeScope>();
-    if (scope == null) return const SizedBox.shrink();
+    if (scope == null || !AppLayout.instance.breadcrumb) return const SizedBox.shrink();
     return Padding(
       padding: EdgeInsets.only(bottom: bottom),
       child: Align(alignment: Alignment.centerLeft, child: Transform.translate(offset: const Offset(-6, 0), child: PageTree(nav: scope.nav, itemId: scope.itemId, fallback: scope.fallback))),

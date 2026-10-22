@@ -15,23 +15,24 @@ import '../format.dart';
 import '../models.dart';
 import '../widgets/brand.dart';
 import 'login_screen.dart' show signOut;
+import 'package:piax_orders_admin/palette.dart';
 
 // Chart colours. Products keep one colour each in every chart (a fixed order, checked for colour-blind separation);
 // single-series charts use the brand teal; order steps use one teal ramp, light to dark, with grey for cancelled.
 // Text never takes a series colour: values and labels stay in the ink colours.
-const _ink = Color(0xFF0C1C19);
-const _muted = Color(0xFF5B6B67);
-const _grid = Color(0xFFE6ECEA);
-const _series = Color(0xFF0F766E);
-const _up = Color(0xFF0F766E);
-const _down = Color(0xFFD9582B);
+const _ink = TColor(0xFF0C1C19);
+const _muted = TColor(0xFF5B6B67);
+const _grid = TColor(0xFFE6ECEA);
+const _series = TColor(0xFF0F766E);
+const _up = TColor(0xFF0F766E);
+const _down = TColor(0xFFD9582B);
 const productColours = {
-  'vera': Color(0xFF4C9A2A),
-  'luma': Color(0xFFB784E6),
-  'nocte': Color(0xFF2C4FA8),
-  'seren': Color(0xFFEB6834),
-  'cycle': Color(0xFF12A58A),
-  'other': Color(0xFF8A8F8C),
+  'vera': TColor(0xFF4C9A2A),
+  'luma': TColor(0xFFB784E6),
+  'nocte': TColor(0xFF2C4FA8),
+  'seren': TColor(0xFFEB6834),
+  'cycle': TColor(0xFF12A58A),
+  'other': TColor(0xFF8A8F8C),
 };
 const productNames = {
   'vera': 'VERA 240mm',
@@ -42,12 +43,12 @@ const productNames = {
   'other': 'Other',
 };
 const _stepColours = {
-  OrderStatus.confirmed: Color(0xFFA7E0D3),
-  OrderStatus.packed: Color(0xFF6FC7B4),
-  OrderStatus.shipped: Color(0xFF34A68F),
-  OrderStatus.outForDelivery: Color(0xFF16806F),
-  OrderStatus.delivered: Color(0xFF0B5B4E),
-  OrderStatus.cancelled: Color(0xFFB9B4AC),
+  OrderStatus.confirmed: TColor(0xFFA7E0D3),
+  OrderStatus.packed: TColor(0xFF6FC7B4),
+  OrderStatus.shipped: TColor(0xFF34A68F),
+  OrderStatus.outForDelivery: TColor(0xFF16806F),
+  OrderStatus.delivered: TColor(0xFF0B5B4E),
+  OrderStatus.cancelled: TColor(0xFFB9B4AC),
 };
 
 final _compact = NumberFormat.compactCurrency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
@@ -90,9 +91,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   Widget build(BuildContext context) {
     final facts = _facts;
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F6F5),
+      backgroundColor: const TColor(0xFFF2F6F5),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF2F6F5),
+        backgroundColor: const TColor(0xFFF2F6F5),
         title: Text(menuTitle(context, 'Analytics', page: AppPage.analytics), style: TextStyle(fontWeight: FontWeight.w600)),
         actions: [
           ...globalSearchActions(context),
@@ -345,7 +346,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           titlesData: _titles(a, left: (v) => _money(v)),
           lineTouchData: LineTouchData(
             touchTooltipData: LineTouchTooltipData(
-              getTooltipColor: (_) => Colors.white,
+              getTooltipColor: (_) => TColor(0xFFFFFFFF),
               tooltipBorder: const BorderSide(color: _grid),
               fitInsideHorizontally: true,
               getTooltipItems: (spots) => [
@@ -410,7 +411,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           titlesData: _titles(a, left: (v) => v == v.roundToDouble() ? '${v.round()}' : ''),
           barTouchData: BarTouchData(
             touchTooltipData: BarTouchTooltipData(
-              getTooltipColor: (_) => Colors.white,
+              getTooltipColor: (_) => TColor(0xFFFFFFFF),
               tooltipBorder: const BorderSide(color: _grid),
               fitInsideHorizontally: true,
               getTooltipItem: (group, _, rod, _) => BarTooltipItem(
@@ -468,13 +469,13 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               maxY: extent,
               gridData: FlGridData(
                 drawVerticalLine: false,
-                getDrawingHorizontalLine: (v) => FlLine(color: v == 0 ? const Color(0xFFB9C4C1) : _grid, strokeWidth: v == 0 ? 1.4 : 1),
+                getDrawingHorizontalLine: (v) => FlLine(color: v == 0 ? const TColor(0xFFB9C4C1) : _grid, strokeWidth: v == 0 ? 1.4 : 1),
               ),
               borderData: FlBorderData(show: false),
               titlesData: _titles(a, left: (v) => '${(v * 100).round()}%'),
               barTouchData: BarTouchData(
                 touchTooltipData: BarTouchTooltipData(
-                  getTooltipColor: (_) => Colors.white,
+                  getTooltipColor: (_) => TColor(0xFFFFFFFF),
                   tooltipBorder: const BorderSide(color: _grid),
                   fitInsideHorizontally: true,
                   fitInsideVertically: true,
@@ -738,8 +739,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     final (online, cod) = a.payments;
     final total = online + cod;
     if (total == 0) return const _Empty('No orders in this period yet.');
-    const onlineColour = Color(0xFF0F766E);
-    const codColour = Color(0xFFE0A21A);
+    const onlineColour = TColor(0xFF0F766E);
+    const codColour = TColor(0xFFE0A21A);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -790,9 +791,9 @@ class _Card extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(20),
     decoration: BoxDecoration(
-      color: Colors.white,
+      color: TColor(0xFFFFFFFF),
       borderRadius: BorderRadius.circular(18),
-      border: Border.all(color: const Color(0xFFE1E8E6)),
+      border: Border.all(color: const TColor(0xFFE1E8E6)),
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -835,9 +836,9 @@ class _Kpi extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(16),
     decoration: BoxDecoration(
-      color: Colors.white,
+      color: TColor(0xFFFFFFFF),
       borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: const Color(0xFFE1E8E6)),
+      border: Border.all(color: const TColor(0xFFE1E8E6)),
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -888,8 +889,8 @@ class _ChangeChip extends StatelessWidget {
     final color = good == null
         ? _muted
         : good
-        ? const Color(0xFF1E7B45)
-        : const Color(0xFFB3261E);
+        ? const TColor(0xFF1E7B45)
+        : const TColor(0xFFB3261E);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -929,7 +930,7 @@ class _Stat extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-    decoration: BoxDecoration(color: const Color(0xFFF2F6F5), borderRadius: BorderRadius.circular(12)),
+    decoration: BoxDecoration(color: const TColor(0xFFF2F6F5), borderRadius: BorderRadius.circular(12)),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -1010,7 +1011,7 @@ class _Empty extends StatelessWidget {
     height: 160,
     alignment: Alignment.center,
     padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(color: const Color(0xFFF6F9F8), borderRadius: BorderRadius.circular(12)),
+    decoration: BoxDecoration(color: const TColor(0xFFF6F9F8), borderRadius: BorderRadius.circular(12)),
     child: Text(
       text,
       textAlign: TextAlign.center,

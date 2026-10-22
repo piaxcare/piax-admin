@@ -1,19 +1,16 @@
-import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:piax_orders_admin/palette.dart';
 
 // The layout of the website and the PIAX app, as the Site & app builder edits it: pages, the sections on each page
 // (hero, product grid, cards, tags, ads, FAQ…) and the elements inside them (cards, tags, buttons, stats…), each with
 // its order, visibility, alignment and colour.
 //
-// A demo copy of the layout is kept on this device. Connected to the local website (`next dev` on this machine), the
-// website's Home page is the real one: its own sections (moved and hidden here) and sections added here, sent to the
-// site's /api/dev/site-layout as they change, and the running site follows within a couple of seconds. Other pages and
-// the app stay demo copies. The live (deployed) website never reads it. Product copy uses validated claims only.
+// A demo copy of the layout (mock-up data) is kept on this device, locally and when deployed alike; no website is
+// contacted. Product copy uses validated claims only.
 
 enum Surface {
   website('Website', Icons.language),
@@ -39,14 +36,14 @@ enum Align3 {
 
 /// The brand's soft tones (the website's card tones), plus white and the brand green.
 enum Tone {
-  white('White', Color(0xFFFFFFFF), Color(0xFF0C1C19)),
-  mist('Mist', Color(0xFFF8FAFC), Color(0xFF0C1C19)),
-  mint('Mint', Color(0xFFDDF3EC), Color(0xFF0B5B4E)),
-  sage('Sage', Color(0xFFE4EDE3), Color(0xFF3E5E3C)),
-  lavender('Lavender', Color(0xFFEDE4F3), Color(0xFF5B3F73)),
-  peach('Peach', Color(0xFFFBE9DF), Color(0xFF8E4A30)),
-  navy('Navy', Color(0xFF2B3A5C), Color(0xFFFFFFFF)),
-  brand('Brand green', Color(0xFF0B5B4E), Color(0xFFFFFFFF));
+  white('White', TColor(0xFFFFFFFF), TColor(0xFF0C1C19)),
+  mist('Mist', TColor(0xFFF8FAFC), TColor(0xFF0C1C19)),
+  mint('Mint', TColor(0xFFDDF3EC), TColor(0xFF0B5B4E)),
+  sage('Sage', TColor(0xFFE4EDE3), TColor(0xFF3E5E3C)),
+  lavender('Lavender', TColor(0xFFEDE4F3), TColor(0xFF5B3F73)),
+  peach('Peach', TColor(0xFFFBE9DF), TColor(0xFF8E4A30)),
+  navy('Navy', TColor(0xFF2B3A5C), TColor(0xFFFFFFFF)),
+  brand('Brand green', TColor(0xFF0B5B4E), TColor(0xFFFFFFFF));
 
   const Tone(this.label, this.background, this.ink);
   final String label;
@@ -323,31 +320,6 @@ SiteLayout demoLayout() {
   });
 }
 
-// ---------------------------------------------------------------- the local website
-
-enum SiteLink { off, connecting, live, failed }
-
-/// The website's home page in the shape the local website's /api/dev/site-layout takes (lib/siteLayout.ts there).
-List<Map<String, dynamic>> homeForWebsite(SitePage home) => [
-  for (final s in home.sections)
-    if (s.kind == SectionKind.builtin)
-      {'id': s.ref ?? s.id, 'builtin': true, 'visible': s.visible}
-    else
-      {
-        'id': s.id, 'kind': s.kind.name, 'title': s.title, 'subtitle': s.subtitle, 'align': s.align.name, 'tone': s.tone.name, 'columns': s.columns, 'visible': s.visible,
-        'elements': [for (final e in s.elements) e.toJson()],
-      },
-];
-
-/// The local website's home layout as builder sections.
-List<SiteSection> homeFromWebsite(List<dynamic> home) => [
-  for (final raw in home.whereType<Map<String, dynamic>>())
-    if (raw['builtin'] == true)
-      SiteSection(id: 'site-${raw['id']}', kind: SectionKind.builtin, ref: '${raw['id']}', title: '${raw['label'] ?? raw['id']}', visible: raw['visible'] != false)
-    else
-      SiteSection.fromJson({...raw, 'kind': raw['kind'] ?? 'text'}),
-];
-
 // ---------------------------------------------------------------- the store
 
 /// The layout being edited, with undo and redo, saved on this device after every change.
@@ -367,73 +339,6 @@ class LayoutStore extends ChangeNotifier {
   /// Bumped by undo, redo and reset, so open forms reload their values.
   int revision = 0;
 
-  /// The local website (`next dev` on this machine) the website's Home page is sent to as it's edited.
-  String siteUrl = 'http://localhost:3000';
-  SiteLink link = SiteLink.off;
-  String? linkProblem;
-  Timer? _push;
-
-  /// Connects to the local website: its home page replaces the demo Home, and every change after is sent to it.
-  /// Without a local website (or in a release build) the builder stays on the demo copy.
-  Future<void> connect([String? url]) async {
-    if (url != null) siteUrl = url.trim().replaceAll(RegExp(r'/+$'), '');
-    link = SiteLink.connecting;
-    linkProblem = null;
-    notifyListeners();
-    try {
-      final res = await http.get(Uri.parse('$siteUrl/api/dev/site-layout')).timeout(const Duration(seconds: 4));
-      if (res.statusCode != 200) throw Exception(res.statusCode == 404 ? 'The website isn’t running in development (next dev) here.' : 'The website answered ${res.statusCode}.');
-      final data = jsonDecode(res.body) as Map<String, dynamic>;
-      final home = homeFromWebsite(data['home'] as List? ?? const []);
-      final pages = this.pages(Surface.website);
-      final page = pages.where((p) => p.path == '/').firstOrNull;
-      if (page == null) {
-        pages.insert(0, SitePage(name: 'Home', path: '/', sections: home));
-      } else {
-        page.sections = home;
-      }
-      link = SiteLink.live;
-      revision++;
-      try {
-        (await SharedPreferences.getInstance()).setString('site_builder_url', siteUrl);
-      } catch (_) {}
-      await _save();
-    } catch (e) {
-      link = SiteLink.failed;
-      linkProblem = e is Exception ? e.toString().replaceFirst('Exception: ', '') : 'Couldn’t reach $siteUrl.';
-      if (linkProblem!.contains('Failed host lookup') || linkProblem!.contains('Connection') || linkProblem!.contains('XMLHttpRequest') || linkProblem!.contains('TimeoutException')) {
-        linkProblem = 'Couldn’t reach $siteUrl. Is the website running (npm run dev)?';
-      }
-      notifyListeners();
-    }
-  }
-
-  void disconnect() {
-    link = SiteLink.off;
-    _push?.cancel();
-    notifyListeners();
-  }
-
-  /// Sends the website's Home page to the local website, a moment after the last change.
-  void _schedulePush() {
-    if (link != SiteLink.live) return;
-    _push?.cancel();
-    _push = Timer(const Duration(milliseconds: 250), () async {
-      final home = pages(Surface.website).where((p) => p.path == '/').firstOrNull;
-      if (home == null) return;
-      try {
-        final res = await http
-            .put(Uri.parse('$siteUrl/api/dev/site-layout'), headers: {'Content-Type': 'application/json'}, body: jsonEncode({'home': homeForWebsite(home)}))
-            .timeout(const Duration(seconds: 4));
-        if (res.statusCode != 200) throw Exception('The website answered ${res.statusCode}.');
-      } catch (e) {
-        link = SiteLink.failed;
-        linkProblem = 'Lost the local website: changes are kept here. Reconnect to send them.';
-        notifyListeners();
-      }
-    });
-  }
-
   bool get canUndo => _undo.isNotEmpty;
   bool get canRedo => _redo.isNotEmpty;
 
@@ -444,7 +349,6 @@ class LayoutStore extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       final raw = prefs.getString(_prefsKey);
       if (raw != null) layout = SiteLayout.fromJson(jsonDecode(raw) as Map<String, dynamic>);
-      siteUrl = prefs.getString('site_builder_url') ?? siteUrl;
       notifyListeners();
     } catch (_) {
       // Unreadable: the demo copy.
@@ -453,7 +357,6 @@ class LayoutStore extends ChangeNotifier {
 
   Future<void> _save() async {
     notifyListeners();
-    _schedulePush();
     try {
       await (await SharedPreferences.getInstance()).setString(_prefsKey, jsonEncode(layout.toJson()));
     } catch (_) {
@@ -496,20 +399,12 @@ class LayoutStore extends ChangeNotifier {
     _save();
   }
 
-  /// Back to the demo copy (undoable). Connected, the local website's home goes back to its built-in layout too.
+  /// Back to the demo copy (undoable).
   Future<void> reset() async {
     edit((_) {});
-    final wasLive = link == SiteLink.live;
-    link = SiteLink.off;
     layout = demoLayout();
     revision++;
     await _save();
-    if (wasLive) {
-      try {
-        await http.delete(Uri.parse('$siteUrl/api/dev/site-layout')).timeout(const Duration(seconds: 4));
-      } catch (_) {}
-      await connect();
-    }
   }
 
   // Lookups.

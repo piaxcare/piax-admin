@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../format.dart';
 import 'menu_options_screen.dart' show MenuEditorScreen;
+import 'package:piax_orders_admin/palette.dart';
 
 // The values of every dropdown menu in the admin console (a module's choice fields, a content page's choice columns),
 // with the team's own changes: values added through "Other…" in a form, or edited in Settings → Dropdown menus.
@@ -196,9 +197,9 @@ class _ChoiceDropdownState extends State<ChoiceDropdown> {
           const DropdownMenuItem(
             value: _edit,
             child: Row(children: [
-              Icon(Icons.settings_outlined, size: 18, color: Color(0xFF5A6C68)),
+              Icon(Icons.settings_outlined, size: 18, color: TColor(0xFF5A6C68)),
               SizedBox(width: 8),
-              Text('Edit this menu…', style: TextStyle(color: Color(0xFF34443F), fontWeight: FontWeight.w600)),
+              Text('Edit this menu…', style: TextStyle(color: TColor(0xFF34443F), fontWeight: FontWeight.w600)),
             ]),
           ),
         ],

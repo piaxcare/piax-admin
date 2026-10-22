@@ -15,6 +15,7 @@ import 'analytics_screen.dart';
 import 'dashboard_view.dart';
 import 'refunds_screen.dart';
 import 'settings_screen.dart';
+import 'package:piax_orders_admin/palette.dart';
 
 enum OrderFilter {
   open('Open', 'open'),
@@ -374,20 +375,20 @@ class _OrdersScreenState extends State<OrdersScreen> with WidgetsBindingObserver
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
               child: Material(
-                color: const Color(0xFFFFF4D6),
+                color: const TColor(0xFFFFF4D6),
                 borderRadius: BorderRadius.circular(14),
                 child: ListTile(
                   dense: true,
-                  leading: const Icon(Icons.warning_amber_rounded, color: Color(0xFF8A5A00)),
+                  leading: const Icon(Icons.warning_amber_rounded, color: TColor(0xFF8A5A00)),
                   title: const Text(
                     'Change the default password',
-                    style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF6B4600)),
+                    style: TextStyle(fontWeight: FontWeight.w600, color: TColor(0xFF6B4600)),
                   ),
                   subtitle: const Text(
                     'Anyone who knows admin / admin can see customer details.',
-                    style: TextStyle(color: Color(0xFF6B4600)),
+                    style: TextStyle(color: TColor(0xFF6B4600)),
                   ),
-                  trailing: const Icon(Icons.chevron_right, color: Color(0xFF8A5A00)),
+                  trailing: const Icon(Icons.chevron_right, color: TColor(0xFF8A5A00)),
                   onTap: _openSettings,
                 ),
               ),
@@ -396,7 +397,7 @@ class _OrdersScreenState extends State<OrdersScreen> with WidgetsBindingObserver
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
               child: Material(
-                color: const Color(0xFFDDF3EC),
+                color: const TColor(0xFFDDF3EC),
                 borderRadius: BorderRadius.circular(14),
                 child: ListTile(
                   dense: true,
@@ -463,7 +464,7 @@ class _OrderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final muted = const TextStyle(color: Color(0xFF5B6B67), fontSize: 13.5);
+    final muted = const TextStyle(color: TColor(0xFF5B6B67), fontSize: 13.5);
     final place = [order.address.city, order.address.pincode].where((p) => p.isNotEmpty).join(' · ');
     return Card(
       shape: isNew
@@ -488,7 +489,7 @@ class _OrderCard extends StatelessWidget {
                       decoration: BoxDecoration(color: brand, borderRadius: BorderRadius.circular(6)),
                       child: const Text(
                         'NEW',
-                        style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
+                        style: TextStyle(color: Color(0xFFFFFFFF), fontSize: 11, fontWeight: FontWeight.w600),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -516,7 +517,7 @@ class _OrderCard extends StatelessWidget {
                     const SizedBox(width: 8),
                     Text(
                       order.payment.statusLabel,
-                      style: const TextStyle(color: Color(0xFF8A5A00), fontSize: 13, fontWeight: FontWeight.w600),
+                      style: const TextStyle(color: TColor(0xFF8A5A00), fontSize: 13, fontWeight: FontWeight.w600),
                     ),
                   ],
                   const Spacer(),
@@ -543,12 +544,12 @@ class _Message extends StatelessWidget {
     child: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 40, color: const Color(0xFF9AAEA9)),
+        Icon(icon, size: 40, color: const TColor(0xFF9AAEA9)),
         const SizedBox(height: 12),
         Text(
           text,
           textAlign: TextAlign.center,
-          style: const TextStyle(color: Color(0xFF5B6B67), fontSize: 15),
+          style: const TextStyle(color: TColor(0xFF5B6B67), fontSize: 15),
         ),
         if (action != null) ...[const SizedBox(height: 16), action!],
       ],

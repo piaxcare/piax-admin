@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../format.dart';
+import 'package:piax_orders_admin/palette.dart';
 
 // Each product's own discount (Products › Discount section): a percentage or an amount off the selling price, with
 // optional dates, a minimum number of boxes, an offer label and where it applies. The admin sets and previews it here;
@@ -109,28 +110,28 @@ class DiscountPreview extends StatelessWidget {
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: children),
     );
     if (problem != null) {
-      return box(const Color(0xFFFBE7E5), const Color(0xFFF0B8B3), [
-        Row(children: [const Icon(Icons.error_outline, size: 18, color: Color(0xFFB3261E)), const SizedBox(width: 8), Expanded(child: Text(problem, style: const TextStyle(color: Color(0xFF8B2E2E), fontWeight: FontWeight.w600)))]),
+      return box(const TColor(0xFFFBE7E5), const TColor(0xFFF0B8B3), [
+        Row(children: [const Icon(Icons.error_outline, size: 18, color: TColor(0xFFB3261E)), const SizedBox(width: 8), Expanded(child: Text(problem, style: const TextStyle(color: TColor(0xFF8B2E2E), fontWeight: FontWeight.w600)))]),
       ]);
     }
     if (d == null || price == null) {
-      return box(const Color(0xFFF4F8F6), const Color(0xFFE1E8E6), [
-        Text(price == null ? 'Set the selling price to preview a discount.' : 'No discount: customers pay ${rupees(price)}.', style: const TextStyle(color: Color(0xFF5A6C68))),
+      return box(const TColor(0xFFF4F8F6), const TColor(0xFFE1E8E6), [
+        Text(price == null ? 'Set the selling price to preview a discount.' : 'No discount: customers pay ${rupees(price)}.', style: const TextStyle(color: TColor(0xFF5A6C68))),
       ]);
     }
     final after = d.priceFrom(price);
     final state = d.stateAt(at);
     final (stateText, stateColor) = switch (state) {
-      DiscountState.active => ('Running now', const Color(0xFF0F8A5F)),
-      DiscountState.scheduled => ('Starts ${date.format(d.starts!)}', const Color(0xFF8A5A00)),
-      DiscountState.ended => ('Ended ${date.format(d.ends!)}', const Color(0xFF8B2E2E)),
+      DiscountState.active => ('Running now', const TColor(0xFF0F8A5F)),
+      DiscountState.scheduled => ('Starts ${date.format(d.starts!)}', const TColor(0xFF8A5A00)),
+      DiscountState.ended => ('Ended ${date.format(d.ends!)}', const TColor(0xFF8B2E2E)),
       DiscountState.none => ('', Colors.transparent),
     };
-    return box(const Color(0xFFEFF7F4), const Color(0xFFBFE3D6), [
+    return box(const TColor(0xFFEFF7F4), const TColor(0xFFBFE3D6), [
       Row(children: [
         const Icon(Icons.local_offer_outlined, size: 18, color: brand),
         const SizedBox(width: 8),
-        Expanded(child: Text(d.label ?? 'Discount', style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF0C1C19)))),
+        Expanded(child: Text(d.label ?? 'Discount', style: const TextStyle(fontWeight: FontWeight.w600, color: TColor(0xFF0C1C19)))),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
           decoration: BoxDecoration(color: stateColor.withValues(alpha: .12), borderRadius: BorderRadius.circular(999)),
@@ -139,9 +140,9 @@ class DiscountPreview extends StatelessWidget {
       ]),
       const SizedBox(height: 10),
       Wrap(crossAxisAlignment: WrapCrossAlignment.end, spacing: 10, runSpacing: 4, children: [
-        Text(rupees(after), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w600, color: Color(0xFF0C1C19), height: 1)),
-        Text(rupees(price), style: const TextStyle(fontSize: 15, color: Color(0xFF8A9A96), decoration: TextDecoration.lineThrough)),
-        Text('save ${rupees(price - after)} (${((price - after) * 100 / price).round()}%)', style: const TextStyle(fontSize: 13, color: Color(0xFF0F8A5F), fontWeight: FontWeight.w600)),
+        Text(rupees(after), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w600, color: TColor(0xFF0C1C19), height: 1)),
+        Text(rupees(price), style: const TextStyle(fontSize: 15, color: TColor(0xFF8A9A96), decoration: TextDecoration.lineThrough)),
+        Text('save ${rupees(price - after)} (${((price - after) * 100 / price).round()}%)', style: const TextStyle(fontSize: 13, color: TColor(0xFF0F8A5F), fontWeight: FontWeight.w600)),
       ]),
       const SizedBox(height: 8),
       Text(
@@ -150,12 +151,12 @@ class DiscountPreview extends StatelessWidget {
           if (d.minBoxes != null && d.minBoxes! > 1) 'from ${d.minBoxes} boxes in one order',
           if (d.starts != null || d.ends != null) '${d.starts == null ? 'now' : date.format(d.starts!)} – ${d.ends == null ? 'until changed' : date.format(d.ends!)}',
         ].join(' · '),
-        style: const TextStyle(color: Color(0xFF26413B), fontSize: 12.5),
+        style: const TextStyle(color: TColor(0xFF26413B), fontSize: 12.5),
       ),
       if (_num(product['mrp']) case final mrp? when mrp > price)
         Padding(
           padding: const EdgeInsets.only(top: 4),
-          child: Text('Against MRP ${rupees(mrp.round())}: ${((mrp - after) * 100 / mrp).round()}% off in all.', style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 12)),
+          child: Text('Against MRP ${rupees(mrp.round())}: ${((mrp - after) * 100 / mrp).round()}% off in all.', style: const TextStyle(color: TColor(0xFF5A6C68), fontSize: 12)),
         ),
     ]);
   }

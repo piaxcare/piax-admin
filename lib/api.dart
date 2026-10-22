@@ -138,22 +138,6 @@ class AdminApi {
     return Order.fromJson(data['order'] as Map<String, dynamic>);
   }
 
-  // ---------------------------------------------------------------- admin modules (mock-up)
-  // The local website's development-only dummy data for the Admin modules (website: /api/admin/mock). Deployed builds
-  // don't call these; they use the dummy data bundled in the app (lib/admin_modules/repository.dart).
-
-  /// Every module's records: { module: [record, …] }. 404 when the website doesn't serve mock data (production).
-  Future<Map<String, dynamic>> mockModules() async =>
-      (await _send('GET', '/api/admin/mock'))['modules'] as Map<String, dynamic>? ?? {};
-
-  Future<Map<String, dynamic>> mockCreate(String module, Map<String, dynamic> record) async =>
-      (await _send('POST', '/api/admin/mock/$module', body: {'record': record}))['record'] as Map<String, dynamic>;
-
-  Future<Map<String, dynamic>> mockUpdate(String module, String id, Map<String, dynamic> changes) async =>
-      (await _send('PATCH', '/api/admin/mock/$module', body: {'id': id, 'changes': changes}))['record'] as Map<String, dynamic>;
-
-  Future<void> mockDelete(String module, String id) async => _send('DELETE', '/api/admin/mock/$module', query: {'id': id});
-
   Future<Map<String, dynamic>> _send(String method, String path, {Map<String, String>? query, Map<String, dynamic>? body}) async {
     if (_demo case final demo?) {
       try {

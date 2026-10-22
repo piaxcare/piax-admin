@@ -47,7 +47,6 @@ void main() {
 
   testWidgets('a page: header, numbers, charts, then a table that searches, filters and sorts', (tester) async {
     await show(tester, 'purchase-orders', const Size(1500, 2600));
-    expect(find.text('Demo data'), findsOneWidget);
     expect(find.text('All purchase orders'), findsWidgets);
     expect(find.text('Highlights'), findsOneWidget);
     expect(find.textContaining('Showing all 32'), findsOneWidget);

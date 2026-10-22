@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'discounts.dart';
+import 'package:piax_orders_admin/palette.dart';
 
 /// The Admin modules mock-up: the modules of the PIAX backend admin panel (api.piax.co.in/admin), described as data so
 /// one set of screens (list, details, form) shows them all. Records are dummy data (assets/mock/admin_modules.json,
@@ -686,8 +687,8 @@ const modules = <ModuleDef>[
   const good = {'Connected', 'Active', 'Live', 'Published', 'Available', 'Online', 'Open', 'Visible', 'Completed', 'Booked'};
   const waiting = {'Expiring soon', 'Maintenance', 'Draft', 'Scheduled', 'Paused', 'Pending verification', 'Pending KYC', 'Rollout', 'Invited', 'On leave', 'Offline', 'Reported'};
   const stopped = {'Error', 'Hidden', 'Closed', 'Ended', 'Suspended', 'Blocked', 'Cancelled', 'No-show', 'Disabled'};
-  if (good.contains(status)) return (const Color(0xFFDDF3EC), const Color(0xFF0B5B4E));
-  if (waiting.contains(status)) return (const Color(0xFFFFF4D6), const Color(0xFF8A5A00));
-  if (stopped.contains(status)) return (const Color(0xFFF3E3E3), const Color(0xFF8B2E2E));
-  return (const Color(0xFFEEF2F1), const Color(0xFF475569));
+  if (good.contains(status)) return (const TColor(0xFFDDF3EC), const TColor(0xFF0B5B4E));
+  if (waiting.contains(status)) return (const TColor(0xFFFFF4D6), const TColor(0xFF8A5A00));
+  if (stopped.contains(status)) return (const TColor(0xFFF3E3E3), const TColor(0xFF8B2E2E));
+  return (const TColor(0xFFEEF2F1), const TColor(0xFF475569));
 }

@@ -26,6 +26,9 @@ import 'record_filter.dart';
 import 'repository.dart';
 import 'schema.dart';
 
+import 'package:piax_orders_admin/palette.dart';
+import 'package:piax_orders_admin/app_layout.dart';
+
 // The Admin modules mock-up: the backend admin panel's modules (schema.dart) on dummy data (repository.dart).
 // One set of screens serves every module: Home (module groups) → List (search, status filter, add) → Details
 // (fields, one-tap actions, edit, delete) → Form (add / edit).
@@ -80,7 +83,17 @@ Future<void> _handleError(BuildContext context, Object error) async {
 // ================================================================ Home
 
 class ModulesHomeScreen extends StatefulWidget {
-  const ModulesHomeScreen({super.key, required this.api, this.appNav, this.initialModule, this.initialStatus, this.startAdding = false, this.showAllModules = false, this.showSidebar = true, this.onTab});
+  const ModulesHomeScreen({
+    super.key,
+    required this.api,
+    this.appNav,
+    this.initialModule,
+    this.initialStatus,
+    this.startAdding = false,
+    this.showAllModules = false,
+    this.showSidebar = true,
+    this.onTab,
+  });
   final AdminApi api;
 
   /// Its own sidebar on big screens. Off inside the app frame (AdminShell), which has the sidebar for every page.
@@ -215,7 +228,7 @@ class ModulesHomeScreenState extends State<ModulesHomeScreen> {
           )
         : _allModules(repo);
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F7F6),
+      backgroundColor: const TColor(0xFFF4F7F6),
       drawer: shell ? null : AdminDrawer(nav: _nav, server: widget.api.base, onSignOut: widget.api.isDemo ? null : () => signOut(context)),
       appBar: shell
           ? null
@@ -235,7 +248,8 @@ class ModulesHomeScreenState extends State<ModulesHomeScreen> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (shell && widget.showSidebar) AdminSidebar(nav: _nav, activeItemId: _tab == 0 ? 'founder-overview' : null, onSignOut: widget.api.isDemo ? null : () => signOut(context)),
+            if (shell && widget.showSidebar)
+              AdminSidebar(nav: _nav, activeItemId: _tab == 0 ? 'founder-overview' : null, onSignOut: widget.api.isDemo ? null : () => signOut(context)),
             Expanded(
               child: Column(
                 children: [
@@ -246,7 +260,7 @@ class ModulesHomeScreenState extends State<ModulesHomeScreen> {
                         children: [
                           Text(
                             title,
-                            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w600, color: Color(0xFF0C1C19), letterSpacing: -.5),
+                            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w600, color: TColor(0xFF0C1C19), letterSpacing: -.5),
                           ),
                           const SizedBox(width: 24),
                           const Spacer(),
@@ -260,6 +274,9 @@ class ModulesHomeScreenState extends State<ModulesHomeScreen> {
                               ),
                             ),
                           const SizedBox(width: 12),
+                          // In the app frame: search (Ctrl / ⌘ + K), like every page's top bar.
+                          if (!widget.showSidebar && AppLayout.instance.search)
+                            IconButton(tooltip: 'Search (Ctrl / ⌘ + K)', icon: const Icon(Icons.search), onPressed: () => showCommandPalette(context, _nav)),
                           if (repo != null)
                             _Bell(
                               repo: repo,
@@ -270,16 +287,6 @@ class ModulesHomeScreenState extends State<ModulesHomeScreen> {
                           _Profile(server: widget.api.base),
                         ],
                       ),
-                    )
-                  else
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-                      child: SizedBox(width: double.infinity, child: _tabs()),
-                    ),
-                  if (shell)
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(28, 0, 28, 6),
-                      child: Align(alignment: Alignment.centerLeft, child: _tabs()),
                     ),
                   Expanded(child: content),
                 ],
@@ -290,16 +297,6 @@ class ModulesHomeScreenState extends State<ModulesHomeScreen> {
       ),
     );
   }
-
-  Widget _tabs() => SegmentedButton<int>(
-    showSelectedIcon: false,
-    segments: const [
-      ButtonSegment(value: 0, icon: Icon(Icons.space_dashboard_outlined, size: 18), label: Text('Overview')),
-      ButtonSegment(value: 1, icon: Icon(Icons.apps_outlined, size: 18), label: Text('All modules')),
-    ],
-    selected: {_tab},
-    onSelectionChanged: (s) => setTab(s.first),
-  );
 
   Widget _allModules(ModuleRepository repo) => LayoutBuilder(
     builder: (context, box) {
@@ -319,7 +316,7 @@ class ModulesHomeScreenState extends State<ModulesHomeScreen> {
               padding: const EdgeInsets.fromLTRB(4, 22, 4, 10),
               child: Text(
                 group.toUpperCase(),
-                style: const TextStyle(color: Color(0xFF5B6B67), fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 1.6),
+                style: const TextStyle(color: TColor(0xFF5B6B67), fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 1.6),
               ),
             ),
             EqualRows(
@@ -359,10 +356,10 @@ class _Bell extends StatelessWidget {
                   width: 30,
                   alignment: Alignment.center,
                   padding: const EdgeInsets.symmetric(vertical: 3),
-                  decoration: BoxDecoration(color: a.urgency == Urgency.high ? const Color(0xFFFBE7E5) : const Color(0xFFEFF7F4), borderRadius: BorderRadius.circular(8)),
+                  decoration: BoxDecoration(color: a.urgency == Urgency.high ? const TColor(0xFFFBE7E5) : const TColor(0xFFEFF7F4), borderRadius: BorderRadius.circular(8)),
                   child: Text(
                     '${a.count}',
-                    style: TextStyle(fontWeight: FontWeight.w600, color: a.urgency == Urgency.high ? const Color(0xFFB3261E) : brand),
+                    style: TextStyle(fontWeight: FontWeight.w600, color: a.urgency == Urgency.high ? const TColor(0xFFB3261E) : brand),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -376,8 +373,8 @@ class _Bell extends StatelessWidget {
         child: Badge(
           isLabelVisible: urgent > 0,
           label: Text('$urgent'),
-          backgroundColor: const Color(0xFFB3261E),
-          child: const Icon(Icons.notifications_none_rounded, color: Color(0xFF34443F)),
+          backgroundColor: const TColor(0xFFB3261E),
+          child: const Icon(Icons.notifications_none_rounded, color: TColor(0xFF34443F)),
         ),
       ),
     );
@@ -407,9 +404,9 @@ class _Profile extends StatelessWidget {
         children: [
           const Text(
             'PIAX team',
-            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Color(0xFF0C1C19)),
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: TColor(0xFF0C1C19)),
           ),
-          Text('Admin · ${server.replaceFirst(RegExp(r'^https?://'), '')}', style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 11.5)),
+          Text('Admin · ${server.replaceFirst(RegExp(r'^https?://'), '')}', style: const TextStyle(color: TColor(0xFF5A6C68), fontSize: 11.5)),
         ],
       ),
     ],
@@ -424,7 +421,7 @@ class _ModuleTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-    color: Colors.white,
+    color: TColor(0xFFFFFFFF),
     borderRadius: BorderRadius.circular(18),
     child: InkWell(
       borderRadius: BorderRadius.circular(18),
@@ -436,8 +433,8 @@ class _ModuleTile extends StatelessWidget {
             Container(
               width: 44,
               height: 44,
-              decoration: BoxDecoration(color: module.sensitive ? const Color(0xFFFDE7EA) : const Color(0xFFD8EEE3), borderRadius: BorderRadius.circular(12)),
-              child: Icon(module.icon, color: module.sensitive ? const Color(0xFFA8243F) : brand),
+              decoration: BoxDecoration(color: module.sensitive ? const TColor(0xFFFDE7EA) : const TColor(0xFFD8EEE3), borderRadius: BorderRadius.circular(12)),
+              child: Icon(module.icon, color: module.sensitive ? const TColor(0xFFA8243F) : brand),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -456,7 +453,7 @@ class _ModuleTile extends StatelessWidget {
                     module.description,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 12.5),
+                    style: const TextStyle(color: TColor(0xFF5A6C68), fontSize: 12.5),
                   ),
                 ],
               ),
@@ -619,11 +616,16 @@ class _ModuleListScreenState extends State<ModuleListScreen> {
     final shown = _shown;
     final all = widget.repo.records(m.key);
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F6F5),
+      backgroundColor: const TColor(0xFFF2F6F5),
       appBar: AppBar(
-        title: Text(menuTitle(context, m.title, module: m.key), style: const TextStyle(fontWeight: FontWeight.w600)),
+        title: Text(
+          menuTitle(context, m.title, module: m.key),
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
         actions: [
-          if (!m.readOnly && !m.sensitive)
+          ...globalSearchActions(context),
+          if (!m.readOnly && !m.sensitive) ...[
+            const SizedBox(width: 8),
             EditFieldsButton(
               onPressed: () => showFieldEditor(
                 context,
@@ -644,7 +646,7 @@ class _ModuleListScreenState extends State<ModuleListScreen> {
                 ],
               ),
             ),
-          ...globalSearchActions(context),
+          ],
           const SizedBox(width: 8),
         ],
       ),
@@ -698,7 +700,7 @@ class _ModuleListScreenState extends State<ModuleListScreen> {
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 48),
                   child: Center(
-                    child: Text(all.isEmpty ? 'No ${m.title.toLowerCase()} yet.' : 'Nothing matches these filters.', style: const TextStyle(color: Color(0xFF5A6C68))),
+                    child: Text(all.isEmpty ? 'No ${m.title.toLowerCase()} yet.' : 'Nothing matches these filters.', style: const TextStyle(color: TColor(0xFF5A6C68))),
                   ),
                 )
               else
@@ -767,8 +769,8 @@ class _ModuleListScreenState extends State<ModuleListScreen> {
                 width: panel == null ? 0 : (form == null ? 460 : 520),
                 clipBehavior: Clip.hardEdge,
                 decoration: const BoxDecoration(
-                  color: Color(0xFFF2F6F5),
-                  border: Border(left: BorderSide(color: Color(0xFFE1E8E6))),
+                  color: TColor(0xFFF2F6F5),
+                  border: Border(left: BorderSide(color: TColor(0xFFE1E8E6))),
                 ),
                 child: panel == null ? const SizedBox.shrink() : PanelScope(expanded: false, onToggle: () => setState(() => _panelExpanded = true), child: panel),
               ),
@@ -800,7 +802,7 @@ class _RecordCard extends StatelessWidget {
     ].join(' · ');
     final status = module.statusField == null ? null : record[module.statusField];
     return Material(
-      color: Colors.white,
+      color: TColor(0xFFFFFFFF),
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
@@ -826,16 +828,22 @@ class _RecordCard extends StatelessWidget {
                         subtitle,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 13),
+                        style: const TextStyle(color: TColor(0xFF5A6C68), fontSize: 13),
                       ),
                     ],
                   ],
                 ),
               ),
-              if (status != null) ...[const SizedBox(width: 10), _StatusChip('$status')],
-              if (onEdit != null) IconButton(tooltip: 'Edit ${module.singular.toLowerCase()}', icon: const Icon(Icons.edit_outlined, size: 19), onPressed: onEdit, visualDensity: VisualDensity.compact),
+              if (status != null) ...[const SizedBox(width: 10), Flexible(child: _StatusChip('$status'))],
+              if (onEdit != null)
+                IconButton(
+                  tooltip: 'Edit ${module.singular.toLowerCase()}',
+                  icon: const Icon(Icons.edit_outlined, size: 19),
+                  onPressed: onEdit,
+                  visualDensity: VisualDensity.compact,
+                ),
               const SizedBox(width: 4),
-              const Icon(Icons.chevron_right, color: Color(0xFF94A3B8)),
+              const Icon(Icons.chevron_right, color: TColor(0xFF94A3B8)),
             ],
           ),
         ),
@@ -856,9 +864,9 @@ class _ModuleHeader extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: TColor(0xFFFFFFFF),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE6EEEB)),
+        border: Border.all(color: const TColor(0xFFE6EEEB)),
       ),
       child: Row(
         children: [
@@ -868,8 +876,8 @@ class _ModuleHeader extends StatelessWidget {
             Container(
               width: 54,
               height: 54,
-              decoration: BoxDecoration(color: m.sensitive ? const Color(0xFFFDE7EA) : const Color(0xFFD8EEE3), borderRadius: BorderRadius.circular(14)),
-              child: Icon(m.icon, size: 26, color: m.sensitive ? const Color(0xFFA8243F) : brand),
+              decoration: BoxDecoration(color: m.sensitive ? const TColor(0xFFFDE7EA) : const TColor(0xFFD8EEE3), borderRadius: BorderRadius.circular(14)),
+              child: Icon(m.icon, size: 26, color: m.sensitive ? const TColor(0xFFA8243F) : brand),
             ),
           const SizedBox(width: 16),
           Expanded(
@@ -878,12 +886,15 @@ class _ModuleHeader extends StatelessWidget {
               children: [
                 Text(
                   m.title,
-                  style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w600, color: Color(0xFF0C1C19)),
+                  style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w600, color: TColor(0xFF0C1C19)),
                 ),
                 const SizedBox(height: 3),
-                Text(m.description, style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 13.5, height: 1.35)),
+                Text(m.description, style: const TextStyle(color: TColor(0xFF5A6C68), fontSize: 13.5, height: 1.35)),
                 const SizedBox(height: 6),
-                Text('${m.group} · $total ${total == 1 ? 'record' : 'records'}${m.readOnly ? ' · read-only' : ''}', style: const TextStyle(color: Color(0xFF8A9A96), fontSize: 12)),
+                Text(
+                  '${m.group} · $total ${total == 1 ? 'record' : 'records'}${m.readOnly ? ' · read-only' : ''}',
+                  style: const TextStyle(color: TColor(0xFF8A9A96), fontSize: 12),
+                ),
               ],
             ),
           ),
@@ -905,10 +916,10 @@ class _KpiTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-    color: selected ? color.withValues(alpha: 0.08) : Colors.white,
+    color: selected ? color.withValues(alpha: 0.08) : const TColor(0xFFFFFFFF),
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(16),
-      side: BorderSide(color: selected ? color : const Color(0xFFE6EEEB), width: selected ? 1.6 : 1),
+      side: BorderSide(color: selected ? color : const TColor(0xFFE6EEEB), width: selected ? 1.6 : 1),
     ),
     child: InkWell(
       borderRadius: BorderRadius.circular(16),
@@ -934,7 +945,7 @@ class _KpiTile extends StatelessWidget {
                     label,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: Color(0xFF34443F), fontSize: 12.5, fontWeight: FontWeight.w600),
+                    style: const TextStyle(color: TColor(0xFF34443F), fontSize: 12.5, fontWeight: FontWeight.w600),
                   ),
                 ),
               ],
@@ -945,7 +956,7 @@ class _KpiTile extends StatelessWidget {
               alignment: Alignment.centerLeft,
               child: Text(
                 value,
-                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600, color: Color(0xFF0C1C19)),
+                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600, color: TColor(0xFF0C1C19)),
               ),
             ),
             if (caption != null && caption!.isNotEmpty) ...[
@@ -954,7 +965,7 @@ class _KpiTile extends StatelessWidget {
                 caption!,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 11.5),
+                style: const TextStyle(color: TColor(0xFF5A6C68), fontSize: 11.5),
               ),
             ],
           ],
@@ -980,7 +991,9 @@ class _ModuleDashboard extends StatelessWidget {
     final i = insight;
     if (i.total == 0) return const SizedBox.shrink();
     final m = i.module;
-    final trend = i.dates.where((d) => d.weekly.where((n) => n > 0).length >= 2 && const {'renewsAt', 'predictedNext', 'expiresAt', 'endsAt', 'startsAt'}.contains(d.field.key) == false).firstOrNull;
+    final trend = i.dates
+        .where((d) => d.weekly.where((n) => n > 0).length >= 2 && const {'renewsAt', 'predictedNext', 'expiresAt', 'endsAt', 'startsAt'}.contains(d.field.key) == false)
+        .firstOrNull;
     final recent = i.dates.where((d) => d.past30 > 0 || d.next30 > 0).firstOrNull;
     return LayoutBuilder(
       builder: (context, box) {
@@ -1011,23 +1024,37 @@ class _ModuleDashboard extends StatelessWidget {
             onTap: () => onStatus(null),
           ),
           for (final s in i.statuses.where((s) => s.count > 0).take(4))
-            _KpiTile(label: s.label, value: '${s.count}', caption: '${(s.count * 100 / i.total).round()}% of all', color: s.color, selected: status == s.label, onTap: () => onStatus(s.label)),
-          for (final n in i.numbers.take(3)) _KpiTile(label: n.headlineLabel, value: n.headline, caption: n.range.isEmpty ? null : 'from ${n.range}', icon: Icons.insights_outlined, color: const Color(0xFF0F766E)),
+            _KpiTile(
+              label: s.label,
+              value: '${s.count}',
+              caption: '${(s.count * 100 / i.total).round()}% of all',
+              color: s.color,
+              selected: status == s.label,
+              onTap: () => onStatus(s.label),
+            ),
+          for (final n in i.numbers.take(3))
+            _KpiTile(
+              label: n.headlineLabel,
+              value: n.headline,
+              caption: n.range.isEmpty ? null : 'from ${n.range}',
+              icon: Icons.insights_outlined,
+              color: const TColor(0xFF0F766E),
+            ),
           if (recent != null)
             _KpiTile(
               label: recent.field.label,
               value: '${recent.past30 > 0 ? recent.past30 : recent.next30}',
               caption: recent.past30 > 0 ? 'in the last 30 days${recent.next30 > 0 ? ' · ${recent.next30} coming up' : ''}' : 'in the next 30 days',
               icon: Icons.event_note_outlined,
-              color: const Color(0xFF2D5F80),
+              color: const TColor(0xFF2D5F80),
             ),
         ];
         Widget panel(String title, Widget child) => Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: TColor(0xFFFFFFFF),
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: const Color(0xFFE6EEEB)),
+            border: Border.all(color: const TColor(0xFFE6EEEB)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1053,7 +1080,10 @@ class _ModuleDashboard extends StatelessWidget {
                   final grouping = weeklyGrouping(m);
                   final groups = grouping == null ? null : weeklyGroups(records, trend.field.key, grouping.$2);
                   return AreaTrend(
-                    bars: [for (final (k, v) in trend.weekly.indexed) if (k >= from) (k == 11 ? 'This wk' : '${11 - k}w ago', v)],
+                    bars: [
+                      for (final (k, v) in trend.weekly.indexed)
+                        if (k >= from) (k == 11 ? 'This wk' : '${11 - k}w ago', v),
+                    ],
                     details: groups == null ? null : [for (var k = from; k < 12; k++) breakdownText(groups[k], title: grouping!.$1)],
                   );
                 }(),
@@ -1215,7 +1245,11 @@ class _ModuleDetailScreenState extends State<ModuleDetailScreen> {
         appBar: AppBar(
           title: Text(m.singular),
           automaticallyImplyLeading: !widget.embedded,
-          actions: [?panelExpandButton(context), if (widget.embedded) IconButton(tooltip: 'Close', onPressed: widget.onClose, icon: const Icon(Icons.close)), const SizedBox(width: 8)],
+          actions: [
+            ?panelExpandButton(context),
+            if (widget.embedded) IconButton(tooltip: 'Close', onPressed: widget.onClose, icon: const Icon(Icons.close)),
+            const SizedBox(width: 8),
+          ],
         ),
         body: const Center(child: Text('This record is no longer there.')),
       );
@@ -1224,7 +1258,7 @@ class _ModuleDetailScreenState extends State<ModuleDetailScreen> {
     final status = m.statusField == null ? null : record[m.statusField];
     final actions = m.actions.where((a) => a.appliesTo(record, m.statusField)).toList();
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F6F5),
+      backgroundColor: const TColor(0xFFF2F6F5),
       appBar: AppBar(
         title: Text(m.singular, style: const TextStyle(fontWeight: FontWeight.w600)),
         automaticallyImplyLeading: !widget.embedded,
@@ -1249,7 +1283,7 @@ class _ModuleDetailScreenState extends State<ModuleDetailScreen> {
               const SizedBox(height: 14),
               Container(
                 padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+                decoration: BoxDecoration(color: TColor(0xFFFFFFFF), borderRadius: BorderRadius.circular(20)),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -1261,25 +1295,28 @@ class _ModuleDetailScreenState extends State<ModuleDetailScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
-                          child: Text(title == null ? '${record['id']}' : displayValue(title, record[m.titleField]), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600, height: 1.25)),
+                          child: Text(
+                            title == null ? '${record['id']}' : displayValue(title, record[m.titleField]),
+                            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600, height: 1.25),
+                          ),
                         ),
                         if (status != null) ...[const SizedBox(width: 12), _StatusChip('$status')],
                       ],
                     ),
                     const SizedBox(height: 4),
-                    Text('ID ${record['id']}', style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12.5)),
+                    Text('ID ${record['id']}', style: const TextStyle(color: TColor(0xFF94A3B8), fontSize: 12.5)),
                     if (m.sensitive) ...[
                       const SizedBox(height: 10),
                       const Text(
                         'Health data: anonymised and read-only.',
-                        style: TextStyle(color: Color(0xFFA8243F), fontSize: 13, fontWeight: FontWeight.w600),
+                        style: TextStyle(color: TColor(0xFFA8243F), fontSize: 13, fontWeight: FontWeight.w600),
                       ),
                     ],
                     if (actions.isNotEmpty) ...[
                       const SizedBox(height: 14),
                       Text(
                         'Change this ${m.singular.toLowerCase()} with one tap. Each button says what it does; the red ones ask before they change anything.',
-                        style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 12.5),
+                        style: const TextStyle(color: TColor(0xFF5A6C68), fontSize: 12.5),
                       ),
                       const SizedBox(height: 10),
                       Wrap(
@@ -1295,8 +1332,8 @@ class _ModuleDetailScreenState extends State<ModuleDetailScreen> {
                                       icon: Icon(a.icon, size: 18),
                                       label: Text(a.label),
                                       style: OutlinedButton.styleFrom(
-                                        foregroundColor: const Color(0xFFB3261E),
-                                        side: const BorderSide(color: Color(0xFFF0B8B3)),
+                                        foregroundColor: const TColor(0xFFB3261E),
+                                        side: const BorderSide(color: TColor(0xFFF0B8B3)),
                                       ),
                                     )
                                   : FilledButton.tonalIcon(onPressed: _busy ? null : () => _run(a), icon: Icon(a.icon, size: 18), label: Text(a.label)),
@@ -1323,30 +1360,36 @@ class _ModuleDetailScreenState extends State<ModuleDetailScreen> {
                     gap: 12,
                     children: [
                       for (final f in _numbers(record))
-                        _KpiTile(label: f.label, value: displayValue(f, record[f.key]), caption: compareHint(f, record[f.key], widget.repo.records(m.key)), icon: Icons.insights_outlined, color: const Color(0xFF0F766E)),
+                        _KpiTile(
+                          label: f.label,
+                          value: displayValue(f, record[f.key]),
+                          caption: compareHint(f, record[f.key], widget.repo.records(m.key)),
+                          icon: Icons.insights_outlined,
+                          color: const TColor(0xFF0F766E),
+                        ),
                     ],
                   ),
                 ),
               ],
               for (final section in m.sections)
                 if (m.fields.any((f) => f.section == section && !f.hidden)) ...[
-                const SizedBox(height: 14),
-                _SectionCard(
-                  title: m.sections.length > 1 ? section : null,
-                  child: _withDiscount(
-                    m.key == 'products' && section == 'Discount',
-                    record,
-                    fieldGrid(
-                      [
-                        for (final f in m.fields)
-                          if (f.section == section && !f.hidden) f,
-                      ],
-                      (f) => _FieldView(module: m, field: f, record: record, repo: widget.repo),
-                      gap: 18,
+                  const SizedBox(height: 14),
+                  _SectionCard(
+                    title: m.sections.length > 1 ? section : null,
+                    child: _withDiscount(
+                      m.key == 'products' && section == 'Discount',
+                      record,
+                      fieldGrid(
+                        [
+                          for (final f in m.fields)
+                            if (f.section == section && !f.hidden) f,
+                        ],
+                        (f) => _FieldView(module: m, field: f, record: record, repo: widget.repo),
+                        gap: 18,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
             ],
           ),
         ),
@@ -1372,7 +1415,7 @@ class _FieldView extends StatelessWidget {
     if (empty) {
       shown = const Text(
         'Not filled in yet',
-        style: TextStyle(color: Color(0xFF94A3B8), fontSize: 14, fontStyle: FontStyle.italic),
+        style: TextStyle(color: TColor(0xFF94A3B8), fontSize: 14, fontStyle: FontStyle.italic),
       );
     } else if (f.key == module.statusField) {
       shown = Align(alignment: Alignment.centerLeft, child: _StatusChip('$value'));
@@ -1383,7 +1426,7 @@ class _FieldView extends StatelessWidget {
           imagePreview('$value', repo.api.base, size: 110),
           const SizedBox(width: 12),
           Expanded(
-            child: SelectableText('$value', style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 12.5)),
+            child: SelectableText('$value', style: const TextStyle(color: TColor(0xFF5A6C68), fontSize: 12.5)),
           ),
         ],
       );
@@ -1397,10 +1440,10 @@ class _FieldView extends StatelessWidget {
           for (final v in value)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(color: const Color(0xFFEFF7F4), borderRadius: BorderRadius.circular(999)),
+              decoration: BoxDecoration(color: const TColor(0xFFEFF7F4), borderRadius: BorderRadius.circular(999)),
               child: Text(
                 '$v',
-                style: const TextStyle(fontSize: 13, color: Color(0xFF26413B), fontWeight: FontWeight.w600),
+                style: const TextStyle(fontSize: 13, color: TColor(0xFF26413B), fontWeight: FontWeight.w600),
               ),
             ),
         ],
@@ -1424,24 +1467,24 @@ class _FieldView extends StatelessWidget {
       children: [
         Text(
           f.label,
-          style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 12.5, fontWeight: FontWeight.w600),
+          style: const TextStyle(color: TColor(0xFF5A6C68), fontSize: 12.5, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 5),
         shown,
         if (hint != null)
           Padding(
             padding: const EdgeInsets.only(top: 4),
-            child: Text(hint, style: const TextStyle(color: Color(0xFF0F766E), fontSize: 12.5)),
+            child: Text(hint, style: const TextStyle(color: TColor(0xFF0F766E), fontSize: 12.5)),
           ),
         if (long)
           Padding(
             padding: const EdgeInsets.only(top: 4),
-            child: Text('${value.length} characters: over the $max that show in full.', style: const TextStyle(color: Color(0xFF8A5A00), fontSize: 12.5)),
+            child: Text('${value.length} characters: over the $max that show in full.', style: const TextStyle(color: TColor(0xFF8A5A00), fontSize: 12.5)),
           ),
         if (f.help != null)
           Padding(
             padding: const EdgeInsets.only(top: 4),
-            child: Text(f.help!, style: const TextStyle(color: Color(0xFF8A9A96), fontSize: 12, height: 1.35)),
+            child: Text(f.help!, style: const TextStyle(color: TColor(0xFF8A9A96), fontSize: 12, height: 1.35)),
           ),
       ],
     );
@@ -1520,9 +1563,9 @@ class _SectionCard extends StatelessWidget {
     width: double.infinity,
     padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
     decoration: BoxDecoration(
-      color: Colors.white,
+      color: TColor(0xFFFFFFFF),
       borderRadius: BorderRadius.circular(20),
-      border: Border.all(color: const Color(0xFFE6EEEB)),
+      border: Border.all(color: const TColor(0xFFE6EEEB)),
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1530,7 +1573,7 @@ class _SectionCard extends StatelessWidget {
         if (title != null) ...[
           Text(
             title!,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF0C1C19)),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: TColor(0xFF0C1C19)),
           ),
           const SizedBox(height: 14),
         ],
@@ -1545,16 +1588,16 @@ class _SectionCard extends StatelessWidget {
 Widget imagePreview(String value, String server, {double size = 96}) {
   final v = value.trim();
   Widget fallback(BuildContext _, Object _, StackTrace? _) => Container(
-    color: const Color(0xFFEFF5F3),
+    color: const TColor(0xFFEFF5F3),
     alignment: Alignment.center,
-    child: const Icon(Icons.image_outlined, color: Color(0xFF8DA19C)),
+    child: const Icon(Icons.image_outlined, color: TColor(0xFF8DA19C)),
   );
   final Widget image = v.startsWith('assets/')
       ? Image.asset(v, fit: BoxFit.contain, errorBuilder: fallback)
       : Image.network(v.startsWith('/') ? '${server.replaceFirst(RegExp(r'/+$'), '')}$v' : v, fit: BoxFit.contain, errorBuilder: fallback);
   return ClipRRect(
     borderRadius: BorderRadius.circular(14),
-    child: Container(width: size, height: size, color: const Color(0xFFF4F8F6), child: image),
+    child: Container(width: size, height: size, color: const TColor(0xFFF4F8F6), child: image),
   );
 }
 
@@ -1670,10 +1713,10 @@ class _ModuleFormScreenState extends State<ModuleFormScreen> {
     hintText: f.hint,
     helperText: f.help,
     helperMaxLines: 5,
-    helperStyle: const TextStyle(color: Color(0xFF5A6C68), fontSize: 12.5, height: 1.35),
+    helperStyle: const TextStyle(color: TColor(0xFF5A6C68), fontSize: 12.5, height: 1.35),
     errorMaxLines: 3,
     filled: true,
-    fillColor: Colors.white,
+    fillColor: TColor(0xFFFFFFFF),
     alignLabelWithHint: f.type == FieldType.longText,
     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
   );
@@ -1695,7 +1738,7 @@ class _ModuleFormScreenState extends State<ModuleFormScreen> {
     switch (f.type) {
       case FieldType.boolean:
         return Material(
-          color: const Color(0xFFF7FAF9),
+          color: const TColor(0xFFF7FAF9),
           borderRadius: BorderRadius.circular(12),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
@@ -1703,7 +1746,7 @@ class _ModuleFormScreenState extends State<ModuleFormScreen> {
               value: _values[f.key] == true,
               onChanged: _busy ? null : (v) => setState(() => _values[f.key] = v),
               title: Text(f.label, style: const TextStyle(fontWeight: FontWeight.w600)),
-              subtitle: f.help == null ? null : Text(f.help!, style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 12.5)),
+              subtitle: f.help == null ? null : Text(f.help!, style: const TextStyle(color: TColor(0xFF5A6C68), fontSize: 12.5)),
               contentPadding: EdgeInsets.zero,
             ),
           ),
@@ -1751,7 +1794,9 @@ class _ModuleFormScreenState extends State<ModuleFormScreen> {
           maxLines: f.type == FieldType.longText ? 8 : 1,
           maxLength: f.maxLength,
           // Pictures preview as their link is typed; a product's prices redraw its discount preview.
-          onChanged: f.type == FieldType.image || (m.key == 'products' && const {'price', 'mrp', 'discountValue', 'discountMinBoxes'}.contains(f.key)) ? (_) => setState(() {}) : null,
+          onChanged: f.type == FieldType.image || (m.key == 'products' && const {'price', 'mrp', 'discountValue', 'discountMinBoxes'}.contains(f.key))
+              ? (_) => setState(() {})
+              : null,
           style: const TextStyle(fontSize: 16),
           keyboardType: switch (f.type) {
             FieldType.email => TextInputType.emailAddress,
@@ -1777,11 +1822,11 @@ class _ModuleFormScreenState extends State<ModuleFormScreen> {
                     width: 96,
                     height: 96,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF4F8F6),
+                      color: const TColor(0xFFF4F8F6),
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: const Color(0xFFDCE6E3)),
+                      border: Border.all(color: const TColor(0xFFDCE6E3)),
                     ),
-                    child: const Icon(Icons.add_photo_alternate_outlined, color: Color(0xFF8DA19C)),
+                    child: const Icon(Icons.add_photo_alternate_outlined, color: TColor(0xFF8DA19C)),
                   )
                 : imagePreview(link, widget.repo.api.base),
           ],
@@ -1797,7 +1842,7 @@ class _ModuleFormScreenState extends State<ModuleFormScreen> {
         if (_editable.any((f) => f.section == s)) s,
     ];
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F6F5),
+      backgroundColor: const TColor(0xFFF2F6F5),
       appBar: AppBar(
         automaticallyImplyLeading: widget.onDone == null,
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
@@ -1830,14 +1875,14 @@ class _ModuleFormScreenState extends State<ModuleFormScreen> {
                   if (m.formIntro != null) ...[
                     Container(
                       padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(color: const Color(0xFFEFF7F4), borderRadius: BorderRadius.circular(16)),
+                      decoration: BoxDecoration(color: const TColor(0xFFEFF7F4), borderRadius: BorderRadius.circular(16)),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Icon(Icons.info_outline, color: brand, size: 20),
                           const SizedBox(width: 10),
                           Expanded(
-                            child: Text(m.formIntro!, style: const TextStyle(color: Color(0xFF26413B), fontSize: 13.5, height: 1.4)),
+                            child: Text(m.formIntro!, style: const TextStyle(color: TColor(0xFF26413B), fontSize: 13.5, height: 1.4)),
                           ),
                         ],
                       ),
@@ -1845,7 +1890,7 @@ class _ModuleFormScreenState extends State<ModuleFormScreen> {
                     const SizedBox(height: 6),
                     const Padding(
                       padding: EdgeInsets.only(left: 4, bottom: 10),
-                      child: Text('Boxes marked * are needed. Each box says what it’s for underneath.', style: TextStyle(color: Color(0xFF5A6C68), fontSize: 12.5)),
+                      child: Text('Boxes marked * are needed. Each box says what it’s for underneath.', style: TextStyle(color: TColor(0xFF5A6C68), fontSize: 12.5)),
                     ),
                   ],
                   for (final s in sections) ...[
@@ -1870,7 +1915,9 @@ class _ModuleFormScreenState extends State<ModuleFormScreen> {
                       width: MediaQuery.sizeOf(context).width < 600 ? double.infinity : 260,
                       child: FilledButton(
                         onPressed: _busy ? null : _save,
-                        child: _busy ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.white)) : Text(_editing ? 'Save changes' : 'Add ${m.singular.toLowerCase()}'),
+                        child: _busy
+                            ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.4, color: Color(0xFFFFFFFF)))
+                            : Text(_editing ? 'Save changes' : 'Add ${m.singular.toLowerCase()}'),
                       ),
                     ),
                   ),
@@ -1962,7 +2009,7 @@ class _ListFieldState extends State<_ListField> {
                       isDense: true,
                       hintText: 'Type one, then press Add',
                       filled: true,
-                      fillColor: const Color(0xFFF7FAF9),
+                      fillColor: const TColor(0xFFF7FAF9),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
                     ),
                   ),
@@ -2000,4 +2047,11 @@ String _kindLabel(FieldType t) => switch (t) {
 /// A form or record section with the product's discount preview under its fields (Products › Discount).
 Widget _withDiscount(bool show, Map<String, dynamic> product, Widget fields) => !show
     ? fields
-    : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [fields, const SizedBox(height: 14), DiscountPreview(product: product)]);
+    : Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          fields,
+          const SizedBox(height: 14),
+          DiscountPreview(product: product),
+        ],
+      );

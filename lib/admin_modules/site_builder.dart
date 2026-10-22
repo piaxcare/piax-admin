@@ -1,10 +1,10 @@
-import 'package:flutter/foundation.dart' show kReleaseMode;
 import 'package:flutter/material.dart';
 
 import '../format.dart';
 import 'admin_search.dart' show globalSearchActions;
 import 'nav_widgets.dart' show PageTreeSlot;
 import 'site_layout.dart';
+import 'package:piax_orders_admin/palette.dart';
 
 // The Site & app builder: the website's and the PIAX app's pages as a canvas you edit directly. Drag sections to
 // reorder them; drag cards, tags and buttons within a section or into another; add sections from the component
@@ -30,10 +30,7 @@ class _SiteBuilderScreenState extends State<SiteBuilderScreen> {
   void initState() {
     super.initState();
     store.addListener(_changed);
-    // Connects to the local website when one is running (debug builds), so its Home page is edited live.
-    store.load().then((_) {
-      if (!kReleaseMode && store.link == SiteLink.off) store.connect();
-    });
+    store.load();
   }
 
   @override
@@ -158,30 +155,6 @@ class _SiteBuilderScreenState extends State<SiteBuilderScreen> {
     }
   }
 
-  Future<void> _connectDialog() async {
-    final url = TextEditingController(text: store.siteUrl);
-    final go = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Local website'),
-        content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('The website running on this machine with npm run dev. Its home page follows the builder as you edit.', style: TextStyle(color: Color(0xFF5A6C68))),
-          const SizedBox(height: 12),
-          TextField(
-            controller: url,
-            style: const TextStyle(fontSize: 16),
-            decoration: const InputDecoration(labelText: 'Address', helperText: 'Usually http://localhost:3000 (Android emulator: http://10.0.2.2:3000)'),
-          ),
-        ]),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Connect')),
-        ],
-      ),
-    );
-    if (go == true) await store.connect(url.text);
-  }
-
   // ---------------------------------------------------------------- build
 
   @override
@@ -198,7 +171,7 @@ class _SiteBuilderScreenState extends State<SiteBuilderScreen> {
       onDeleteElement: _deleteElement,
     );
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F6F5),
+      backgroundColor: const TColor(0xFFF2F6F5),
       appBar: AppBar(
         title: const Text('Site & app builder', style: TextStyle(fontWeight: FontWeight.w600)),
         actions: [
@@ -207,22 +180,14 @@ class _SiteBuilderScreenState extends State<SiteBuilderScreen> {
           PopupMenuButton<String>(
             tooltip: 'More',
             onSelected: (v) async {
-              if (v == 'connect') return _connectDialog();
-              final live = store.link == SiteLink.live;
               if (v == 'reset' &&
-                  await _confirm(
-                    'Reset to the demo layout?',
-                    live
-                        ? 'Every change goes, and the local website’s home page goes back to its built-in layout.'
-                        : 'Every change to the website and app layout goes. Undo can bring them back while the app is open.',
-                  )) {
+                  await _confirm('Reset to the demo layout?', 'Every change to the website and app layout goes. Undo can bring them back while the app is open.')) {
                 await store.reset();
                 _select();
               }
             },
             itemBuilder: (_) => const [
-              PopupMenuItem(value: 'connect', child: Text('Local website address…')),
-              PopupMenuItem(value: 'reset', child: Text('Reset to the demo layout')),
+              PopupMenuItem(value: 'reset', child: Text('Reset to the default layout')),
             ],
           ),
           ...globalSearchActions(context),
@@ -248,7 +213,7 @@ class _SiteBuilderScreenState extends State<SiteBuilderScreen> {
                   if (wide)
                     SizedBox(
                       width: 360,
-                      child: Material(color: const Color(0xFFF7FAF9), child: inspector),
+                      child: Material(color: const TColor(0xFFF7FAF9), child: inspector),
                     ),
                 ],
               ),
@@ -291,7 +256,6 @@ class _SiteBuilderScreenState extends State<SiteBuilderScreen> {
           FilterChip(label: const Text('Show hidden'), selected: _showHidden, onSelected: (v) => setState(() => _showHidden = v)),
           if (!wide && (_sectionId != null))
             FilledButton.icon(onPressed: () => Scaffold.of(context).openEndDrawer(), icon: const Icon(Icons.tune, size: 18), label: const Text('Settings')),
-          _LinkStatus(store: store, onConnect: _connectDialog),
         ],
       ),
     );
@@ -312,7 +276,7 @@ class _SiteBuilderScreenState extends State<SiteBuilderScreen> {
               Expanded(
                 child: Text(
                   '${_surface.label.toUpperCase()} PAGES (${pages.length})',
-                  style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 11.5, fontWeight: FontWeight.w600, letterSpacing: .8),
+                  style: const TextStyle(color: TColor(0xFF5A6C68), fontSize: 11.5, fontWeight: FontWeight.w600, letterSpacing: .8),
                 ),
               ),
               IconButton(tooltip: 'Add a page', onPressed: () => _pageForm(), icon: const Icon(Icons.add)),
@@ -331,7 +295,7 @@ class _SiteBuilderScreenState extends State<SiteBuilderScreen> {
               for (final (i, p) in pages.indexed)
                 Material(
                   key: ValueKey(p.id),
-                  color: p.id == current?.id ? const Color(0xFFDDF3EC) : Colors.transparent,
+                  color: p.id == current?.id ? const TColor(0xFFDDF3EC) : Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
                   child: ListTile(
                     dense: true,
@@ -342,21 +306,13 @@ class _SiteBuilderScreenState extends State<SiteBuilderScreen> {
                       index: i,
                       child: const Padding(
                         padding: EdgeInsets.all(6),
-                        child: Icon(Icons.drag_indicator, size: 18, color: Color(0xFF9AAEA9)),
+                        child: Icon(Icons.drag_indicator, size: 18, color: TColor(0xFF9AAEA9)),
                       ),
                     ),
                     title: Row(children: [
                       Flexible(
-                        child: Text(p.name, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w600, color: p.visible ? null : const Color(0xFF8A9A96))),
+                        child: Text(p.name, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w600, color: p.visible ? null : const TColor(0xFF8A9A96))),
                       ),
-                      if (_surface == Surface.website && p.path == '/' && store.link == SiteLink.live) ...[
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                          decoration: BoxDecoration(color: const Color(0xFF0F8A5F), borderRadius: BorderRadius.circular(999)),
-                          child: const Text('LIVE', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: .6)),
-                        ),
-                      ],
                     ]),
                     subtitle: Text('${p.path} · ${p.sections.length} sections${p.visible ? '' : ' · hidden'}', maxLines: 1, overflow: TextOverflow.ellipsis),
                     trailing: PopupMenuButton<String>(
@@ -399,7 +355,7 @@ class _SiteBuilderScreenState extends State<SiteBuilderScreen> {
     ];
     final width = _mobile ? 390.0 : 1080.0;
     return Container(
-      color: const Color(0xFFE9EFED),
+      color: const TColor(0xFFE9EFED),
       child: Center(
         child: ConstrainedBox(
           constraints: BoxConstraints(maxWidth: width),
@@ -411,12 +367,12 @@ class _SiteBuilderScreenState extends State<SiteBuilderScreen> {
               padding: const EdgeInsets.only(bottom: 10),
               child: Row(
                 children: [
-                  Icon(_surface.icon, size: 16, color: const Color(0xFF5A6C68)),
+                  Icon(_surface.icon, size: 16, color: const TColor(0xFF5A6C68)),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
                       '${page.name} · ${page.path}${page.visible ? '' : ' · hidden page'}',
-                      style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 12.5, fontWeight: FontWeight.w600),
+                      style: const TextStyle(color: TColor(0xFF5A6C68), fontSize: 12.5, fontWeight: FontWeight.w600),
                     ),
                   ),
                   TextButton.icon(onPressed: () => _addSection(page, 0), icon: const Icon(Icons.add, size: 18), label: const Text('Section at top')),
@@ -429,7 +385,7 @@ class _SiteBuilderScreenState extends State<SiteBuilderScreen> {
                 onPressed: () => _addSection(page, sections.length),
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size(0, 52),
-                  side: const BorderSide(color: Color(0xFF9CCFC2), style: BorderStyle.solid),
+                  side: const BorderSide(color: TColor(0xFF9CCFC2), style: BorderStyle.solid),
                 ),
                 icon: const Icon(Icons.add),
                 label: const Text('Add a section'),
@@ -544,9 +500,9 @@ class _SectionBlock extends StatelessWidget {
         opacity: s.visible ? 1 : .45,
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: TColor(0xFFFFFFFF),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: selected ? brand : const Color(0xFFDCE6E3), width: selected ? 2 : 1),
+            border: Border.all(color: selected ? brand : const TColor(0xFFDCE6E3), width: selected ? 2 : 1),
           ),
           clipBehavior: Clip.antiAlias,
           child: Column(
@@ -554,7 +510,7 @@ class _SectionBlock extends StatelessWidget {
             children: [
               // The section's own bar: drag, name, actions.
               Container(
-                color: selected ? const Color(0xFFDDF3EC) : const Color(0xFFF7FAF9),
+                color: selected ? const TColor(0xFFDDF3EC) : const TColor(0xFFF7FAF9),
                 padding: const EdgeInsets.only(left: 4, right: 4),
                 child: Row(
                   children: [
@@ -564,7 +520,7 @@ class _SectionBlock extends StatelessWidget {
                         message: 'Drag to move this section',
                         child: const Padding(
                           padding: EdgeInsets.all(8),
-                          child: Icon(Icons.drag_indicator, size: 18, color: Color(0xFF7D918C)),
+                          child: Icon(Icons.drag_indicator, size: 18, color: TColor(0xFF7D918C)),
                         ),
                       ),
                     ),
@@ -579,7 +535,7 @@ class _SectionBlock extends StatelessWidget {
                             '${s.kind.label}${s.visible ? '' : ' · hidden'}${s.title.isEmpty ? '' : ' · ${s.title}'}',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFF34443F)),
+                            style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: TColor(0xFF34443F)),
                           ),
                         ),
                       ),
@@ -619,15 +575,15 @@ class _SectionBlock extends StatelessWidget {
                     height: 86,
                     alignment: Alignment.center,
                     decoration: const BoxDecoration(
-                      gradient: LinearGradient(colors: [Color(0xFFEFF7F4), Color(0xFFF7FAF9)]),
+                      gradient: LinearGradient(colors: [TColor(0xFFEFF7F4), TColor(0xFFF7FAF9)]),
                     ),
                     child: Row(mainAxisSize: MainAxisSize.min, children: [
                       const Icon(Icons.web_asset, color: brand),
                       const SizedBox(width: 10),
                       Flexible(
                         child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text(s.title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: Color(0xFF0C1C19))),
-                          const Text('The website’s own section: move or hide it here', style: TextStyle(fontSize: 12, color: Color(0xFF5A6C68))),
+                          Text(s.title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: TColor(0xFF0C1C19))),
+                          const Text('The website’s own section: move or hide it here', style: TextStyle(fontSize: 12, color: TColor(0xFF5A6C68))),
                         ]),
                       ),
                     ]),
@@ -713,7 +669,7 @@ class _Elements extends StatelessWidget {
         duration: const Duration(milliseconds: 120),
         height: candidates.isEmpty ? 10 : 36,
         margin: const EdgeInsets.only(top: 6),
-        decoration: BoxDecoration(color: candidates.isEmpty ? Colors.transparent : const Color(0x330B5B4E), borderRadius: BorderRadius.circular(10)),
+        decoration: BoxDecoration(color: candidates.isEmpty ? Colors.transparent : const TColor(0x330B5B4E), borderRadius: BorderRadius.circular(10)),
         child: candidates.isEmpty
             ? null
             : const Center(
@@ -727,7 +683,7 @@ class _Elements extends StatelessWidget {
         builder: (context, candidates, _) => Container(
           width: double.infinity,
           padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(color: candidates.isEmpty ? const Color(0x0F000000) : const Color(0x330B5B4E), borderRadius: BorderRadius.circular(12)),
+          decoration: BoxDecoration(color: candidates.isEmpty ? const TColor(0x0F000000) : const TColor(0x330B5B4E), borderRadius: BorderRadius.circular(12)),
           child: Text(
             'Empty: add an element from the section menu, or drop one here.',
             textAlign: TextAlign.center,
@@ -797,7 +753,7 @@ class _DragTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: TColor(0xFFFFFFFF),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: brand),
         ),
@@ -838,14 +794,14 @@ class _DragTile extends StatelessWidget {
               right: -6,
               top: -6,
               child: Material(
-                color: const Color(0xFFB3261E),
+                color: const TColor(0xFFB3261E),
                 shape: const CircleBorder(),
                 child: InkWell(
                   customBorder: const CircleBorder(),
                   onTap: onDelete,
                   child: const Padding(
                     padding: EdgeInsets.all(4),
-                    child: Icon(Icons.close, size: 14, color: Colors.white),
+                    child: Icon(Icons.close, size: 14, color: Color(0xFFFFFFFF)),
                   ),
                 ),
               ),
@@ -877,11 +833,11 @@ class _ElementView extends StatelessWidget {
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: .7),
               borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: const Color(0xFFDCE6E3)),
+              border: Border.all(color: const TColor(0xFFDCE6E3)),
             ),
             child: Text(
               t,
-              style: const TextStyle(fontSize: 11, color: Color(0xFF26413B), fontWeight: FontWeight.w600),
+              style: const TextStyle(fontSize: 11, color: TColor(0xFF26413B), fontWeight: FontWeight.w600),
             ),
           ),
       ],
@@ -907,11 +863,11 @@ class _ElementView extends StatelessWidget {
           decoration: BoxDecoration(
             color: e.tone == Tone.white ? Colors.white : e.tone.background,
             borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: const Color(0xFFCFE0DA)),
+            border: Border.all(color: const TColor(0xFFCFE0DA)),
           ),
           child: Text(
             e.title.isEmpty ? 'Tag' : e.title,
-            style: TextStyle(color: e.tone == Tone.white ? const Color(0xFF26413B) : e.tone.ink, fontWeight: FontWeight.w600, fontSize: 13),
+            style: TextStyle(color: e.tone == Tone.white ? const TColor(0xFF26413B) : e.tone.ink, fontWeight: FontWeight.w600, fontSize: 13),
           ),
         );
       case ElementKind.link:
@@ -941,9 +897,9 @@ class _ElementView extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: TColor(0xFFFFFFFF),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFE1E8E6)),
+            border: Border.all(color: const TColor(0xFFE1E8E6)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -956,7 +912,7 @@ class _ElementView extends StatelessWidget {
                   const Icon(Icons.expand_more, size: 20),
                 ],
               ),
-              if (e.text.isNotEmpty) ...[const SizedBox(height: 6), Text(e.text, style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 13, height: 1.4))],
+              if (e.text.isNotEmpty) ...[const SizedBox(height: 6), Text(e.text, style: const TextStyle(color: TColor(0xFF5A6C68), fontSize: 13, height: 1.4))],
             ],
           ),
         );
@@ -966,19 +922,19 @@ class _ElementView extends StatelessWidget {
           decoration: BoxDecoration(
             color: e.tone == Tone.white ? Colors.white : e.tone.background,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: const Color(0xFFE1E8E6)),
+            border: Border.all(color: const TColor(0xFFE1E8E6)),
           ),
           child: Column(
             crossAxisAlignment: e.align.cross,
             children: [
               Text(
                 e.title,
-                style: TextStyle(fontSize: 26, fontWeight: FontWeight.w600, color: e.tone == Tone.white ? const Color(0xFF0C1C19) : e.tone.ink),
+                style: TextStyle(fontSize: 26, fontWeight: FontWeight.w600, color: e.tone == Tone.white ? const TColor(0xFF0C1C19) : e.tone.ink),
               ),
               Text(
                 e.text,
                 textAlign: e.align.text,
-                style: TextStyle(color: (e.tone == Tone.white ? const Color(0xFF5A6C68) : e.tone.ink), fontSize: 12.5),
+                style: TextStyle(color: (e.tone == Tone.white ? const TColor(0xFF5A6C68) : e.tone.ink), fontSize: 12.5),
               ),
             ],
           ),
@@ -1030,9 +986,9 @@ class _ElementView extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: TColor(0xFFFFFFFF),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: const Color(0xFFE1E8E6)),
+            border: Border.all(color: const TColor(0xFFE1E8E6)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1042,7 +998,7 @@ class _ElementView extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 e.title,
-                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12.5, color: Color(0xFF5A6C68)),
+                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12.5, color: TColor(0xFF5A6C68)),
               ),
             ],
           ),
@@ -1051,13 +1007,13 @@ class _ElementView extends StatelessWidget {
         return AspectRatio(
           aspectRatio: 16 / 10,
           child: Container(
-            decoration: BoxDecoration(color: const Color(0xFFDCE6E3), borderRadius: BorderRadius.circular(14)),
+            decoration: BoxDecoration(color: const TColor(0xFFDCE6E3), borderRadius: BorderRadius.circular(14)),
             child: Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.image_outlined, size: 30, color: Color(0xFF7D918C)),
-                  Text(e.title.isEmpty ? 'Image' : e.title, style: const TextStyle(fontSize: 12, color: Color(0xFF5A6C68))),
+                  const Icon(Icons.image_outlined, size: 30, color: TColor(0xFF7D918C)),
+                  Text(e.title.isEmpty ? 'Image' : e.title, style: const TextStyle(fontSize: 12, color: TColor(0xFF5A6C68))),
                 ],
               ),
             ),
@@ -1072,13 +1028,13 @@ class _ElementView extends StatelessWidget {
           );
         }
         final bg = e.tone == Tone.white ? Colors.white : e.tone.background;
-        final fg = e.tone == Tone.white ? const Color(0xFF0C1C19) : e.tone.ink;
+        final fg = e.tone == Tone.white ? const TColor(0xFF0C1C19) : e.tone.ink;
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: bg,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFE1E8E6)),
+            border: Border.all(color: const TColor(0xFFE1E8E6)),
           ),
           child: Column(
             crossAxisAlignment: e.align.cross,
@@ -1139,7 +1095,7 @@ class _ComponentLibrary extends StatelessWidget {
           ),
           const Padding(
             padding: EdgeInsets.fromLTRB(22, 0, 22, 12),
-            child: Text('Pick a component. It arrives with starter content to edit.', style: TextStyle(color: Color(0xFF5A6C68))),
+            child: Text('Pick a component. It arrives with starter content to edit.', style: TextStyle(color: TColor(0xFF5A6C68))),
           ),
           Expanded(
             child: GridView.extent(
@@ -1151,10 +1107,10 @@ class _ComponentLibrary extends StatelessWidget {
               children: [
                 for (final k in SectionKind.values.where((k) => k != SectionKind.builtin))
                   Material(
-                    color: Colors.white,
+                    color: TColor(0xFFFFFFFF),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
-                      side: const BorderSide(color: Color(0xFFE1E8E6)),
+                      side: const BorderSide(color: TColor(0xFFE1E8E6)),
                     ),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(14),
@@ -1173,7 +1129,7 @@ class _ComponentLibrary extends StatelessWidget {
                                 k.description,
                                 maxLines: 3,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 12),
+                                style: const TextStyle(color: TColor(0xFF5A6C68), fontSize: 12),
                               ),
                             ),
                           ],
@@ -1226,7 +1182,7 @@ class _InspectorState extends State<_Inspector> {
     padding: const EdgeInsets.only(top: 16, bottom: 8),
     child: Text(
       text,
-      style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 11.5, fontWeight: FontWeight.w600, letterSpacing: .8),
+      style: const TextStyle(color: TColor(0xFF5A6C68), fontSize: 11.5, fontWeight: FontWeight.w600, letterSpacing: .8),
     ),
   );
 
@@ -1241,7 +1197,7 @@ class _InspectorState extends State<_Inspector> {
         labelText: label,
         isDense: true,
         filled: true,
-        fillColor: Colors.white,
+        fillColor: TColor(0xFFFFFFFF),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       ),
       onChanged: (v) => store.edit((_) => onChanged(v), key: key ?? label),
@@ -1276,7 +1232,7 @@ class _InspectorState extends State<_Inspector> {
                 decoration: BoxDecoration(
                   color: t.background,
                   shape: BoxShape.circle,
-                  border: Border.all(color: t == value ? brand : const Color(0xFFCBD5D1), width: t == value ? 3 : 1),
+                  border: Border.all(color: t == value ? brand : const TColor(0xFFCBD5D1), width: t == value ? 3 : 1),
                 ),
                 child: t == value ? Icon(Icons.check, size: 16, color: t.ink) : null,
               ),
@@ -1296,18 +1252,18 @@ class _InspectorState extends State<_Inspector> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.touch_app_outlined, size: 36, color: Color(0xFF9AAEA9)),
+            Icon(Icons.touch_app_outlined, size: 36, color: TColor(0xFF9AAEA9)),
             SizedBox(height: 10),
             Text(
               'Select a section or an element on the page to change it.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Color(0xFF5A6C68)),
+              style: TextStyle(color: TColor(0xFF5A6C68)),
             ),
             SizedBox(height: 8),
             Text(
               'Drag sections by ⋮⋮ to reorder them; drag cards, tags and buttons to move them, even into another section.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Color(0xFF8A9A96), fontSize: 12.5),
+              style: TextStyle(color: TColor(0xFF8A9A96), fontSize: 12.5),
             ),
           ],
         ),
@@ -1335,14 +1291,14 @@ class _InspectorState extends State<_Inspector> {
         ),
         Text(
           (e?.visible ?? sec.visible) ? 'Shown' : 'Hidden: kept here, not shown on the page.',
-          style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 12.5),
+          style: const TextStyle(color: TColor(0xFF5A6C68), fontSize: 12.5),
         ),
         if (sec.kind == SectionKind.builtin)
           const Padding(
             padding: EdgeInsets.only(top: 14),
             child: Text(
               'One of the website’s own designed sections. Drag it to move it on the page, or switch it off to hide it. Its words and pictures are edited in the website’s code or CMS.',
-              style: TextStyle(color: Color(0xFF34443F), height: 1.45),
+              style: TextStyle(color: TColor(0xFF34443F), height: 1.45),
             ),
           )
         else if (e == null) ..._sectionForm(sec) else ..._elementForm(sec, e),
@@ -1392,10 +1348,10 @@ class _InspectorState extends State<_Inspector> {
             key: ValueKey(x.id),
             padding: const EdgeInsets.only(bottom: 6),
             child: Material(
-              color: Colors.white,
+              color: TColor(0xFFFFFFFF),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
-                side: const BorderSide(color: Color(0xFFE6EEEB)),
+                side: const BorderSide(color: TColor(0xFFE6EEEB)),
               ),
               clipBehavior: Clip.antiAlias,
               child: ListTile(
@@ -1405,14 +1361,14 @@ class _InspectorState extends State<_Inspector> {
                   index: i,
                   child: const Padding(
                     padding: EdgeInsets.all(6),
-                    child: Icon(Icons.drag_indicator, size: 18, color: Color(0xFF9AAEA9)),
+                    child: Icon(Icons.drag_indicator, size: 18, color: TColor(0xFF9AAEA9)),
                   ),
                 ),
                 title: Text(
                   x.title.isEmpty ? x.kind.label : x.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontWeight: FontWeight.w600, color: x.visible ? null : const Color(0xFF8A9A96)),
+                  style: TextStyle(fontWeight: FontWeight.w600, color: x.visible ? null : const TColor(0xFF8A9A96)),
                 ),
                 subtitle: Text('${x.kind.label}${x.visible ? '' : ' · hidden'}'),
                 onTap: () => widget.onSelect(section: s.id, element: x.id),
@@ -1500,7 +1456,7 @@ class _InspectorState extends State<_Inspector> {
           helperMaxLines: 2,
           isDense: true,
           filled: true,
-          fillColor: Colors.white,
+          fillColor: TColor(0xFFFFFFFF),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           suffixIcon: IconButton(tooltip: 'Add tag', icon: const Icon(Icons.add), onPressed: () => _addTag(e)),
         ),
@@ -1515,8 +1471,8 @@ class _InspectorState extends State<_Inspector> {
     OutlinedButton.icon(
       onPressed: () => widget.onDeleteElement(s, e),
       style: OutlinedButton.styleFrom(
-        foregroundColor: const Color(0xFFB3261E),
-        side: const BorderSide(color: Color(0xFFF0B8B3)),
+        foregroundColor: const TColor(0xFFB3261E),
+        side: const BorderSide(color: TColor(0xFFF0B8B3)),
       ),
       icon: const Icon(Icons.delete_outline, size: 18),
       label: Text('Delete ${e.kind.label.toLowerCase()}'),
@@ -1531,38 +1487,3 @@ class _InspectorState extends State<_Inspector> {
   }
 }
 
-/// Where the builder's changes go: live to the local website, or kept here (with Connect and why).
-class _LinkStatus extends StatelessWidget {
-  const _LinkStatus({required this.store, required this.onConnect});
-  final LayoutStore store;
-  final VoidCallback onConnect;
-
-  @override
-  Widget build(BuildContext context) {
-    final host = Uri.tryParse(store.siteUrl)?.authority ?? store.siteUrl;
-    Widget chip(Color bg, Color fg, IconData icon, String text) => Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(999)),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Icon(icon, size: 15, color: fg),
-        const SizedBox(width: 6),
-        Text(text, style: TextStyle(color: fg, fontSize: 12, fontWeight: FontWeight.w600)),
-      ]),
-    );
-    return switch (store.link) {
-      SiteLink.live => Tooltip(
-        message: 'The website’s Home page on $host follows every change within a couple of seconds. Other pages and the app are demo copies.',
-        child: chip(const Color(0xFFDDF3EC), const Color(0xFF0B5B4E), Icons.wifi_tethering, 'Live on $host · Home page'),
-      ),
-      SiteLink.connecting => chip(const Color(0xFFEEF2F1), const Color(0xFF475569), Icons.sync, 'Connecting to $host…'),
-      _ => Row(mainAxisSize: MainAxisSize.min, children: [
-        Tooltip(
-          message: store.linkProblem ?? 'Run the website with npm run dev, then connect to edit its home page live.',
-          child: chip(const Color(0xFFFFF4D6), const Color(0xFF7F5300), Icons.cloud_off_outlined, store.link == SiteLink.failed ? 'Not connected: demo layout' : 'Demo layout: not live yet'),
-        ),
-        const SizedBox(width: 6),
-        TextButton.icon(onPressed: onConnect, icon: const Icon(Icons.link, size: 18), label: const Text('Connect')),
-      ]),
-    };
-  }
-}

@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../format.dart';
 import 'option_store.dart' show promptText;
+import 'package:piax_orders_admin/palette.dart';
 
 // Filtering for every list of records in the admin console (module lists and the menu's content pages), in one place:
 //   - a query: search across all fields, one filter per field (by the field's kind), and a sort;
@@ -428,7 +429,7 @@ class _FilterBarState extends State<FilterBar> {
       child: Container(
         height: 44,
         padding: const EdgeInsets.symmetric(horizontal: 14),
-        decoration: BoxDecoration(border: Border.all(color: const Color(0xFFCBD5D1)), borderRadius: BorderRadius.circular(999)),
+        decoration: BoxDecoration(border: Border.all(color: const TColor(0xFFCBD5D1)), borderRadius: BorderRadius.circular(999)),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
           const Icon(Icons.sort, size: 18, color: brand),
           const SizedBox(width: 6),
@@ -458,7 +459,7 @@ class _FilterBarState extends State<FilterBar> {
           ),
         const PopupMenuDivider(),
         PopupMenuItem(enabled: !q.isEmpty || q.sortKey != null, value: 'save', child: const Text('Save current view…')),
-        for (final v in _views) PopupMenuItem(value: ('delete', v.$1), child: Text('Delete “${v.$1}”', style: const TextStyle(color: Color(0xFFB3261E)))),
+        for (final v in _views) PopupMenuItem(value: ('delete', v.$1), child: Text('Delete “${v.$1}”', style: const TextStyle(color: TColor(0xFFB3261E)))),
       ],
       child: const Padding(padding: EdgeInsets.all(10), child: Icon(Icons.bookmarks_outlined, color: brand)),
     );
@@ -520,7 +521,7 @@ class _FilterBarState extends State<FilterBar> {
             const SizedBox(height: 10),
             Text(
               widget.shown == widget.total ? 'Showing all ${widget.total} ${widget.noun}' : 'Showing ${widget.shown} of ${widget.total} ${widget.noun}',
-              style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 13, fontWeight: FontWeight.w600),
+              style: const TextStyle(color: TColor(0xFF5A6C68), fontSize: 13, fontWeight: FontWeight.w600),
             ),
           ],
         );

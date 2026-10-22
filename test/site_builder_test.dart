@@ -24,26 +24,6 @@ void main() {
     expect(round.toJson().toString(), l.toJson().toString());
   });
 
-  test('the website’s home page converts to the local website’s layout and back', () {
-    final home = SitePage(name: 'Home', path: '/', sections: [
-      SiteSection(id: 'site-faq', kind: SectionKind.builtin, ref: 'faq', title: 'FAQ', visible: false),
-      starterSection(SectionKind.banner),
-    ]);
-    final sent = homeForWebsite(home);
-    expect(sent.first, {'id': 'faq', 'builtin': true, 'visible': false});
-    expect(sent.last['kind'], 'banner');
-    expect((sent.last['elements'] as List).single['kind'], 'ad');
-    final back = homeFromWebsite([
-      {'id': 'faq', 'builtin': true, 'label': 'FAQ', 'visible': false},
-      sent.last,
-    ]);
-    expect(back.first.kind, SectionKind.builtin);
-    expect(back.first.ref, 'faq');
-    expect(back.first.visible, isFalse);
-    expect(back.last.kind, SectionKind.banner);
-    expect(back.last.elements.single.kind, ElementKind.ad);
-  });
-
   test('elements move within a section and across sections; undo and redo', () {
     final store = LayoutStore.instance;
     final home = store.pages(Surface.website).first;
@@ -69,8 +49,6 @@ void main() {
     await tester.pumpWidget(const MaterialApp(home: SiteBuilderScreen()));
     await tester.pumpAndSettle();
     expect(find.text('Feel different. Feel you.'), findsWidgets);
-    expect(find.textContaining('emo layout'), findsOneWidget); // no local website in tests: the demo copy
-    expect(find.text('Connect'), findsOneWidget);
     final home = LayoutStore.instance.pages(Surface.website).first;
     final before = home.sections.length;
 

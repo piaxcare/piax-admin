@@ -6,6 +6,8 @@ import 'nav_pages.dart';
 import 'nav_widgets.dart' show PageTreeSlot;
 import 'option_store.dart';
 import 'schema.dart';
+import 'package:piax_orders_admin/palette.dart';
+import 'admin_search.dart' show globalSearchActions;
 
 // Settings → Dropdown menus: every dropdown in the admin console, searchable, and an editor for each one's values
 // (add, rename, reorder, delete, back to the defaults). The same menus the forms and filters use (option_store.dart).
@@ -59,8 +61,11 @@ class _MenuOptionsScreenState extends State<MenuOptionsScreen> {
     final shown = [for (final m in _menus) if (q.isEmpty || '${m.where} ${m.label}'.toLowerCase().contains(q)) m];
     final store = OptionStore.instance;
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F6F5),
-      appBar: AppBar(title: const Text('Dropdown menus', style: TextStyle(fontWeight: FontWeight.w600))),
+      backgroundColor: const TColor(0xFFF2F6F5),
+      appBar: AppBar(
+        title: const Text('Dropdown menus', style: TextStyle(fontWeight: FontWeight.w600)),
+        actions: [...globalSearchActions(context), const SizedBox(width: 8)],
+      ),
       body: ListenableBuilder(
         listenable: store,
         builder: (context, _) => Center(
@@ -72,7 +77,7 @@ class _MenuOptionsScreenState extends State<MenuOptionsScreen> {
                 const PageTreeSlot(),
                 const Text(
                   'The values in every dropdown of the add and edit forms (and their filters). Values added with “Other…” in a form show up here too. Changes are saved on this device.',
-                  style: TextStyle(color: Color(0xFF5A6C68), fontSize: 13.5, height: 1.4),
+                  style: TextStyle(color: TColor(0xFF5A6C68), fontSize: 13.5, height: 1.4),
                 ),
                 const SizedBox(height: 12),
                 TextField(
@@ -82,11 +87,11 @@ class _MenuOptionsScreenState extends State<MenuOptionsScreen> {
                   decoration: const InputDecoration(hintText: 'Search menus: a page or a field, like “status” or “supplier”', prefixIcon: Icon(Icons.search)),
                 ),
                 const SizedBox(height: 8),
-                Text('${shown.length} menus · ${_menus.where((m) => store.isCustomized(m.key)).length} changed', style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 13, fontWeight: FontWeight.w600)),
+                Text('${shown.length} menus · ${_menus.where((m) => store.isCustomized(m.key)).length} changed', style: const TextStyle(color: TColor(0xFF5A6C68), fontSize: 13, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 10),
                 Material(
-                  color: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18), side: const BorderSide(color: Color(0xFFE6EEEB))),
+                  color: TColor(0xFFFFFFFF),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18), side: const BorderSide(color: TColor(0xFFE6EEEB))),
                   clipBehavior: Clip.antiAlias,
                   child: Column(children: [
                     for (final (i, m) in shown.indexed) ...[
@@ -98,7 +103,7 @@ class _MenuOptionsScreenState extends State<MenuOptionsScreen> {
                           if (store.isCustomized(m.key))
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(color: const Color(0xFFDDF3EC), borderRadius: BorderRadius.circular(999)),
+                              decoration: BoxDecoration(color: const TColor(0xFFDDF3EC), borderRadius: BorderRadius.circular(999)),
                               child: const Text('Changed', style: TextStyle(color: brand, fontSize: 11.5, fontWeight: FontWeight.w600)),
                             ),
                           const SizedBox(width: 6),
@@ -185,10 +190,11 @@ class _MenuEditorState extends State<_MenuEditor> {
     builder: (context, _) {
       final values = _values;
       return Scaffold(
-        backgroundColor: const Color(0xFFF2F6F5),
+        backgroundColor: const TColor(0xFFF2F6F5),
         appBar: AppBar(
           title: Text(m.label, style: const TextStyle(fontWeight: FontWeight.w600)),
           actions: [
+            ...globalSearchActions(context),
             if (store.isCustomized(m.key)) TextButton.icon(onPressed: _reset, icon: const Icon(Icons.restart_alt), label: const Text('Reset to defaults')),
             const SizedBox(width: 8),
           ],
@@ -199,22 +205,22 @@ class _MenuEditorState extends State<_MenuEditor> {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
               children: [
-                Text(m.where, style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 13.5)),
+                Text(m.where, style: const TextStyle(color: TColor(0xFF5A6C68), fontSize: 13.5)),
                 if (m.status) ...[
                   const SizedBox(height: 10),
                   Container(
                     padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(color: const Color(0xFFFFF7E6), borderRadius: BorderRadius.circular(12)),
+                    decoration: BoxDecoration(color: const TColor(0xFFFFF7E6), borderRadius: BorderRadius.circular(12)),
                     child: const Text(
                       'A status menu: its values also set the status colours and one-tap actions. Records keep the status they have, so renaming a value leaves older records on the old name (they still show).',
-                      style: TextStyle(color: Color(0xFF7F5300), fontSize: 13),
+                      style: TextStyle(color: TColor(0xFF7F5300), fontSize: 13),
                     ),
                   ),
                 ],
                 const SizedBox(height: 14),
                 Material(
-                  color: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18), side: const BorderSide(color: Color(0xFFE6EEEB))),
+                  color: TColor(0xFFFFFFFF),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18), side: const BorderSide(color: TColor(0xFFE6EEEB))),
                   clipBehavior: Clip.antiAlias,
                   child: ReorderableListView(
                     shrinkWrap: true,
@@ -230,7 +236,7 @@ class _MenuEditorState extends State<_MenuEditor> {
                       for (final (i, v) in values.indexed)
                         ListTile(
                           key: ValueKey('$i|$v'),
-                          leading: ReorderableDragStartListener(index: i, child: const Icon(Icons.drag_indicator, color: Color(0xFF8A9A96))),
+                          leading: ReorderableDragStartListener(index: i, child: const Icon(Icons.drag_indicator, color: TColor(0xFF8A9A96))),
                           title: Text(v),
                           trailing: Row(mainAxisSize: MainAxisSize.min, children: [
                             IconButton(tooltip: 'Rename', icon: const Icon(Icons.edit_outlined, size: 20), onPressed: () => _rename(i)),
@@ -258,7 +264,7 @@ class _MenuEditorState extends State<_MenuEditor> {
                   FilledButton.icon(onPressed: _addValue, icon: const Icon(Icons.add), label: const Text('Add')),
                 ]),
                 const SizedBox(height: 8),
-                const Text('Drag the handle to reorder. A menu keeps at least one value.', style: TextStyle(color: Color(0xFF8A9A96), fontSize: 12.5)),
+                const Text('Drag the handle to reorder. A menu keeps at least one value.', style: TextStyle(color: TColor(0xFF8A9A96), fontSize: 12.5)),
               ],
             ),
           ),

@@ -12,6 +12,7 @@ import 'repository.dart';
 import 'founder_dashboard.dart';
 import 'nav_pages.dart' show navPageSpecs, rowsFor;
 import 'schema.dart';
+import 'package:piax_orders_admin/palette.dart';
 
 // The unified admin dashboard, in the deployed admin's style (piax-admin.vercel.app): big KPI cards, area line
 // charts, donut rings, a health gauge, the member funnel and share bars, full width on desktop. The Founder Overview's sales part first (revenue, orders), then alerts and decisions, stock
@@ -51,7 +52,7 @@ class AdminOverview extends StatelessWidget {
         final chartCols = inner >= 1800 ? 5 : inner >= 1400 ? 4 : inner >= 1050 ? 3 : medium ? 2 : 1;
 
         final cards = headlineCards(repo, now: now);
-        const tones = [brand, Color(0xFF5B3F73), Color(0xFF8A5A00)];
+        const tones = [brand, TColor(0xFF5B3F73), TColor(0xFF8A5A00)];
         final heads = [
           for (final (i, c) in cards.indexed)
             MiniStat(highlight: i == 0, icon: c.icon, tone: tones[i % tones.length], value: c.value, label: c.label, delta: c.delta, onTap: () => onOpen(c.module)),
@@ -120,7 +121,7 @@ class AdminOverview extends StatelessWidget {
                 const SizedBox(height: 30),
                 if (onAdd != null) ...[
                   const SizedBox(height: 22),
-                  const Text('Quick actions', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Color(0xFF34443F))),
+                  const Text('Quick actions', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: TColor(0xFF34443F))),
                   const SizedBox(height: 10),
                   Wrap(
                     spacing: 8,
@@ -145,7 +146,7 @@ class AdminOverview extends StatelessWidget {
                 for (final group in moduleGroups) ...[
                   Padding(
                     padding: const EdgeInsets.fromLTRB(2, 18, 2, 10),
-                    child: Text(group.toUpperCase(), style: const TextStyle(color: Color(0xFF5B6B67), fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 1.6)),
+                    child: Text(group.toUpperCase(), style: const TextStyle(color: TColor(0xFF5B6B67), fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 1.6)),
                   ),
                   EqualRows(
                     columns: chartCols,
@@ -273,7 +274,7 @@ class _SectionTitle extends StatelessWidget {
     children: [
       Text(title, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w600)),
       const SizedBox(height: 3),
-      Text(note, style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 13)),
+      Text(note, style: const TextStyle(color: TColor(0xFF5A6C68), fontSize: 13)),
     ],
   );
 }
@@ -308,7 +309,7 @@ class _OperationsCard extends StatelessWidget {
                       Container(
                         width: 34,
                         height: 34,
-                        decoration: BoxDecoration(color: const Color(0xFFEFF7F4), borderRadius: BorderRadius.circular(10)),
+                        decoration: BoxDecoration(color: const TColor(0xFFEFF7F4), borderRadius: BorderRadius.circular(10)),
                         child: Icon(k.icon, size: 18, color: brand),
                       ),
                     const SizedBox(width: 12),
@@ -348,9 +349,9 @@ class _AttentionCardState extends State<_AttentionCard> {
   OpenModule get onOpen => widget.onOpen;
 
   static (Color, Color, String) _tone(Urgency u) => switch (u) {
-    Urgency.high => (const Color(0xFFFBE7E5), const Color(0xFFB3261E), 'Act now'),
-    Urgency.medium => (const Color(0xFFFFF4D6), const Color(0xFF8A5A00), 'Look soon'),
-    Urgency.info => (const Color(0xFFE3EEF6), const Color(0xFF2D5F80), 'FYI'),
+    Urgency.high => (const TColor(0xFFFBE7E5), const TColor(0xFFB3261E), 'Act now'),
+    Urgency.medium => (const TColor(0xFFFFF4D6), const TColor(0xFF8A5A00), 'Look soon'),
+    Urgency.info => (const TColor(0xFFE3EEF6), const TColor(0xFF2D5F80), 'FYI'),
   };
 
   @override
@@ -393,7 +394,7 @@ class _AttentionCardState extends State<_AttentionCard> {
                               ],
                             ),
                           ),
-                          const Icon(Icons.chevron_right, color: Color(0xFF94A3B8)),
+                          const Icon(Icons.chevron_right, color: TColor(0xFF94A3B8)),
                         ],
                       ),
                     ),
@@ -423,7 +424,7 @@ class _ModuleSummaryCard extends StatelessWidget {
     final m = insight.module;
     final dates = insight.dates.where((d) => d.past30 > 0 || d.next30 > 0).take(1);
     return Material(
-      color: Colors.white,
+      color: TColor(0xFFFFFFFF),
       borderRadius: BorderRadius.circular(18),
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
@@ -441,8 +442,8 @@ class _ModuleSummaryCard extends StatelessWidget {
                     Container(
                       width: 38,
                       height: 38,
-                      decoration: BoxDecoration(color: m.sensitive ? const Color(0xFFFDE7EA) : const Color(0xFFD8EEE3), borderRadius: BorderRadius.circular(11)),
-                      child: Icon(m.icon, size: 20, color: m.sensitive ? const Color(0xFFA8243F) : brand),
+                      decoration: BoxDecoration(color: m.sensitive ? const TColor(0xFFFDE7EA) : const TColor(0xFFD8EEE3), borderRadius: BorderRadius.circular(11)),
+                      child: Icon(m.icon, size: 20, color: m.sensitive ? const TColor(0xFFA8243F) : brand),
                     ),
                   const SizedBox(width: 12),
                   Expanded(child: Text(m.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15))),
@@ -450,7 +451,7 @@ class _ModuleSummaryCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 8),
-              Text(m.description, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFF34443F), fontSize: 12.5, height: 1.35)),
+              Text(m.description, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: TColor(0xFF34443F), fontSize: 12.5, height: 1.35)),
               const SizedBox(height: 12),
               if (insight.statuses.isNotEmpty) ...[
                 StackedBar(slices: insight.statuses),
@@ -469,12 +470,12 @@ class _ModuleSummaryCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
               ],
-              Text(insight.summary, maxLines: 3, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 12.5, height: 1.35)),
+              Text(insight.summary, maxLines: 3, overflow: TextOverflow.ellipsis, style: const TextStyle(color: TColor(0xFF5A6C68), fontSize: 12.5, height: 1.35)),
               for (final d in dates) ...[
                 const SizedBox(height: 4),
                 Text(
                   [if (d.past30 > 0) '${d.past30} in the last 30 days', if (d.next30 > 0) '${d.next30} due in the next 30 days'].join(' · ').replaceFirst(RegExp('^'), '${d.field.label}: '),
-                  style: const TextStyle(color: Color(0xFF0F766E), fontSize: 12, fontWeight: FontWeight.w600),
+                  style: const TextStyle(color: TColor(0xFF0F766E), fontSize: 12, fontWeight: FontWeight.w600),
                 ),
               ],
             ],
@@ -520,14 +521,14 @@ class _PendingApprovals extends StatelessWidget {
                   onTap: onOpen == null ? null : () => onOpen!('decisions-approvals'),
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 4),
-                    decoration: BoxDecoration(border: i == 0 ? null : const Border(top: BorderSide(color: Color(0xFFEDF2F0)))),
+                    decoration: BoxDecoration(border: i == 0 ? null : const Border(top: BorderSide(color: TColor(0xFFEDF2F0)))),
                     child: Row(children: [
-                      const Icon(Icons.gavel_outlined, size: 18, color: Color(0xFF8A5A00)),
+                      const Icon(Icons.gavel_outlined, size: 18, color: TColor(0xFF8A5A00)),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                           Text('${r['Type']}', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5)),
-                          Text('${r['ID']} · asked by ${r['Requested by']}', style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 12)),
+                          Text('${r['ID']} · asked by ${r['Requested by']}', style: const TextStyle(color: TColor(0xFF5A6C68), fontSize: 12)),
                         ]),
                       ),
                       Text(rupees(((r['Amount'] as num?) ?? 0).round()), style: const TextStyle(fontWeight: FontWeight.w600)),

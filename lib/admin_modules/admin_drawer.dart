@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../format.dart';
 import 'admin_search.dart';
 import 'nav_widgets.dart';
+import 'package:piax_orders_admin/palette.dart';
 
 // The phone's side menu: the admin console's 12 sections (nav_config.dart), as on the big-screen sidebar.
 
@@ -51,7 +52,7 @@ class AdminDrawer extends StatelessWidget {
             if (onSignOut != null) tile(Icons.logout, 'Sign out', onSignOut),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-              child: Text(server.replaceFirst(RegExp(r'^https?://'), ''), style: const TextStyle(color: Color(0xFF8DA19C), fontSize: 12)),
+              child: Text(server.replaceFirst(RegExp(r'^https?://'), ''), style: const TextStyle(color: TColor(0xFF8DA19C), fontSize: 12)),
             ),
           ],
         ),

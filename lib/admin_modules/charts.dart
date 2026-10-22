@@ -6,13 +6,14 @@ import 'package:intl/intl.dart';
 
 import 'dashboard_images.dart';
 import 'insights.dart';
+import 'package:piax_orders_admin/palette.dart';
 
 // The dashboard's charts (fl_chart, plus a hand-drawn bar list): a donut with a legend, ranked horizontal bars, a
 // column chart and a smooth multi-line trend. All animate in, show exact numbers on touch, and say "no data yet"
 // instead of drawing an empty frame.
 
-const _muted = Color(0xFF5A6C68);
-const _grid = Color(0xFFE6EEEB);
+const _muted = TColor(0xFF5A6C68);
+const _grid = TColor(0xFFE6EEEB);
 
 /// A white card with a title and an optional one-line note, holding one chart.
 class ChartCard extends StatelessWidget {
@@ -29,9 +30,9 @@ class ChartCard extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
     decoration: BoxDecoration(
-      color: Colors.white,
+      color: TColor(0xFFFFFFFF),
       borderRadius: BorderRadius.circular(20),
-      boxShadow: const [BoxShadow(color: Color(0x0F0B5B4E), blurRadius: 18, offset: Offset(0, 6))],
+      boxShadow: const [BoxShadow(color: TColor(0x0F0B5B4E), blurRadius: 18, offset: Offset(0, 6))],
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -87,6 +88,7 @@ class SegmentRing extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final slices = distinctSlices(this.slices);
     final motion = MediaQuery.disableAnimationsOf(context) ? Duration.zero : const Duration(milliseconds: 700);
     return SizedBox(
       width: size,
@@ -127,7 +129,7 @@ class _RingPainter extends CustomPainter {
     canvas.drawArc(rect, 0, 2 * math.pi, false, Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = stroke
-      ..color = const Color(0xFFEEF2F1));
+      ..color = const TColor(0xFFEEF2F1));
     if (total == 0) return;
     final shown = slices.where((s) => s.count > 0).length;
     final gap = shown > 1 ? 0.035 : 0.0; // radians of surface between segments
@@ -172,7 +174,7 @@ class _DonutChartState extends State<DonutChart> {
 
   @override
   Widget build(BuildContext context) {
-    final slices = widget.slices;
+    final slices = distinctSlices(widget.slices);
     final total = slices.fold<int>(0, (a, s) => a + s.count);
     if (total == 0) return const _Empty();
     final focus = _selected != null && _selected! < slices.length ? slices[_selected!] : null;
@@ -186,7 +188,7 @@ class _DonutChartState extends State<DonutChart> {
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           FittedBox(
             fit: BoxFit.scaleDown,
-            child: Text('${focus?.count ?? total}', style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w600, height: 1.1, color: Color(0xFF0C1C19))),
+            child: Text('${focus?.count ?? total}', style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w600, height: 1.1, color: TColor(0xFF0C1C19))),
           ),
           const SizedBox(height: 2),
           Text(
@@ -213,14 +215,14 @@ class _DonutChartState extends State<DonutChart> {
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 150),
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                decoration: BoxDecoration(color: _selected == i ? const Color(0xFFF1F6F4) : null, borderRadius: BorderRadius.circular(8)),
+                decoration: BoxDecoration(color: _selected == i ? const TColor(0xFFF1F6F4) : null, borderRadius: BorderRadius.circular(8)),
                 child: Row(
                   children: [
                     Container(width: 10, height: 10, decoration: BoxDecoration(color: s.color, borderRadius: BorderRadius.circular(3))),
                     const SizedBox(width: 10),
-                    Expanded(child: Text(s.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13, color: Color(0xFF34443F)))),
+                    Expanded(child: Text(s.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13, color: TColor(0xFF34443F)))),
                     const SizedBox(width: 8),
-                    Text('${s.count}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF0C1C19), fontFeatures: [FontFeature.tabularFigures()])),
+                    Text('${s.count}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: TColor(0xFF0C1C19), fontFeatures: [FontFeature.tabularFigures()])),
                     SizedBox(
                       width: 46,
                       child: Text('${(s.count * 100 / total).round()}%', textAlign: TextAlign.right, style: const TextStyle(fontSize: 12, color: _muted, fontFeatures: [FontFeature.tabularFigures()])),
@@ -275,7 +277,7 @@ class EqualRows extends StatelessWidget {
 /// Ranked horizontal bars, biggest first: "which city / plan / article has the most". One measure, so one colour
 /// ([color], brand teal): the bars differ by length, and each is labelled. [format] writes the values.
 class BarList extends StatelessWidget {
-  const BarList({super.key, required this.slices, this.format, this.color = const Color(0xFF0F8A6F), this.dense = false, this.detail});
+  const BarList({super.key, required this.slices, this.format, this.color = const TColor(0xFF0F8A6F), this.dense = false, this.detail});
   final List<Slice> slices;
   final String Function(int value)? format;
   final Color color;
@@ -288,6 +290,7 @@ class BarList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final slices = distinctSlices(this.slices);
     final top = slices.fold<int>(0, (a, s) => s.count > a ? s.count : a);
     if (top == 0) return const _Empty();
     final total = slices.fold<int>(0, (a, s) => a + s.count);
@@ -308,7 +311,7 @@ class BarList extends StatelessWidget {
                   Row(
                     children: [
                       Expanded(child: Text(s.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13))),
-                      if (detail != null) Text('${detail!(s)}  ', style: const TextStyle(fontSize: 11.5, color: Color(0xFF5A6C68))),
+                      if (detail != null) Text('${detail!(s)}  ', style: const TextStyle(fontSize: 11.5, color: TColor(0xFF5A6C68))),
                       Text(format?.call(s.count) ?? '${s.count}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                     ],
                   ),
@@ -317,7 +320,7 @@ class BarList extends StatelessWidget {
                     borderRadius: BorderRadius.circular(4),
                     child: Stack(
                       children: [
-                        Container(height: 8, color: const Color(0xFFEDF2F0)),
+                        Container(height: 8, color: const TColor(0xFFEDF2F0)),
                         TweenAnimationBuilder<double>(
                           tween: Tween(begin: 0, end: s.count / top),
                           duration: const Duration(milliseconds: 600),
@@ -326,7 +329,7 @@ class BarList extends StatelessWidget {
                             widthFactor: f,
                             child: Container(
                               height: 8,
-                              decoration: BoxDecoration(color: s.label == 'Other' ? otherColor : color, borderRadius: BorderRadius.circular(4)),
+                              decoration: BoxDecoration(color: s.label == 'Other' ? otherColor : s.color, borderRadius: BorderRadius.circular(4)),
                             ),
                           ),
                         ),
@@ -353,8 +356,9 @@ class StackedBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final slices = distinctSlices(this.slices);
     final shown = [for (final s in slices) if (s.count > 0) s];
-    if (shown.isEmpty) return Container(height: height, decoration: BoxDecoration(color: const Color(0xFFEDF2F0), borderRadius: BorderRadius.circular(99)));
+    if (shown.isEmpty) return Container(height: height, decoration: BoxDecoration(color: const TColor(0xFFEDF2F0), borderRadius: BorderRadius.circular(99)));
     return ClipRRect(
       borderRadius: BorderRadius.circular(99),
       child: Row(
@@ -377,6 +381,7 @@ class ColumnChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final slices = distinctSlices(this.slices);
     final top = slices.fold<int>(0, (a, s) => s.count > a ? s.count : a);
     if (top == 0) return const _Empty();
     return SizedBox(
@@ -408,8 +413,8 @@ class ColumnChart extends StatelessWidget {
           ),
           barTouchData: BarTouchData(
             touchTooltipData: BarTouchTooltipData(
-              getTooltipColor: (_) => const Color(0xFF1E293B),
-              getTooltipItem: (group, _, rod, _) => BarTooltipItem('${slices[group.x].label}: ${rod.toY.toInt()}', const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 12)),
+              getTooltipColor: (_) => const TColor(0xFF1E293B),
+              getTooltipItem: (group, _, rod, _) => BarTooltipItem('${slices[group.x].label}: ${rod.toY.toInt()}', const TextStyle(color: Color(0xFFFFFFFF), fontWeight: FontWeight.w600, fontSize: 12)),
             ),
           ),
           barGroups: [
@@ -490,12 +495,12 @@ class TrendChart extends StatelessWidget {
               ),
               lineTouchData: LineTouchData(
                 touchTooltipData: LineTouchTooltipData(
-                  getTooltipColor: (_) => const Color(0xFF1E293B),
+                  getTooltipColor: (_) => const TColor(0xFF1E293B),
                   getTooltipItems: (spots) => [
                     for (final (i, s) in spots.indexed)
                       LineTooltipItem(
                         '${i == 0 ? 'Week of ${week(s.x.toInt())}\n' : ''}${series[s.barIndex].$1}: ${s.y.toInt()}',
-                        TextStyle(color: Colors.white, fontSize: 12, fontWeight: i == 0 ? FontWeight.w600 : FontWeight.w500),
+                        TextStyle(color: Color(0xFFFFFFFF), fontSize: 12, fontWeight: i == 0 ? FontWeight.w600 : FontWeight.w500),
                       ),
                   ],
                 ),

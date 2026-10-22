@@ -11,6 +11,7 @@ import '../models.dart';
 import '../widgets/brand.dart';
 import 'login_screen.dart' show signOut;
 import 'order_detail_screen.dart';
+import 'package:piax_orders_admin/palette.dart';
 
 /// Every cancelled order that was paid online, by where its refund stands, so refunds can be verified:
 ///   Due          cancelled and paid, not refunded yet (or a refund that failed): refund it here
@@ -141,9 +142,9 @@ class _RefundsScreenState extends State<RefundsScreen> {
   Widget build(BuildContext context) {
     final orders = _orders;
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F6F5),
+      backgroundColor: const TColor(0xFFF2F6F5),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF2F6F5),
+        backgroundColor: const TColor(0xFFF2F6F5),
         title: Text(menuTitle(context, 'Refunds', page: AppPage.refunds), style: TextStyle(fontWeight: FontWeight.w600)),
         actions: [
           ...globalSearchActions(context),
@@ -191,21 +192,21 @@ class _RefundsScreenState extends State<RefundsScreen> {
                         label: 'Refunds due',
                         value: '${due.length}',
                         detail: rupees(sum(due)),
-                        color: const Color(0xFF8A5A00),
+                        color: const TColor(0xFF8A5A00),
                         icon: Icons.pending_actions_outlined,
                       ),
                       _Tile(
                         label: 'In progress',
                         value: '${inProgress.length}',
                         detail: rupees(sum(inProgress)),
-                        color: const Color(0xFF2B3A5C),
+                        color: const TColor(0xFF2B3A5C),
                         icon: Icons.hourglass_top,
                       ),
                       _Tile(
                         label: 'Completed',
                         value: '${done.length}',
                         detail: rupees(sum(done)),
-                        color: const Color(0xFF2F5A2C),
+                        color: const TColor(0xFF2F5A2C),
                         icon: Icons.check_circle_outline,
                       ),
                     ],
@@ -217,7 +218,7 @@ class _RefundsScreenState extends State<RefundsScreen> {
                         : _checkedAt == null
                         ? ''
                         : 'Checked with Razorpay at ${timeOnly(_checkedAt!)}. Normal refunds usually show in the customer’s bank within 5–7 working days.',
-                    style: const TextStyle(color: Color(0xFF5B6B67), fontSize: 12.5),
+                    style: const TextStyle(color: TColor(0xFF5B6B67), fontSize: 12.5),
                   ),
                   const SizedBox(height: 16),
                   _Group(
@@ -253,12 +254,12 @@ class _RefundsScreenState extends State<RefundsScreen> {
     final r = order.payment.refund;
     final busy = _working.contains(order.id);
     final (chipBg, chipInk, chipText) = order.needsRefund
-        ? (const Color(0xFFFFF4D6), const Color(0xFF6B4600), order.payment.failedRefund != null ? 'Last refund failed' : 'Refund due')
+        ? (const TColor(0xFFFFF4D6), const TColor(0xFF6B4600), order.payment.failedRefund != null ? 'Last refund failed' : 'Refund due')
         : r == null
-        ? (const Color(0xFFE1EAF7), const Color(0xFF2B3A5C), 'Being sent')
+        ? (const TColor(0xFFE1EAF7), const TColor(0xFF2B3A5C), 'Being sent')
         : r.processed
-        ? (const Color(0xFFE3EDE2), const Color(0xFF2F5A2C), 'Processed')
-        : (const Color(0xFFE1EAF7), const Color(0xFF2B3A5C), r.status == 'pending' ? 'Pending at Razorpay' : 'Sent');
+        ? (const TColor(0xFFE3EDE2), const TColor(0xFF2F5A2C), 'Processed')
+        : (const TColor(0xFFE1EAF7), const TColor(0xFF2B3A5C), r.status == 'pending' ? 'Pending at Razorpay' : 'Sent');
 
     return InkWell(
       onTap: () => _open(order),
@@ -285,7 +286,7 @@ class _RefundsScreenState extends State<RefundsScreen> {
                           style: TextStyle(color: chipInk, fontSize: 12, fontWeight: FontWeight.w600),
                         ),
                       ),
-                      if (r?.test == true) const Text('test, no money moved', style: TextStyle(color: Color(0xFF5B6B67), fontSize: 12)),
+                      if (r?.test == true) const Text('test, no money moved', style: TextStyle(color: TColor(0xFF5B6B67), fontSize: 12)),
                     ],
                   ),
                   const SizedBox(height: 4),
@@ -298,7 +299,7 @@ class _RefundsScreenState extends State<RefundsScreen> {
                     const SizedBox(height: 2),
                     Text(
                       'Refunded ${dateTime(r.at)} · ${r.id}${r.checkedAt == null ? '' : ' · checked ${ago(r.checkedAt!)}'}',
-                      style: const TextStyle(color: Color(0xFF5B6B67), fontSize: 12.5),
+                      style: const TextStyle(color: TColor(0xFF5B6B67), fontSize: 12.5),
                     ),
                     if (r.arn != null)
                       InkWell(
@@ -318,7 +319,7 @@ class _RefundsScreenState extends State<RefundsScreen> {
                   if (order.payment.failedRefund != null && order.needsRefund)
                     Text(
                       'Razorpay reported refund ${order.payment.failedRefund!.id} as failed. Refund it again.',
-                      style: const TextStyle(color: Color(0xFF8B2E2E), fontSize: 12.5),
+                      style: const TextStyle(color: TColor(0xFF8B2E2E), fontSize: 12.5),
                     ),
                 ],
               ),
@@ -334,7 +335,7 @@ class _RefundsScreenState extends State<RefundsScreen> {
             else if (r != null && !r.processed)
               OutlinedButton(onPressed: () => _check(order), child: const Text('Check'))
             else
-              const Icon(Icons.chevron_right, color: Color(0xFF9AAEA9)),
+              const Icon(Icons.chevron_right, color: TColor(0xFF9AAEA9)),
           ],
         ),
       ),
@@ -353,9 +354,9 @@ class _Tile extends StatelessWidget {
     width: 220,
     padding: const EdgeInsets.all(16),
     decoration: BoxDecoration(
-      color: Colors.white,
+      color: TColor(0xFFFFFFFF),
       borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: const Color(0xFFE1E8E6)),
+      border: Border.all(color: const TColor(0xFFE1E8E6)),
     ),
     child: Row(
       children: [
@@ -372,9 +373,9 @@ class _Tile extends StatelessWidget {
             children: [
               Text(
                 value,
-                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600, color: Color(0xFF0C1C19)),
+                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600, color: TColor(0xFF0C1C19)),
               ),
-              Text('$label · $detail', style: const TextStyle(color: Color(0xFF5B6B67), fontSize: 12.5)),
+              Text('$label · $detail', style: const TextStyle(color: TColor(0xFF5B6B67), fontSize: 12.5)),
             ],
           ),
         ),
@@ -392,23 +393,23 @@ class _Group extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.fromLTRB(18, 16, 18, 8),
     decoration: BoxDecoration(
-      color: Colors.white,
+      color: TColor(0xFFFFFFFF),
       borderRadius: BorderRadius.circular(18),
-      border: Border.all(color: const Color(0xFFE1E8E6)),
+      border: Border.all(color: const TColor(0xFFE1E8E6)),
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
           '$title (${children.length})',
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF0C1C19)),
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: TColor(0xFF0C1C19)),
         ),
-        Text(hint, style: const TextStyle(color: Color(0xFF5B6B67), fontSize: 12.5)),
+        Text(hint, style: const TextStyle(color: TColor(0xFF5B6B67), fontSize: 12.5)),
         const SizedBox(height: 6),
         if (children.isEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 14),
-            child: Text(empty, style: const TextStyle(color: Color(0xFF9AAEA9))),
+            child: Text(empty, style: const TextStyle(color: TColor(0xFF9AAEA9))),
           )
         else
           for (final (i, child) in children.indexed) ...[if (i > 0) const Divider(height: 1), child],

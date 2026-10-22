@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../format.dart';
 
 /// Screen-size steps shared by every page: phones get one column, tablets more room, desktops side-by-side layouts.
 class Breakpoints {
@@ -23,7 +22,7 @@ class BrandBackdrop extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF0F766E), brand, Color(0xFF073B33)],
+          colors: [Color(0xFF0F766E), Color(0xFF0B5B4E), Color(0xFF073B33)],
         ),
       ),
       child: Stack(
@@ -68,7 +67,7 @@ class BrandLogo extends StatelessWidget {
     semanticLabel: 'PIAX',
     errorBuilder: (_, _, _) => Text(
       'PIAX',
-      style: TextStyle(color: Colors.white, fontSize: height * .6, fontWeight: FontWeight.w600, letterSpacing: 3),
+      style: TextStyle(color: Color(0xFFFFFFFF), fontSize: height * .6, fontWeight: FontWeight.w600, letterSpacing: 3),
     ),
   );
 }

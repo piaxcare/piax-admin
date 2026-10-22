@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:piax_orders_admin/palette.dart';
 
 // Pictures for the admin dashboard, copied from the website (public/images): product packshots, PIAX Learn
 // thumbnails, the PIAX AI robot and the brand leaf. Records without a matching picture just show their icon.
@@ -75,7 +76,7 @@ class AssetThumb extends StatelessWidget {
     child: Container(
       width: size,
       height: size,
-      color: const Color(0xFFEFF5F3),
+      color: const TColor(0xFFEFF5F3),
       child: Image.asset(path, fit: fit, errorBuilder: (_, _, _) => const SizedBox.shrink()),
     ),
   );

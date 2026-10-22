@@ -13,11 +13,12 @@ import 'nav_config.dart';
 import 'nav_pages.dart' show navPageSpecs, rowsFor, demoTone, ColKind, specWithCustom;
 import 'repository.dart';
 import 'schema.dart';
+import 'package:piax_orders_admin/palette.dart';
 
 // The Analytics page's "every dataset" part: one small card per set of records in the admin app (the admin modules
 // and every section page), each with the charts its fields allow: statuses as a split bar, the main breakdown as
 // bars, records per week as columns, and the number fields as figures. Grouped like the menus, with a search.
-// Module records come from the module data (bundled dummy data, or the local website's); section pages are demo
+// Module records come from the module data (bundled dummy data); section pages are demo
 // data, and say so.
 
 class _Dataset {
@@ -126,7 +127,6 @@ class _AllDataChartsState extends State<AllDataCharts> {
             }
           }
         }
-        final seen = <Color, int>{};
         final avg = rows.isEmpty ? 0.0 : numSum / rows.length;
         out.add(_Dataset(
           group: '${section.numbered} ${section.label}',
@@ -138,8 +138,7 @@ class _AllDataChartsState extends State<AllDataCharts> {
             for (final e in statusCounts.entries)
               () {
                 final base = demoTone(e.key).$2;
-                final k = seen.update(base, (n) => n + 1, ifAbsent: () => 0);
-                return Slice(e.key, e.value, Color.lerp(base, Colors.white, 0.3 * k)!);
+                return Slice(e.key, e.value, base);
               }(),
           ],
           breakdownTitle: pick == null ? null : '${money == null ? 'Count' : money.label} by ${pick.label.toLowerCase()}',
@@ -167,9 +166,7 @@ class _AllDataChartsState extends State<AllDataCharts> {
       const Text('Every dataset', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w600, color: ink)),
       const SizedBox(height: 3),
       Text(
-        repo == null
-            ? 'Charts for every set of records in the admin app.'
-            : 'Charts for every set of records in the admin app, from ${repo.sourceLabel.toLowerCase()}. Section pages hold demo records.',
+        'Charts for every set of records in the admin app.',
         style: const TextStyle(color: muted, fontSize: 13),
       ),
       const SizedBox(height: 12),
@@ -233,7 +230,7 @@ class _DatasetCard extends StatelessWidget {
     final compact = NumberFormat.compactCurrency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
     final weekly = d.weekly;
     return Material(
-      color: Colors.white,
+      color: TColor(0xFFFFFFFF),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: line)),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
@@ -251,12 +248,6 @@ class _DatasetCard extends StatelessWidget {
               const SizedBox(width: 8),
               Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
                 Text(NumberFormat.decimalPattern('en_IN').format(d.total), style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 18, color: brand)),
-                if (d.demo)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                    decoration: BoxDecoration(color: const Color(0xFFFFF4D6), borderRadius: BorderRadius.circular(999)),
-                    child: const Text('Demo', style: TextStyle(color: Color(0xFF7F5300), fontSize: 10.5, fontWeight: FontWeight.w600)),
-                  ),
               ]),
             ]),
             if (d.facts.isNotEmpty) ...[

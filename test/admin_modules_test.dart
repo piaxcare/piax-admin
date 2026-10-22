@@ -112,7 +112,6 @@ void main() {
       expect(find.text(title), findsWidgets);
     }
     expect(find.text('Revenue trend'), findsOneWidget); // the area chart beside the KPI cards
-    expect(find.text('Demo data'), findsOneWidget);
     final list = find.descendant(of: find.byKey(const Key('overview-scroll')), matching: find.byType(Scrollable)).first;
     await tester.scrollUntilVisible(find.text('Channel × segment'), 300, scrollable: list);
     expect(find.text('Revenue by sales channel'), findsOneWidget);
