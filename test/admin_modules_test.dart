@@ -20,7 +20,7 @@ void main() {
 
   testWidgets('home lists every module group and module, on the bundled dummy data', (tester) async {
     await openHome(tester);
-    expect(find.textContaining('dummy data bundled in the app'), findsOneWidget);
+    expect(find.textContaining('dummy data bundled in the app'), findsNothing); // no development banner
     for (final group in moduleGroups) {
       await tester.scrollUntilVisible(find.text(group.toUpperCase()).last, 300, scrollable: find.byType(Scrollable).last);
       expect(find.text(group.toUpperCase()), findsWidgets);
@@ -105,21 +105,30 @@ void main() {
     expect(find.byTooltip('Delete'), findsNothing);
   });
 
-  testWidgets('overview: headline numbers, what needs attention (opens filtered), charts and quick actions', (tester) async {
+  testWidgets('overview: revenue first, then orders, alerts (opens filtered), operations, customers', (tester) async {
     await openHome(tester, all: false);
-    for (final title in ['Subscription income', 'Activity', 'Health', 'Stock by product', 'Members by city', 'Member journey', 'Learn views by topic']) {
-      expect(find.text(title), findsOneWidget);
+    // Revenue first: the four money figures, labelled demo data (no order desk to ask in a test).
+    for (final title in ['Net revenue', 'Cash collected', 'Gross profit', 'Outstanding receivables']) {
+      expect(find.text(title), findsWidgets);
     }
+    expect(find.text('Revenue trend'), findsOneWidget); // the area chart beside the KPI cards
+    expect(find.text('Demo data'), findsOneWidget);
     final list = find.descendant(of: find.byKey(const Key('overview-scroll')), matching: find.byType(Scrollable)).first;
-    // Revenue and orders: the demo orders here (no order desk to ask in a test), labelled as such.
+    await tester.scrollUntilVisible(find.text('Channel × segment'), 300, scrollable: list);
+    expect(find.text('Revenue by sales channel'), findsOneWidget);
+    expect(find.text('Revenue by customer segment'), findsOneWidget);
     await tester.scrollUntilVisible(find.text('Best sellers'), 300, scrollable: list);
-    expect(find.text('Demo orders: no live orders to show'), findsOneWidget);
     expect(find.text('Average order'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Pending decisions'), 300, scrollable: list);
     await tester.scrollUntilVisible(find.text('Needs attention'), 300, scrollable: list);
     expect(find.text('Everything else at a glance'), findsOneWidget);
 
     // Keys about to expire are flagged; tapping the line opens the credentials, filtered to them.
     final expiring = find.descendant(of: find.byKey(const Key('overview-scroll')), matching: find.textContaining('keys expiring soon'));
+    await tester.ensureVisible(expiring);
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(expiring);
+    await tester.pumpAndSettle();
     expect(expiring, findsOneWidget);
     await tester.tap(expiring);
     await tester.pumpAndSettle();
@@ -215,6 +224,22 @@ void main() {
     expect(find.text('How their orders ended'), findsOneWidget);
     expect(find.text('Orders, last 6 months'), findsOneWidget);
     expect(find.text('Total spent'), findsWidgets);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('overview, below the alerts: operations, customers, then recent transactions (paged); filters narrow them', (tester) async {
+    await openHome(tester, all: false);
+    final list = find.descendant(of: find.byKey(const Key('overview-scroll')), matching: find.byType(Scrollable)).first;
+    for (final title in ['Inventory & operational health', 'Stock by product', 'Customer & marketing performance', 'Member journey', 'Recent transactions']) {
+      await tester.scrollUntilVisible(find.text(title), 300, scrollable: list);
+    }
+    await tester.scrollUntilVisible(find.byTooltip('Next page'), 300, scrollable: list);
+    await tester.drag(list, const Offset(0, 150)); // down from the top edge, fully in view
+    await tester.pumpAndSettle();
+    expect(find.textContaining(RegExp(r'^1–10 of \d+$')), findsOneWidget);
+    await tester.tap(find.byTooltip('Next page'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining(RegExp(r'^11–20 of \d+$')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

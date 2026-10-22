@@ -5,6 +5,7 @@ import 'package:piax_orders_admin/admin_modules/record_filter.dart';
 import 'package:piax_orders_admin/admin_modules/admin_shell.dart';
 import 'package:piax_orders_admin/admin_modules/nav_config.dart';
 import 'package:piax_orders_admin/admin_modules/nav_pages.dart';
+import 'package:piax_orders_admin/admin_modules/nav_widgets.dart' show PageTree;
 import 'package:piax_orders_admin/api.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -79,8 +80,50 @@ void main() {
     await tapInSidebar(tester, 'Machine Register & Asset Passport');
     expect(find.byType(NavModulePage), findsOneWidget);
     expect(find.text('Demo data'), findsOneWidget);
-    expect(find.text('06 Vending Machine Operations'), findsOneWidget); // the breadcrumb
+    expect(find.text('06 Vending Machine Operations'), findsOneWidget); // the page tree
     expect(find.byType(AdminSidebar), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a page opened from the sidebar takes the name of the item clicked', (tester) async {
+    await open(tester, {});
+    // The page's own title: the name, outside the sidebar and the page tree.
+    int titles(String t) =>
+        find.text(t).evaluate().length - inSidebar(t).evaluate().length - find.descendant(of: find.byType(PageTree), matching: find.text(t)).evaluate().length;
+    expect(titles('Founder Overview'), 1);
+
+    await tapInSidebar(tester, 'Website, App & Content');
+    for (final name in ['Website CMS', 'Blogs & Education Hub', 'Reviews & Publishing Queue', 'Product Pages & Catalogue']) {
+      await tapInSidebar(tester, name);
+      expect(titles(name), 1, reason: name); // two items on the articles module each keep their own name
+    }
+    await tapInSidebar(tester, 'Business Health & KPIs'); // its section is still open
+    expect(titles('Business Health & KPIs'), 1);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('the page tree is above every page, and each name in it opens its page', (tester) async {
+    await open(tester, {});
+    Finder inTree(String text) => find.descendant(of: find.byType(PageTree), matching: find.text(text));
+    expect(inTree('Founder Overview'), findsOneWidget);
+
+    await tapInSidebar(tester, 'Vending Machine Operations');
+    await tapInSidebar(tester, 'Machine Register & Asset Passport');
+    expect(inTree('Machine Register & Asset Passport'), findsOneWidget);
+
+    // The section lists its pages: pick another one.
+    await tester.tap(inTree('06 Vending Machine Operations'));
+    await tester.pumpAndSettle();
+    final other = navSections.firstWhere((s) => s.id == 'vending').items.firstWhere((i) => i.label != 'Machine Register & Asset Passport').label;
+    await tester.tap(find.descendant(of: find.byType(CheckedPopupMenuItem<NavItem>), matching: find.text(other)).last);
+    await tester.pumpAndSettle();
+    expect(inTree(other), findsOneWidget);
+
+    // Admin goes back to the Founder Overview.
+    await tester.tap(inTree('Admin'));
+    await tester.pumpAndSettle();
+    expect(inTree('Founder Overview'), findsOneWidget);
+    expect(find.text('Subscription income'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

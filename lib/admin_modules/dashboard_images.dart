@@ -80,3 +80,6 @@ class AssetThumb extends StatelessWidget {
     ),
   );
 }
+
+/// A product's packshot by its name ("PIAX LUMA"), if there is one.
+String? productImageFor(String name) => recordImage('products', {'name': name});

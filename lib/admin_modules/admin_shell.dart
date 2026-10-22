@@ -10,6 +10,7 @@ import '../screens/settings_screen.dart';
 import '../session.dart';
 import '../widgets/brand.dart';
 import 'admin_search.dart';
+import 'schema.dart' show modules;
 import 'modules_screens.dart';
 import 'nav_config.dart';
 import 'nav_widgets.dart';
@@ -42,6 +43,9 @@ class _AdminShellState extends State<AdminShell> {
   /// The menu item (nav_config.dart) for the page on top, highlighted in the sidebar; null for pages outside the menu.
   String? _active = 'founder-overview';
 
+  /// The route name of the page on top, for naming pages outside the menu in the page tree.
+  String? _route = 'overview';
+
   /// The menu item last opened from the sidebar: when two items open the same module, it's the one highlighted.
   String? _clicked;
 
@@ -73,7 +77,7 @@ class _AdminShellState extends State<AdminShell> {
   void _pageChanged(String? name, {required bool opened}) {
     if (!mounted) return;
     setState(() {
-      if (name != null) _active = _itemFor(name);
+      if (name != null) (_active = _itemFor(name), _route = name);
       if (opened && _mode != 'remember') _open = _mode == 'open';
     });
   }
@@ -129,11 +133,19 @@ class _AdminShellState extends State<AdminShell> {
     if (found == null) return;
     final item = found.$2;
     _clicked = id;
-    if (item.target is DemoTarget) return _push('nav:$id', NavDemoPage(itemId: id, nav: nav));
+    if (item.target is DemoTarget || item.target is ScreenTarget) return _push('nav:$id', NavDemoPage(itemId: id, nav: nav));
     openNavItem(context, AdminNav(orders: nav.orders, analytics: nav.analytics, refunds: nav.refunds, settings: nav.settings, overview: nav.overview, allModules: nav.allModules, module: nav.module), item);
     // Founder Overview is the first page, so no route change tells the sidebar: highlight it here.
-    setState(() => _active = id);
+    setState(() => (_active = id, _route = null));
   }
+
+  /// A name for a page that isn't in the menu.
+  String? _fallbackName(String? route) => switch (route) {
+    'modules' => 'All modules',
+    'settings' => 'Settings',
+    final r? when r.startsWith('module:') => modules.where((m) => m.key == r.substring(7)).firstOrNull?.title,
+    _ => null,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -151,7 +163,11 @@ class _AdminShellState extends State<AdminShell> {
         ],
       ),
     );
-    final scoped = AdminNavScope(nav: nav, child: pages);
+    // Each page shows the page tree at the top of its content (PageTreeSlot); this says where they are.
+    final scoped = AdminNavScope(
+      nav: nav,
+      child: PageTreeScope(nav: nav, itemId: _active, fallback: _fallbackName(_route), child: pages),
+    );
     if (!wide) return scoped;
     // Big screens: search is a pop-up (pages, modules, features), opened anywhere with Ctrl / ⌘ + K. Each list keeps
     // its own search for its records, above the list.

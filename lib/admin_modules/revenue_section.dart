@@ -18,7 +18,26 @@ import 'repository.dart';
 
 /// One order, reduced to what the charts need; made from a live [Order] or a demo record.
 class OrderPoint {
-  const OrderPoint({required this.at, required this.status, required this.total, required this.city, required this.payment, required this.items, required this.refundDue});
+  const OrderPoint({
+    required this.at,
+    required this.status,
+    required this.total,
+    required this.city,
+    required this.payment,
+    required this.items,
+    required this.refundDue,
+    this.id = '',
+    this.channel,
+    this.segment,
+    this.refunded = false,
+  });
+  final String id;
+
+  /// The platform and customer segment as recorded (null when the order doesn't say; reports show "Unknown").
+  final String? channel, segment;
+
+  /// Cancelled and the money already sent back.
+  final bool refunded;
   final DateTime at;
   final String status; // placed | confirmed | packed | shipped | out_for_delivery | delivered | cancelled
   final int total;
@@ -36,6 +55,10 @@ class OrderPoint {
     payment: o.payment.method == 'cod' ? 'Cash on delivery' : 'Online (Razorpay)',
     items: [for (final i in o.items) (i.name, i.quantity, i.lineTotal)],
     refundDue: o.needsRefund,
+    id: o.id,
+    channel: o.channel,
+    segment: o.segment,
+    refunded: o.payment.status == 'refunded',
   );
 
   factory OrderPoint.fromDemo(Map<String, dynamic> j) => OrderPoint(
@@ -46,6 +69,10 @@ class OrderPoint {
     payment: '${j['payment'] ?? 'Online'}',
     items: [for (final i in (j['items'] as List? ?? const [])) ('${i['name']}', (i['quantity'] as num?)?.round() ?? 1, (i['lineTotal'] as num?)?.round() ?? 0)],
     refundDue: j['refund'] == 'pending',
+    id: '${j['id'] ?? ''}',
+    channel: j['channel'] as String?,
+    segment: j['segment'] as String?,
+    refunded: j['refund'] == 'refunded',
   );
 }
 

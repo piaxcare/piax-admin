@@ -23,6 +23,12 @@ class ModuleTarget extends NavTarget {
   final String? status;
 }
 
+/// A screen of its own that isn't a module or one of the app's pages (the Site & app builder).
+class ScreenTarget extends NavTarget {
+  const ScreenTarget(this.screen);
+  final String screen;
+}
+
 /// Not built yet: opens the demonstration page for the item.
 class DemoTarget extends NavTarget {
   const DemoTarget();
@@ -180,6 +186,7 @@ const navSections = <NavSection>[
     id: 'website', number: 9, label: 'Website, App & Content', icon: Icons.web_outlined,
     purpose: 'Manages published digital experiences.',
     items: [
+      NavItem('site-builder', 'Site & App Builder', ScreenTarget('builder')),
       NavItem('website-cms', 'Website CMS', ModuleTarget('pages')),
       NavItem('app-content', 'App Content & Settings', ModuleTarget('settings')),
       NavItem('product-pages', 'Product Pages & Catalogue', ModuleTarget('products')),

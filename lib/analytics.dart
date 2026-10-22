@@ -79,6 +79,10 @@ class Point {
   final String label;
   int orders;
   int revenue;
+
+  /// What the point is made of, for the charts' hover text: revenue by product (id) and orders by status.
+  final Map<String, int> revenueByProduct = {};
+  final Map<String, int> ordersByStatus = {};
 }
 
 class Kpis {
@@ -253,7 +257,13 @@ class Analytics {
       final point = points.where((p) => p.start == start).firstOrNull;
       if (point == null) continue;
       point.orders++;
-      if (f.earns) point.revenue += f.total;
+      point.ordersByStatus[f.status.label] = (point.ordersByStatus[f.status.label] ?? 0) + 1;
+      if (f.earns) {
+        point.revenue += f.total;
+        for (final (product, _, amount) in f.items) {
+          point.revenueByProduct[product] = (point.revenueByProduct[product] ?? 0) + amount;
+        }
+      }
     }
     return points;
   }

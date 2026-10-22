@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+
+import '../admin_modules/nav_config.dart' show AppPage;
 import 'package:flutter/services.dart';
 
 import '../admin_modules/admin_search.dart' show globalSearchActions;
+import '../admin_modules/nav_widgets.dart' show PageTreeSlot, menuTitle;
 import '../api.dart';
 import '../format.dart';
 import '../models.dart';
@@ -141,7 +144,7 @@ class _RefundsScreenState extends State<RefundsScreen> {
       backgroundColor: const Color(0xFFF2F6F5),
       appBar: AppBar(
         backgroundColor: const Color(0xFFF2F6F5),
-        title: const Text('Refunds', style: TextStyle(fontWeight: FontWeight.w600)),
+        title: Text(menuTitle(context, 'Refunds', page: AppPage.refunds), style: TextStyle(fontWeight: FontWeight.w600)),
         actions: [
           ...globalSearchActions(context),
           TextButton.icon(
@@ -174,6 +177,7 @@ class _RefundsScreenState extends State<RefundsScreen> {
         return ListView(
           padding: EdgeInsets.fromLTRB(pad, 4, pad, 40),
           children: [
+            const PageTreeSlot(),
             PageWidth(
               maxWidth: 1100,
               child: Column(

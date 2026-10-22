@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -8,12 +10,17 @@ import '../screens/login_screen.dart' show signOut;
 import 'admin_drawer.dart';
 import 'admin_shell.dart' show AdminSidebar;
 import 'admin_search.dart';
+import 'attachments.dart';
 import 'charts.dart';
+import 'discounts.dart';
+import 'field_store.dart';
 import 'dashboard_images.dart';
-import 'dashboard_widgets.dart' show greens;
+import 'dashboard_widgets.dart' show AreaTrend, SplitBar, breakdownText, greens;
 import 'insights.dart';
 import 'member_widgets.dart';
 import 'overview_screen.dart';
+import 'nav_config.dart' show AppPage;
+import 'nav_widgets.dart' show PageTreeSlot, menuTitle;
 import 'option_store.dart';
 import 'record_filter.dart';
 import 'repository.dart';
@@ -33,6 +40,8 @@ String displayValue(FieldDef field, Object? value) {
       return value == true || value == 'true' ? 'Yes' : 'No';
     case FieldType.list:
       return value is List ? (value.isEmpty ? '—' : value.join(', ')) : '$value';
+    case FieldType.file:
+      return attachmentsSummary(value);
     case FieldType.dateTime:
       final at = DateTime.tryParse('$value');
       return at == null ? '$value' : DateFormat('d MMM yyyy, h:mm a').format(at.toLocal());
@@ -60,37 +69,6 @@ class _StatusChip extends StatelessWidget {
       ),
     );
   }
-}
-
-/// "Dummy data" notice under every Admin modules title, so nobody takes these records for real ones.
-class _SourceBanner extends StatelessWidget {
-  const _SourceBanner(this.repo);
-  final ModuleRepository repo;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    width: double.infinity,
-    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-    decoration: BoxDecoration(
-      color: const Color(0xFFFFF7E6),
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: const Color(0xFFF3D9A6)),
-    ),
-    child: Row(
-      children: [
-        Icon(repo.source == ModuleSource.localServer ? Icons.dns_outlined : Icons.science_outlined, size: 18, color: const Color(0xFF7F5300)),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            repo.source == ModuleSource.localServer
-                ? 'Mock-up on the local website’s dummy data. Changes are saved on that website while you test.'
-                : 'Mock-up on dummy data bundled in the app. Nothing here is real, and changes reset when the app closes.',
-            style: const TextStyle(color: Color(0xFF7F5300), fontSize: 13),
-          ),
-        ),
-      ],
-    ),
-  );
 }
 
 Future<void> _handleError(BuildContext context, Object error) async {
@@ -212,7 +190,7 @@ class ModulesHomeScreenState extends State<ModulesHomeScreen> {
     final repo = _repo;
     // Big screens: a light sidebar and a header bar, like a modern admin. Phones: a top bar with the side drawer.
     final shell = MediaQuery.sizeOf(context).width >= 1100;
-    final title = _tab == 0 ? 'Overview' : 'All modules';
+    final title = _tab == 0 ? menuTitle(context, 'Overview', page: AppPage.overview) : 'All modules';
     final content = repo == null
         ? Center(
             child: _error == null
@@ -229,10 +207,11 @@ class ModulesHomeScreenState extends State<ModulesHomeScreen> {
         : _tab == 0
         ? AdminOverview(
             repo: repo,
-            header: _SourceBanner(repo),
+            header: const PageTreeSlot(bottom: 4),
             onOpen: (key, {status, preset}) => _open(key, status: status, preset: preset),
             onAdd: (key) => _open(key, create: true),
             onOpenOrders: _nav.orders,
+            onNavItem: widget.appNav?.item,
           )
         : _allModules(repo);
     return Scaffold(
@@ -334,7 +313,7 @@ class ModulesHomeScreenState extends State<ModulesHomeScreen> {
       return ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
         children: [
-          _SourceBanner(repo),
+          const PageTreeSlot(bottom: 4),
           for (final group in moduleGroups) ...[
             Padding(
               padding: const EdgeInsets.fromLTRB(4, 22, 4, 10),
@@ -527,13 +506,14 @@ class _ModuleListScreenState extends State<ModuleListScreen> {
   /// The side panel fills the page (its full-screen button); reset whenever the panel closes.
   bool _panelExpanded = false;
 
-  ModuleDef get m => widget.module;
+  ModuleDef get m => withCustomFields(widget.module); // with the team's own fields (Edit fields)
 
   void _menusChanged() => setState(() {});
 
   @override
   void dispose() {
     OptionStore.instance.removeListener(_menusChanged);
+    FieldStore.instance.removeListener(_menusChanged);
     super.dispose();
   }
 
@@ -541,13 +521,14 @@ class _ModuleListScreenState extends State<ModuleListScreen> {
   void initState() {
     super.initState();
     OptionStore.instance.addListener(_menusChanged); // dropdown menus edited in Settings or by "Other…"
+    FieldStore.instance.addListener(_menusChanged); // fields added or changed in Edit fields
     if (widget.startAdding && m.canCreate) WidgetsBinding.instance.addPostFrameCallback((_) => _add());
   }
 
   /// Every field but pictures, by its kind: text, choices, numbers, dates, yes / no.
   List<FilterField> get _fields => [
     for (final f in m.fields)
-      if (f.type != FieldType.image)
+      if (f.type != FieldType.image && f.type != FieldType.file && !f.hidden)
         switch (f.type) {
           FieldType.choice => FilterField(f.key, f.label, FilterKind.choice, options: OptionStore.instance.options('module:${m.key}.${f.key}', f.options)),
           FieldType.boolean => FilterField(f.key, f.label, FilterKind.boolean),
@@ -640,8 +621,32 @@ class _ModuleListScreenState extends State<ModuleListScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF2F6F5),
       appBar: AppBar(
-        title: Text(m.title, style: const TextStyle(fontWeight: FontWeight.w600)),
-        actions: [...globalSearchActions(context), const SizedBox(width: 8)],
+        title: Text(menuTitle(context, m.title, module: m.key), style: const TextStyle(fontWeight: FontWeight.w600)),
+        actions: [
+          if (!m.readOnly && !m.sensitive)
+            EditFieldsButton(
+              onPressed: () => showFieldEditor(
+                context,
+                page: 'module:${m.key}',
+                title: m.title,
+                builtIn: [
+                  for (final f in widget.module.fields)
+                    BuiltinField(
+                      key: f.key,
+                      label: f.label,
+                      kind: _kindLabel(f.type),
+                      help: f.help,
+                      required: f.required,
+                      canToggleRequired: !f.readOnly && f.type != FieldType.boolean,
+                      choicesKey: f.type == FieldType.choice ? 'module:${m.key}.${f.key}' : null,
+                      defaultChoices: f.options,
+                    ),
+                ],
+              ),
+            ),
+          ...globalSearchActions(context),
+          const SizedBox(width: 8),
+        ],
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
@@ -649,12 +654,13 @@ class _ModuleListScreenState extends State<ModuleListScreen> {
           final list = ListView(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 104), // room under the last card for the Add button
             children: [
-              _SourceBanner(widget.repo),
+              const PageTreeSlot(bottom: 4),
               const SizedBox(height: 14),
               _ModuleHeader(module: m, total: all.length), // adding is the floating button
               const SizedBox(height: 14),
               _ModuleDashboard(
                 insight: analyse(m, all),
+                records: all,
                 status: switch (_q.filters[m.statusField]) {
                   ChoiceFilter(:final values) when values.length == 1 => values.single,
                   _ => null,
@@ -788,6 +794,9 @@ class _RecordCard extends StatelessWidget {
       for (final key in module.subtitleFields)
         if (module.field(key) case final f? when record[key] != null && '${record[key]}'.isNotEmpty)
           '${f.type == FieldType.text || f.type == FieldType.longText || f.type == FieldType.choice ? '' : '${f.label}: '}${displayValue(f, record[key])}',
+      // A product's running offer, and what the customer pays with it.
+      if (module.key == 'products' && discountSummary(record) != null)
+        '${discountSummary(record)}${priceNow(record) != null && priceNow(record) != (record['price'] as num?)?.round() ? ' → ${rupees(priceNow(record)!)}' : ' (not running now)'}',
     ].join(' · ');
     final status = module.statusField == null ? null : record[module.statusField];
     return Material(
@@ -958,7 +967,10 @@ class _KpiTile extends StatelessWidget {
 /// A module's dashboard above its list: number cards (all, each status, the key numbers, recent activity) and
 /// charts (status, how fields split, activity per week). Tapping a status card filters the list to it.
 class _ModuleDashboard extends StatelessWidget {
-  const _ModuleDashboard({required this.insight, required this.status, required this.onStatus});
+  const _ModuleDashboard({required this.insight, required this.status, required this.onStatus, this.records = const []});
+
+  /// The records [insight] was worked out from: for the weekly chart's hover breakdown.
+  final List<Map<String, dynamic>> records;
   final ModuleInsight insight;
   final String? status;
   final ValueChanged<String?> onStatus;
@@ -968,25 +980,27 @@ class _ModuleDashboard extends StatelessWidget {
     final i = insight;
     if (i.total == 0) return const SizedBox.shrink();
     final m = i.module;
-    final trend = i.dates.where((d) => d.weekly.any((n) => n > 0) && const {'renewsAt', 'predictedNext', 'expiresAt', 'endsAt', 'startsAt'}.contains(d.field.key) == false).firstOrNull;
+    final trend = i.dates.where((d) => d.weekly.where((n) => n > 0).length >= 2 && const {'renewsAt', 'predictedNext', 'expiresAt', 'endsAt', 'startsAt'}.contains(d.field.key) == false).firstOrNull;
     final recent = i.dates.where((d) => d.past30 > 0 || d.next30 > 0).firstOrNull;
     return LayoutBuilder(
       builder: (context, box) {
         final w = box.maxWidth;
-        final cols = w >= 1100
+        final cols = w >= 1400
+            ? 7
+            : w >= 1100
             ? 5
             : w >= 760
             ? 4
             : w >= 480
             ? 3
             : 2;
-        final chartCols = w >= 1100
+        final chartCols = w >= 1400
+            ? 4
+            : w >= 1000
             ? 3
             : w >= 640
             ? 2
             : 1;
-        final chartWidth = (w - 14 * (chartCols - 1)) / chartCols;
-        final beside = DonutChart.fitsBeside(chartWidth - 36, size: 132);
         final tiles = <Widget>[
           _KpiTile(
             label: 'All ${m.title.toLowerCase()}',
@@ -1020,21 +1034,38 @@ class _ModuleDashboard extends StatelessWidget {
             children: [
               Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14.5)),
               const SizedBox(height: 12),
-              if (chartCols > 1) Expanded(child: Center(child: child)) else child,
+              child,
             ],
           ),
         );
         final charts = <Widget>[
-          if (i.statuses.isNotEmpty) panel('By status', DonutChart(slices: i.statuses, centerLabel: m.title.toLowerCase(), size: 132, horizontal: beside)),
-          for (final b in i.breakdowns.take(trend == null ? 3 : 2))
-            panel('By ${b.field.label.toLowerCase()}', b.slices.length <= 4 ? DonutChart(slices: b.slices, centerLabel: m.title.toLowerCase(), size: 132, horizontal: beside) : BarList(slices: b.slices.take(5).toList())),
-          if (trend != null) panel('${trend.field.label}, per week', TrendChart(series: [(trend.field.label, brand, trend.weekly)], height: 150)),
+          if (i.statuses.isNotEmpty) panel('By status', SplitBar(slices: i.statuses)),
+          for (final b in i.breakdowns.take((chartCols - (i.statuses.isEmpty ? 0 : 1) - (trend == null ? 0 : 1)).clamp(chartCols == 1 ? 2 : 1, 3)))
+            panel('By ${b.field.label.toLowerCase()}', b.slices.length <= 4 ? SplitBar(slices: b.slices) : BarList(slices: b.slices.take(5).toList())),
+          if (trend != null)
+            panel(
+              '${trend.field.label}, per week',
+              // From the first week with any, so a short history isn't a row of empty columns (at least 4 weeks).
+              SizedBox(
+                height: 120,
+                child: () {
+                  final from = math.min(8, trend.weekly.indexWhere((n) => n > 0));
+                  final grouping = weeklyGrouping(m);
+                  final groups = grouping == null ? null : weeklyGroups(records, trend.field.key, grouping.$2);
+                  return AreaTrend(
+                    bars: [for (final (k, v) in trend.weekly.indexed) if (k >= from) (k == 11 ? 'This wk' : '${11 - k}w ago', v)],
+                    details: groups == null ? null : [for (var k = from; k < 12; k++) breakdownText(groups[k], title: grouping!.$1)],
+                  );
+                }(),
+              ),
+            ),
         ];
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            EqualRows(columns: cols, gap: 12, children: tiles),
-            if (charts.isNotEmpty) ...[const SizedBox(height: 14), EqualRows(columns: chartCols, gap: 14, children: charts)],
+            // Rows as wide as the page: never more columns than tiles or charts.
+            EqualRows(columns: math.min(cols, tiles.length), gap: 12, children: tiles),
+            if (charts.isNotEmpty) ...[const SizedBox(height: 14), EqualRows(columns: math.min(chartCols, charts.length), gap: 14, children: charts)],
           ],
         );
       },
@@ -1086,7 +1117,7 @@ class ModuleDetailScreen extends StatefulWidget {
 class _ModuleDetailScreenState extends State<ModuleDetailScreen> {
   bool _busy = false;
 
-  ModuleDef get m => widget.module;
+  ModuleDef get m => withCustomFields(widget.module); // with the team's own fields (Edit fields)
 
   /// The number fields this record has a value for (price, stock, fee, rating…).
   List<FieldDef> _numbers(Map<String, dynamic> record) => [
@@ -1214,7 +1245,7 @@ class _ModuleDetailScreenState extends State<ModuleDetailScreen> {
             key: const Key('detail-scroll'),
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
             children: [
-              _SourceBanner(widget.repo),
+              const PageTreeSlot(bottom: 4),
               const SizedBox(height: 14),
               Container(
                 padding: const EdgeInsets.all(18),
@@ -1297,17 +1328,22 @@ class _ModuleDetailScreenState extends State<ModuleDetailScreen> {
                   ),
                 ),
               ],
-              for (final section in m.sections) ...[
+              for (final section in m.sections)
+                if (m.fields.any((f) => f.section == section && !f.hidden)) ...[
                 const SizedBox(height: 14),
                 _SectionCard(
                   title: m.sections.length > 1 ? section : null,
-                  child: fieldGrid(
-                    [
-                      for (final f in m.fields)
-                        if (f.section == section) f,
-                    ],
-                    (f) => _FieldView(module: m, field: f, record: record, repo: widget.repo),
-                    gap: 18,
+                  child: _withDiscount(
+                    m.key == 'products' && section == 'Discount',
+                    record,
+                    fieldGrid(
+                      [
+                        for (final f in m.fields)
+                          if (f.section == section && !f.hidden) f,
+                      ],
+                      (f) => _FieldView(module: m, field: f, record: record, repo: widget.repo),
+                      gap: 18,
+                    ),
                   ),
                 ),
               ],
@@ -1351,6 +1387,8 @@ class _FieldView extends StatelessWidget {
           ),
         ],
       );
+    } else if (f.type == FieldType.file) {
+      shown = AttachmentList(files: attachmentsOf(value));
     } else if (f.type == FieldType.list && value is List) {
       shown = Wrap(
         spacing: 6,
@@ -1541,11 +1579,11 @@ class _ModuleFormScreenState extends State<ModuleFormScreen> {
   late final Map<String, dynamic> _values;
   bool _busy = false;
 
-  ModuleDef get m => widget.module;
+  ModuleDef get m => withCustomFields(widget.module); // with the team's own fields (Edit fields)
   bool get _editing => widget.record != null;
-  Iterable<FieldDef> get _editable => m.fields.where((f) => !f.readOnly);
+  Iterable<FieldDef> get _editable => m.fields.where((f) => !f.readOnly && !f.hidden);
 
-  static const _picked = {FieldType.boolean, FieldType.choice, FieldType.dateTime, FieldType.list};
+  static const _picked = {FieldType.boolean, FieldType.choice, FieldType.dateTime, FieldType.list, FieldType.file};
 
   @override
   void initState() {
@@ -1555,6 +1593,7 @@ class _ModuleFormScreenState extends State<ModuleFormScreen> {
       for (final f in _editable)
         f.key: switch (f.type) {
           FieldType.list => [for (final v in (record[f.key] as List?) ?? const []) '$v'],
+          FieldType.file => attachmentsOf(record[f.key]),
           _ =>
             record[f.key] ??
                 switch (f.type) {
@@ -1585,12 +1624,21 @@ class _ModuleFormScreenState extends State<ModuleFormScreen> {
     };
   }
 
+  /// The form as it stands, as a record (for saving, and for the discount preview as it's typed).
+  Map<String, dynamic> get _draft => {for (final f in _editable) f.key: _text.containsKey(f.key) ? _parsed(f) : _values[f.key]};
+
   Future<void> _save() async {
     if (!(_form.currentState?.validate() ?? false)) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Some boxes need a look. They’re marked in red.')));
       return;
     }
-    final record = <String, dynamic>{for (final f in _editable) f.key: _text.containsKey(f.key) ? _parsed(f) : _values[f.key]};
+    final record = _draft;
+    // A product's discount must make sense with its price (discounts.dart).
+    final problem = m.key == 'products' ? discountProblem({...?widget.record, ...record}) : null;
+    if (problem != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(problem)));
+      return;
+    }
     setState(() => _busy = true);
     try {
       final saved = _editing ? await widget.repo.update(m.key, '${widget.record!['id']}', record) : await widget.repo.create(m.key, record);
@@ -1682,6 +1730,16 @@ class _ModuleFormScreenState extends State<ModuleFormScreen> {
             child: Text(displayValue(f, _values[f.key])),
           ),
         );
+      case FieldType.file:
+        return AttachmentField(
+          label: f.label,
+          initial: attachmentsOf(_values[f.key]),
+          types: f.fileTypes.isEmpty ? docTypes : f.fileTypes,
+          multiple: f.multiple,
+          mandatory: f.required,
+          help: f.help,
+          onChanged: (files) => _values[f.key] = files,
+        );
       case FieldType.list:
         return _ListField(field: f, decoration: decoration, initial: _values[f.key] as List<String>, enabled: !_busy, onChanged: (items) => _values[f.key] = items);
       default:
@@ -1692,7 +1750,8 @@ class _ModuleFormScreenState extends State<ModuleFormScreen> {
           minLines: f.type == FieldType.longText ? 3 : 1,
           maxLines: f.type == FieldType.longText ? 8 : 1,
           maxLength: f.maxLength,
-          onChanged: f.type == FieldType.image ? (_) => setState(() {}) : null,
+          // Pictures preview as their link is typed; a product's prices redraw its discount preview.
+          onChanged: f.type == FieldType.image || (m.key == 'products' && const {'price', 'mrp', 'discountValue', 'discountMinBoxes'}.contains(f.key)) ? (_) => setState(() {}) : null,
           style: const TextStyle(fontSize: 16),
           keyboardType: switch (f.type) {
             FieldType.email => TextInputType.emailAddress,
@@ -1792,10 +1851,14 @@ class _ModuleFormScreenState extends State<ModuleFormScreen> {
                   for (final s in sections) ...[
                     _SectionCard(
                       title: sections.length > 1 || s != 'Details' ? s : null,
-                      child: fieldGrid([
-                        for (final f in _editable)
-                          if (f.section == s) f,
-                      ], _field),
+                      child: _withDiscount(
+                        m.key == 'products' && s == 'Discount',
+                        _draft,
+                        fieldGrid([
+                          for (final f in _editable)
+                            if (f.section == s) f,
+                        ], _field),
+                      ),
                     ),
                     const SizedBox(height: 14),
                   ],
@@ -1919,3 +1982,22 @@ class _ListFieldState extends State<_ListField> {
     },
   );
 }
+
+/// A built-in field's kind, as the Edit fields panel lists it.
+String _kindLabel(FieldType t) => switch (t) {
+  FieldType.text || FieldType.email || FieldType.phone || FieldType.url => 'Short text',
+  FieldType.longText => 'Long text',
+  FieldType.integer || FieldType.decimal => 'Number',
+  FieldType.money => 'Amount (₹)',
+  FieldType.boolean => 'Yes / no',
+  FieldType.dateTime => 'Date',
+  FieldType.choice => 'Dropdown',
+  FieldType.image => 'Image link',
+  FieldType.list => 'List',
+  FieldType.file => 'File upload',
+};
+
+/// A form or record section with the product's discount preview under its fields (Products › Discount).
+Widget _withDiscount(bool show, Map<String, dynamic> product, Widget fields) => !show
+    ? fields
+    : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [fields, const SizedBox(height: 14), DiscountPreview(product: product)]);

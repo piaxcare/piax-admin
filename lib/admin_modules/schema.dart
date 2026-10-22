@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'discounts.dart';
+
 /// The Admin modules mock-up: the modules of the PIAX backend admin panel (api.piax.co.in/admin), described as data so
 /// one set of screens (list, details, form) shows them all. Records are dummy data (assets/mock/admin_modules.json,
 /// made by the website's scripts/generate-admin-mock.mjs).
@@ -8,7 +10,7 @@ import 'package:flutter/material.dart';
 /// an "Add" form collects everything the live website and app need (for a product: description, features, pricing
 /// and tax, stock, photos, shipping, search listing…) and explains each box in plain words.
 
-enum FieldType { text, longText, integer, decimal, money, boolean, dateTime, choice, email, phone, url, image, list }
+enum FieldType { text, longText, integer, decimal, money, boolean, dateTime, choice, email, phone, url, image, list, file }
 
 class FieldDef {
   const FieldDef(
@@ -24,6 +26,9 @@ class FieldDef {
     this.maxLength,
     this.pattern,
     this.patternMessage,
+    this.fileTypes = const [],
+    this.multiple = true,
+    this.hidden = false,
   });
   final String key;
   final String label;
@@ -52,8 +57,15 @@ class FieldDef {
   final String? pattern;
   final String? patternMessage;
 
+  /// Uploaded files ([FieldType.file]): the types taken (PDF and Word when empty) and whether several can be added.
+  final List<String> fileTypes;
+  final bool multiple;
+
+  /// Hidden by the team (Edit fields): left out of the form and the record page; its value is kept.
+  final bool hidden;
+
   /// Takes the full width of a two-column form.
-  bool get wide => type == FieldType.longText || type == FieldType.list || type == FieldType.image || type == FieldType.boolean;
+  bool get wide => type == FieldType.longText || type == FieldType.list || type == FieldType.image || type == FieldType.boolean || type == FieldType.file;
 }
 
 /// A one-tap action on a record: sets [field] (the status, by default) to [to]. Offered only while the record's
@@ -212,6 +224,13 @@ const modules = <ModuleDef>[
       FieldDef('mrp', 'MRP', FieldType.money, required: true, section: 'Pricing & tax', help: 'Maximum retail price printed on the box. Shown struck through when higher than the selling price.'),
       FieldDef('gstRate', 'GST rate', FieldType.choice, options: ['0%', '5%', '12%', '18%'], section: 'Pricing & tax', help: 'The GST slab on the invoice. Sanitary pads are 0% at present; check with accounts before changing.'),
       FieldDef('hsnCode', 'HSN code', FieldType.text, section: 'Pricing & tax', hint: '96190010', pattern: r'^\d{4,8}$', patternMessage: 'HSN codes are 4 to 8 digits.', help: 'The tax code printed on invoices.'),
+      FieldDef('discountType', 'Discount', FieldType.choice, options: discountTypes, section: 'Discount', help: 'This product’s own offer: a percentage or an amount off the selling price.'),
+      FieldDef('discountValue', 'Discount amount', FieldType.decimal, section: 'Discount', hint: '15', help: 'Percent off (up to 90) or rupees off (less than the selling price), as chosen above.'),
+      FieldDef('discountStarts', 'Starts', FieldType.dateTime, section: 'Discount', help: 'Leave empty to start straight away.'),
+      FieldDef('discountEnds', 'Ends', FieldType.dateTime, section: 'Discount', help: 'Leave empty to run until it’s changed.'),
+      FieldDef('discountMinBoxes', 'Minimum boxes', FieldType.integer, section: 'Discount', hint: '1', help: 'Only when the order has at least this many boxes of the product. Empty or 1: every order.'),
+      FieldDef('discountLabel', 'Offer label', FieldType.text, section: 'Discount', maxLength: 24, hint: 'Diwali offer', help: 'Shown on the product card next to the price.'),
+      FieldDef('discountWhere', 'Applies on', FieldType.choice, options: discountWhere, section: 'Discount'),
       FieldDef('sku', 'SKU', FieldType.text, required: true, section: 'Stock', hint: 'PX-LUMA-12', help: 'The stock code on the box and in the warehouse. Unique per product.'),
       FieldDef('stock', 'Boxes in stock', FieldType.integer, required: true, section: 'Stock', help: 'Boxes ready to ship. At 0 the shop shows “Out of stock”.'),
       FieldDef('lowStockAt', 'Low-stock alert at', FieldType.integer, section: 'Stock', hint: '200', help: 'The dashboard flags the product when stock falls below this.'),
@@ -225,6 +244,7 @@ const modules = <ModuleDef>[
       FieldDef('featured', 'Feature on the home page', FieldType.boolean, section: 'Visibility', help: 'On: shown in “What do you need today?” on the home page.'),
       FieldDef('status', 'Status', FieldType.choice, options: ['Active', 'Hidden'], section: 'Visibility', help: 'Active: on sale in the shop and the app. Hidden: kept here but not sold.'),
       FieldDef('updatedAt', 'Last updated', FieldType.dateTime, readOnly: true, section: 'Visibility'),
+      FieldDef('labReports', 'Lab test reports', FieldType.file, section: 'Quality documents', help: 'The lab reports behind this product’s validated claims (breathable backsheet, SAP core…). PDF or Word.'),
     ],
     actions: [
       ActionDef('Hide from shop', Icons.visibility_off_outlined, 'Hidden', from: ['Active']),
@@ -249,6 +269,7 @@ const modules = <ModuleDef>[
       FieldDef('radiusKm', 'Delivery radius (km)', FieldType.integer, section: 'Delivery', help: 'How far quick deliveries go from this store.'),
       FieldDef('quickDelivery', 'Quick delivery from this store', FieldType.boolean, section: 'Delivery', help: 'On: riders pick up nearby orders here for delivery within the hour.'),
       FieldDef('status', 'Status', FieldType.choice, options: ['Open', 'Closed'], section: 'Delivery'),
+      FieldDef('agreement', 'Store agreement', FieldType.file, section: 'Documents', multiple: false, help: 'The signed agreement with the store or stockist.'),
     ],
     actions: [
       ActionDef('Close store', Icons.store_mall_directory_outlined, 'Closed', from: ['Open'], danger: true),
@@ -397,6 +418,7 @@ const modules = <ModuleDef>[
       FieldDef('city', 'City', FieldType.text, section: 'Consultations'),
       FieldDef('modes', 'Consultation types', FieldType.list, section: 'Consultations', help: 'One per line: Video call, Clinic visit.'),
       FieldDef('clinicAddress', 'Clinic address', FieldType.longText, section: 'Consultations'),
+      FieldDef('credentials', 'Registration & qualification certificates', FieldType.file, section: 'Verification', fileTypes: ['pdf', 'jpg', 'jpeg', 'png'], help: 'Medical council registration and degree certificates, checked before the doctor is verified.'),
     ],
     actions: [
       ActionDef('Verify', Icons.verified_outlined, 'Available', from: ['Pending verification']),
@@ -452,6 +474,7 @@ const modules = <ModuleDef>[
       FieldDef('licenceNo', 'Driving licence no.', FieldType.text, section: 'Vehicle & KYC', help: 'Checked during KYC.'),
       FieldDef('deliveries', 'Deliveries', FieldType.integer, readOnly: true, section: 'Vehicle & KYC'),
       FieldDef('rating', 'Rating', FieldType.decimal, readOnly: true, section: 'Vehicle & KYC'),
+      FieldDef('kycDocuments', 'KYC documents', FieldType.file, section: 'Verification', fileTypes: ['pdf', 'jpg', 'jpeg', 'png'], help: 'ID proof, address proof and driving licence, checked before the account is approved.'),
     ],
     actions: [
       ActionDef('Approve KYC', Icons.verified_user_outlined, 'Offline', from: ['Pending KYC']),
@@ -474,6 +497,7 @@ const modules = <ModuleDef>[
       FieldDef('city', 'City', FieldType.text, section: 'Profile'),
       FieldDef('pincode', 'Pincode', FieldType.text, section: 'Profile', pattern: r'^\d{6}$', patternMessage: 'A pincode is 6 digits.'),
       FieldDef('joinedAt', 'Joined', FieldType.dateTime, readOnly: true, section: 'Profile'),
+      FieldDef('segment', 'Customer segment', FieldType.choice, options: ['B2C', 'B2B', 'Unknown'], section: 'Profile', help: 'B2C: a person buying for themselves. B2B: buying for an organisation. Unknown until confirmed.'),
       FieldDef('status', 'Status', FieldType.choice, options: ['Active', 'Blocked'], section: 'Profile', help: 'Blocked members can’t sign in or order.'),
       FieldDef('orders', 'Orders placed', FieldType.integer, readOnly: true, section: 'Orders'),
       FieldDef('delivered', 'Delivered', FieldType.integer, readOnly: true, section: 'Orders'),

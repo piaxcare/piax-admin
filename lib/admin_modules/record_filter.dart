@@ -165,7 +165,7 @@ class RecordQuery {
     search: '${j['search'] ?? ''}',
     filters: {
       for (final e in ((j['filters'] as Map?) ?? const {}).entries)
-        if (FieldFilter.fromJson(Map<String, Object?>.from(e.value as Map)) case final f?) '${e.key}': f,
+        '${e.key}': ?FieldFilter.fromJson(Map<String, Object?>.from(e.value as Map)),
     },
     sortKey: j['sort'] as String?,
     ascending: j['asc'] != false,

@@ -275,10 +275,16 @@ class EqualRows extends StatelessWidget {
 /// Ranked horizontal bars, biggest first: "which city / plan / article has the most". One measure, so one colour
 /// ([color], brand teal): the bars differ by length, and each is labelled. [format] writes the values.
 class BarList extends StatelessWidget {
-  const BarList({super.key, required this.slices, this.format, this.color = const Color(0xFF0F8A6F)});
+  const BarList({super.key, required this.slices, this.format, this.color = const Color(0xFF0F8A6F), this.dense = false, this.detail});
   final List<Slice> slices;
   final String Function(int value)? format;
   final Color color;
+
+  /// Thinner bars, smaller pictures and type: for the overview's small cards.
+  final bool dense;
+
+  /// A short extra after the value, in grey ("12 orders · 34%").
+  final String Function(Slice slice)? detail;
 
   @override
   Widget build(BuildContext context) {
@@ -294,7 +300,7 @@ class BarList extends StatelessWidget {
               message: '${s.label}: ${format?.call(s.count) ?? s.count} (${(s.count * 100 / total).round()}%)',
               child: Row(
                 children: [
-                  if (s.image != null) ...[AssetThumb(s.image!, size: 38, radius: 10), const SizedBox(width: 12)],
+                  if (s.image != null) ...[AssetThumb(s.image!, size: dense ? 32 : 38, radius: 10), const SizedBox(width: 12)],
                   Expanded(
                     child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -302,6 +308,7 @@ class BarList extends StatelessWidget {
                   Row(
                     children: [
                       Expanded(child: Text(s.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13))),
+                      if (detail != null) Text('${detail!(s)}  ', style: const TextStyle(fontSize: 11.5, color: Color(0xFF5A6C68))),
                       Text(format?.call(s.count) ?? '${s.count}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                     ],
                   ),

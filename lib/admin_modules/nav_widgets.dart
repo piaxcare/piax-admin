@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../format.dart';
 import 'admin_search.dart';
 import 'nav_config.dart';
+import 'site_builder.dart';
 import 'nav_pages.dart';
 
 // The navigation pieces built from nav_config.dart: the section tree (sidebar and phone drawer), the folded icon rail,
@@ -26,7 +27,7 @@ void openNavItem(BuildContext context, AdminNav nav, NavItem item, {NavigatorSta
         AppPage.settings => nav.settings,
       };
       (go ?? demo)();
-    case DemoTarget():
+    case DemoTarget() || ScreenTarget():
       demo();
   }
 }
@@ -243,6 +244,7 @@ class NavDemoPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final found = navItemById(itemId);
     if (found == null) return Scaffold(appBar: AppBar(), body: const Center(child: Text('This page doesn’t exist.')));
+    if (found.$2.target is ScreenTarget) return const SiteBuilderScreen();
     // Pages with a content spec (nav_pages.dart) show their full demo page.
     if (navPageSpecs[itemId] case final spec?) {
       return NavModulePage(itemId: itemId, spec: spec, onSibling: nav == null ? null : (other) => openNavItem(context, nav!, other));
@@ -257,17 +259,7 @@ class NavDemoPage extends StatelessWidget {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
             children: [
-              Semantics(
-                label: 'Breadcrumb',
-                child: Wrap(crossAxisAlignment: WrapCrossAlignment.center, spacing: 6, runSpacing: 4, children: [
-                  const Text('Admin', style: TextStyle(color: Color(0xFF5A6C68), fontSize: 13)),
-                  const Icon(Icons.chevron_right, size: 16, color: Color(0xFF8A9A96)),
-                  Text('${section.numbered} ${section.label}', style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 13)),
-                  const Icon(Icons.chevron_right, size: 16, color: Color(0xFF8A9A96)),
-                  Text(item.label, style: const TextStyle(color: Color(0xFF0C1C19), fontSize: 13, fontWeight: FontWeight.w600)),
-                ]),
-              ),
-              const SizedBox(height: 14),
+              const PageTreeSlot(),
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFFE6EEEB))),
@@ -325,4 +317,113 @@ class NavDemoPage extends StatelessWidget {
       ),
     );
   }
+}
+
+// ================================================================ Page tree
+
+/// The page tree at the top of every page's content: Admin › section › page. Each part is a link: Admin opens the
+/// Founder Overview, the section lists its pages to jump to, and the page name reopens that page from the top (from a
+/// record or a form, say). [itemId] is the menu item on screen; [fallback] names a page outside the menu.
+class PageTree extends StatelessWidget {
+  const PageTree({super.key, required this.nav, this.itemId, this.fallback});
+  final AdminNav nav;
+  final String? itemId;
+  final String? fallback;
+
+  static const _muted = Color(0xFF5A6C68);
+  static const _ink = Color(0xFF0C1C19);
+
+  void _open(BuildContext context, NavItem item) => openNavItem(context, nav, item);
+
+  Widget _link(String text, VoidCallback? onTap, {bool current = false, IconData? icon, bool menu = false}) => InkWell(
+    borderRadius: BorderRadius.circular(8),
+    onTap: onTap,
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        if (icon != null) ...[Icon(icon, size: 16, color: current ? _ink : _muted), const SizedBox(width: 5)],
+        Text(text, style: TextStyle(color: current ? _ink : _muted, fontSize: 13, fontWeight: current ? FontWeight.w600 : FontWeight.w500)),
+        if (menu) const Icon(Icons.arrow_drop_down, size: 18, color: _muted),
+      ]),
+    ),
+  );
+
+  static const _sep = Icon(Icons.chevron_right, size: 16, color: Color(0xFF8A9A96));
+
+  @override
+  Widget build(BuildContext context) {
+    final found = itemId == null ? null : navItemById(itemId!);
+    final overview = navItemById('founder-overview')!.$2;
+    final atHome = itemId == 'founder-overview';
+    return Semantics(
+      label: 'Page tree',
+      container: true,
+      child: SizedBox(
+        height: 34,
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            _link('Admin', atHome ? null : () => _open(context, overview), icon: Icons.home_outlined, current: atHome && found == null),
+            if (found case (final section, final item)) ...[
+              _sep,
+              PopupMenuButton<NavItem>(
+                tooltip: 'Pages in ${section.label}',
+                position: PopupMenuPosition.under,
+                onSelected: (other) => _open(context, other),
+                itemBuilder: (_) => [
+                  for (final other in section.items)
+                    CheckedPopupMenuItem(value: other, checked: other.id == item.id, child: Text(other.label)),
+                ],
+                child: IgnorePointer(child: _link('${section.numbered} ${section.label}', () {}, menu: true)),
+              ),
+              _sep,
+              _link(item.label, () => _open(context, item), current: true),
+            ] else if (fallback != null) ...[
+              _sep,
+              _link(fallback!, null, current: true),
+            ],
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
+/// What the app frame tells its pages about where they are, for the page tree each page shows at its top.
+class PageTreeScope extends InheritedWidget {
+  const PageTreeScope({super.key, required this.nav, required this.itemId, required this.fallback, required super.child});
+  final AdminNav nav;
+  final String? itemId, fallback;
+
+  @override
+  bool updateShouldNotify(PageTreeScope old) => old.itemId != itemId || old.fallback != fallback || !identical(old.nav, nav);
+}
+
+/// The page tree, placed first in a page's content. Nothing outside the app frame (a page opened on its own).
+class PageTreeSlot extends StatelessWidget {
+  const PageTreeSlot({super.key, this.bottom = 10});
+  final double bottom;
+
+  @override
+  Widget build(BuildContext context) {
+    final scope = context.dependOnInheritedWidgetOfExactType<PageTreeScope>();
+    if (scope == null) return const SizedBox.shrink();
+    return Padding(
+      padding: EdgeInsets.only(bottom: bottom),
+      child: Align(alignment: Alignment.centerLeft, child: Transform.translate(offset: const Offset(-6, 0), child: PageTree(nav: scope.nav, itemId: scope.itemId, fallback: scope.fallback))),
+    );
+  }
+}
+
+/// The page's title: the name of the sidebar item that opened it, when that item opens this [module] or app [page]
+/// (so "Website CMS" opens a page called Website CMS, and two items on the same module each keep their own name);
+/// otherwise [fallback].
+String menuTitle(BuildContext context, String fallback, {String? module, AppPage? page}) {
+  final id = context.dependOnInheritedWidgetOfExactType<PageTreeScope>()?.itemId;
+  final item = id == null ? null : navItemById(id)?.$2;
+  return switch (item?.target) {
+    ModuleTarget(module: final m) when m == module => item!.label,
+    PageTarget(page: final p) when p == page => item!.label,
+    _ => fallback,
+  };
 }

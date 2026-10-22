@@ -67,6 +67,8 @@ class DemoServer {
       'id': '${o['id']}',
       'createdAt': created.toUtc().toIso8601String(),
       'demo': true,
+      if (o['channel'] != null) 'channel': o['channel'],
+      if (o['segment'] != null) 'segment': o['segment'],
       'contact': {'name': '${m?['name'] ?? 'Demo customer'}', 'phone': '${m?['phone'] ?? ''}', 'email': '${m?['email'] ?? ''}'},
       'address': {
         'name': '${m?['name'] ?? 'Demo customer'}',

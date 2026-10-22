@@ -435,3 +435,29 @@ List<FunnelStep> memberFunnel(ModuleRepository repo) {
     FunnelStep('Blocked', blocked, '${of(blocked)} of accounts', bad: true),
   ];
 }
+
+/// Records per week for the last 12 weeks (as [DateStat.weekly]), each week split by [group] (a status, a type…):
+/// what a weekly chart shows on hover.
+List<Map<String, int>> weeklyGroups(List<Map<String, dynamic>> records, String dateKey, String Function(Map<String, dynamic>) group, {DateTime? now}) {
+  final at = now ?? DateTime.now();
+  final weekStart = DateTime(at.year, at.month, at.day).subtract(Duration(days: at.weekday - 1));
+  final out = [for (var i = 0; i < 12; i++) <String, int>{}];
+  for (final r in records) {
+    final d = DateTime.tryParse('${r[dateKey] ?? ''}')?.toLocal();
+    if (d == null || d.isAfter(at)) continue;
+    final weeksAgo = weekStart.difference(DateTime(d.year, d.month, d.day)).inDays;
+    final index = 11 - (weeksAgo <= 0 ? 0 : (weeksAgo + 6) ~/ 7);
+    if (index < 0 || index >= 12) continue;
+    final k = group(r);
+    out[index][k] = (out[index][k] ?? 0) + 1;
+  }
+  return out;
+}
+
+/// The category a record's weekly chart is split by: its status, else its first choice field. Null when it has neither.
+(String, String Function(Map<String, dynamic>))? weeklyGrouping(ModuleDef m) {
+  final key = m.statusField ?? m.fields.where((f) => f.type == FieldType.choice).firstOrNull?.key;
+  if (key == null) return null;
+  final label = m.fields.where((f) => f.key == key).firstOrNull?.label ?? 'Status';
+  return ('By ${label.toLowerCase()}', (r) => '${r[key] ?? 'Unknown'}');
+}

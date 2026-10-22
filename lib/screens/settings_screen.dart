@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../admin_modules/nav_config.dart' show AppPage;
+
 import '../admin_modules/menu_options_screen.dart';
 import '../admin_modules/admin_search.dart' show globalSearchActions;
+import '../admin_modules/nav_widgets.dart' show PageTreeSlot, menuTitle;
 import '../api.dart';
 import '../format.dart';
 import '../models.dart';
@@ -78,7 +81,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Settings', style: TextStyle(fontWeight: FontWeight.w600)),
+          title: Text(menuTitle(context, 'Settings', page: AppPage.settings), style: TextStyle(fontWeight: FontWeight.w600)),
           actions: [...globalSearchActions(context), const SizedBox(width: 8)],
         ),
         body: account == null
@@ -96,6 +99,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   return ListView(
                     padding: EdgeInsets.fromLTRB(wide ? 32 : 16, 4, wide ? 32 : 16, 32),
                     children: [
+                      const PageTreeSlot(),
                       PageWidth(
                         maxWidth: 1000,
                         child: Column(

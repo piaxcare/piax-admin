@@ -242,6 +242,8 @@ class Order {
     required this.deliverBy,
     required this.messagesSent,
     this.cancelReason,
+    this.channel,
+    this.segment,
   });
 
   final String id;
@@ -256,6 +258,10 @@ class Order {
   final Tracking? tracking;
   final DateTime? deliverBy;
   final String? cancelReason;
+
+  /// Where the order came from and who bought it, when the server says (the website's API doesn't yet); reports
+  /// show missing ones as "Unknown".
+  final String? channel, segment;
 
   /// WhatsApp updates already sent to the customer from this app: the message's API name → when.
   final Map<String, DateTime> messagesSent;
@@ -302,6 +308,8 @@ class Order {
         (k, v) => MapEntry(k, DateTime.tryParse(_s(v)) ?? DateTime.now()),
       ),
       cancelReason: j['cancelReason'] as String?,
+      channel: j['channel'] as String?,
+      segment: j['segment'] as String?,
     );
   }
 }

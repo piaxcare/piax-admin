@@ -1,5 +1,11 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+
+import '../admin_modules/nav_config.dart' show AppPage;
+
+import '../admin_modules/data_charts.dart';
+import '../admin_modules/nav_widgets.dart' show PageTreeSlot, menuTitle;
+import '../admin_modules/dashboard_widgets.dart' show breakdownText;
 import 'package:intl/intl.dart';
 
 import '../analytics.dart';
@@ -87,7 +93,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       backgroundColor: const Color(0xFFF2F6F5),
       appBar: AppBar(
         backgroundColor: const Color(0xFFF2F6F5),
-        title: const Text('Analytics', style: TextStyle(fontWeight: FontWeight.w600)),
+        title: Text(menuTitle(context, 'Analytics', page: AppPage.analytics), style: TextStyle(fontWeight: FontWeight.w600)),
         actions: [
           ...globalSearchActions(context),
           IconButton(tooltip: 'Refresh', onPressed: _load, icon: const Icon(Icons.refresh)),
@@ -138,6 +144,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     return ListView(
       padding: EdgeInsets.fromLTRB(pad, 4, pad, 40),
       children: [
+        const PageTreeSlot(),
         PageWidth(
           maxWidth: 1400,
           child: Column(
@@ -191,6 +198,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             ],
           ),
         ),
+        const SizedBox(height: 30),
+        // Every other set of records in the admin app, each with its own small charts (full width).
+        AllDataCharts(api: widget.api),
       ],
     );
   }
@@ -343,10 +353,17 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                   LineTooltipItem(
                     '${a.series[s.x.round()].label}\n',
                     const TextStyle(color: _muted, fontSize: 12),
+                    textAlign: TextAlign.left,
                     children: [
                       TextSpan(
                         text: rupees(s.y.round()),
                         style: const TextStyle(color: _ink, fontWeight: FontWeight.w600, fontSize: 14),
+                      ),
+                      TextSpan(
+                        text: breakdownText({
+                          for (final e in a.series[s.x.round()].revenueByProduct.entries) productNames[e.key] ?? e.key: e.value,
+                        }, title: 'By product', format: rupees),
+                        style: const TextStyle(color: _muted, fontSize: 12),
                       ),
                     ],
                   ),
@@ -399,10 +416,15 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               getTooltipItem: (group, _, rod, _) => BarTooltipItem(
                 '${a.series[group.x].label}\n',
                 const TextStyle(color: _muted, fontSize: 12),
-                children: [
+                textAlign: TextAlign.left,
+                    children: [
                   TextSpan(
                     text: '${rod.toY.round()} orders',
                     style: const TextStyle(color: _ink, fontWeight: FontWeight.w600, fontSize: 14),
+                  ),
+                  TextSpan(
+                    text: breakdownText(a.series[group.x].ordersByStatus, title: 'By status'),
+                    style: const TextStyle(color: _muted, fontSize: 12),
                   ),
                 ],
               ),

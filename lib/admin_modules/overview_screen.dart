@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -7,21 +9,19 @@ import 'dashboard_images.dart';
 import 'dashboard_widgets.dart';
 import 'insights.dart';
 import 'repository.dart';
-import 'revenue_section.dart';
+import 'founder_dashboard.dart';
+import 'nav_pages.dart' show navPageSpecs, rowsFor;
 import 'schema.dart';
 
-// The unified admin dashboard, laid out like a modern commerce admin in the app's own colours and font:
-//   1. Three big numbers (subscription income, members, app rating) with their change, and a ring of stock by
-//      product beside them.
-//   2. Activity over the weeks (with a period picker) and a health gauge: how much of everything is running well.
-//   3. Members by city, the member journey (accounts → plan → active → repeat buyers) and Learn views by category.
-//   4. Needs attention, everything else at a glance, quick actions, more charts, and every module in one line.
+// The unified admin dashboard, in the deployed admin's style (piax-admin.vercel.app): big KPI cards, area line
+// charts, donut rings, a health gauge, the member funnel and share bars, full width on desktop. The Founder Overview's sales part first (revenue, orders), then alerts and decisions, stock
+// and operations, customers (members by city, member journey), recent transactions, quick actions and every module.
 
 /// Opens a module list: optionally filtered to a status or a custom filter.
 typedef OpenModule = void Function(String module, {String? status, ListPreset? preset});
 
 class AdminOverview extends StatelessWidget {
-  const AdminOverview({super.key, required this.repo, required this.onOpen, this.onAdd, this.header, this.onOpenOrders});
+  const AdminOverview({super.key, required this.repo, required this.onOpen, this.onAdd, this.header, this.onOpenOrders, this.onNavItem});
   final ModuleRepository repo;
   final OpenModule onOpen;
 
@@ -34,6 +34,9 @@ class AdminOverview extends StatelessWidget {
   /// Opens the order desk, from the revenue and orders section.
   final VoidCallback? onOpenOrders;
 
+  /// Opens a sidebar page by its menu id (pending approvals → Decisions & Approvals).
+  final void Function(String itemId)? onNavItem;
+
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
@@ -42,86 +45,65 @@ class AdminOverview extends StatelessWidget {
       builder: (context, box) {
         final w = box.maxWidth;
         final pad = w >= 900 ? 28.0 : 16.0;
-        final inner = (w - pad * 2).clamp(0.0, 1500.0);
+        final inner = math.max(0.0, w - pad * 2);
         const gap = 18.0;
-        final wide = inner >= 1180, medium = inner >= 720;
-        final chartCols = inner >= 1150 ? 3 : medium ? 2 : 1;
-        double tile(int cols) => (inner - gap * (cols - 1)) / cols;
+        final medium = inner >= 720;
+        final chartCols = inner >= 1800 ? 5 : inner >= 1400 ? 4 : inner >= 1050 ? 3 : medium ? 2 : 1;
 
         final cards = headlineCards(repo, now: now);
-        final heads = [for (final (i, c) in cards.indexed) HeadlineStatCard(card: c, highlight: i == 0, onTap: () => onOpen(c.module))];
+        const tones = [brand, Color(0xFF5B3F73), Color(0xFF8A5A00)];
+        final heads = [
+          for (final (i, c) in cards.indexed)
+            MiniStat(highlight: i == 0, icon: c.icon, tone: tones[i % tones.length], value: c.value, label: c.label, delta: c.delta, onTap: () => onOpen(c.module)),
+        ];
+        // The deployed admin's charts: activity line, health gauge, stock ring, member funnel, Learn share bar.
         final activity = weeklyActivity(repo, now: now);
         final activityCard = ActivityCard(all: activity.all, members: activity.members, now: now);
-        final health = _health();
-        final stock = _stock();
-        final cities = _cities(now);
-        final funnel = DashCard(
+        final journey = DashCard(
           title: 'Member journey',
           subtitle: 'From signing up to buying again.',
           trailing: SeeAll(onTap: () => onOpen('members')),
           child: medium ? FunnelChart(steps: memberFunnel(repo)) : SingleChildScrollView(scrollDirection: Axis.horizontal, child: SizedBox(width: 600, height: 240, child: FunnelChart(steps: memberFunnel(repo)))),
         );
-        final learn = _learnShare();
         Widget fixed(double h, Widget child) => SizedBox(height: h, child: child);
         Widget row(double h, List<(int, Widget)> parts) => SizedBox(
           height: h,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              for (final (i, (flex, child)) in parts.indexed) ...[if (i > 0) const SizedBox(width: gap), Expanded(flex: flex, child: child)],
-            ],
-          ),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            for (final (i, (flex, child)) in parts.indexed) ...[if (i > 0) const SizedBox(width: gap), Expanded(flex: flex, child: child)],
+          ]),
         );
+        final wide = inner >= 1180;
 
-        final List<Widget> top;
-        if (wide) {
-          top = [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  flex: 3,
-                  child: Column(children: [
-                    row(140, [for (final h in heads) (1, h)]),
-                    const SizedBox(height: gap),
-                    row(400, [(2, activityCard), (1, health)]),
-                  ]),
-                ),
-                const SizedBox(width: gap),
-                Expanded(child: fixed(140 + gap + 400, stock)),
-              ],
-            ),
+        // Between the orders section and the recent transactions (not affected by the sales filters):
+        // alerts and decisions, inventory and operations, customers and marketing.
+        final approvals = _PendingApprovals(onOpen: onNavItem);
+        final alerts = DashSection(
+          title: 'Critical alerts & pending decisions',
+          note: 'Across the business, most urgent first. Not filtered by the sales filters.',
+          child: EqualRows(columns: medium ? 2 : 1, gap: gap, children: [_AttentionCard(items: attention, onOpen: onOpen), approvals]),
+        );
+        final operations = DashSection(
+          title: 'Inventory & operational health',
+          note: 'Stock, statuses and what’s running across the modules.',
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            if (medium) row(480, [(1, _health()), (1, _stock())]) else ...[fixed(390, _health()), const SizedBox(height: gap), fixed(490, _stock())],
             const SizedBox(height: gap),
-            row(380, [(1, cities), (2, funnel), (1, learn)]),
-          ];
-        } else if (medium) {
-          top = [
-            row(140, [for (final h in heads) (1, h)]),
+            _OperationsCard(repo: repo, onOpen: onOpen, now: now),
+          ]),
+        );
+        final customers = DashSection(
+          title: 'Customer & marketing performance',
+          note: 'Members, subscriptions, ratings and content. Member segments: ${memberSegments(repo)}.',
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            MiniStatGrid(tiles: heads, across: 3),
             const SizedBox(height: gap),
-            fixed(360, activityCard),
+            if (wide) row(380, [(1, _cities(now)), (2, journey), (1, _learnShare())])
+            else if (medium) ...[row(380, [(1, _cities(now)), (1, _learnShare())]), const SizedBox(height: gap), fixed(330, journey)]
+            else ...[fixed(390, _cities(now)), const SizedBox(height: gap), fixed(330, journey), const SizedBox(height: gap), fixed(370, _learnShare())],
             const SizedBox(height: gap),
-            row(480, [(1, health), (1, stock)]),
-            const SizedBox(height: gap),
-            row(380, [(1, cities), (1, learn)]),
-            const SizedBox(height: gap),
-            fixed(330, funnel),
-          ];
-        } else {
-          top = [
-            for (final h in heads) ...[fixed(140, h), const SizedBox(height: 12)],
-            fixed(340, activityCard),
-            const SizedBox(height: gap),
-            fixed(390, health),
-            const SizedBox(height: gap),
-            fixed(490, stock),
-            const SizedBox(height: gap),
-            fixed(390, cities),
-            const SizedBox(height: gap),
-            fixed(330, funnel),
-            const SizedBox(height: gap),
-            fixed(370, learn),
-          ];
-        }
+            fixed(medium ? 380 : 340, activityCard),
+          ]),
+        );
 
         return Align(
           alignment: Alignment.topCenter,
@@ -132,15 +114,10 @@ class AdminOverview extends StatelessWidget {
               padding: EdgeInsets.fromLTRB(pad, 8, pad, 40),
               children: [
                 if (header != null) ...[header!, const SizedBox(height: gap)],
-                ...top,
+                // Founder Overview, in priority order: revenue, orders, then (middle) alerts, operations, customers,
+                // then recent transactions. One set of sales filters over the revenue and order parts.
+                FounderDashboard(repo: repo, onOpenOrders: onOpenOrders, middle: [alerts, operations, customers]),
                 const SizedBox(height: 30),
-                RevenueSection(repo: repo, onOpenOrders: onOpenOrders),
-                const SizedBox(height: 30),
-                EqualRows(
-                  columns: medium ? 2 : 1,
-                  gap: gap,
-                  children: [_AttentionCard(items: attention, onOpen: onOpen), _OperationsCard(repo: repo, onOpen: onOpen, now: now)],
-                ),
                 if (onAdd != null) ...[
                   const SizedBox(height: 22),
                   const Text('Quick actions', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Color(0xFF34443F))),
@@ -163,10 +140,6 @@ class AdminOverview extends StatelessWidget {
                     ],
                   ),
                 ],
-                const SizedBox(height: 30),
-                const _SectionTitle('More breakdowns', 'Statuses, places, plans and favourites across the modules.'),
-                const SizedBox(height: 12),
-                EqualRows(columns: chartCols, gap: gap, children: _charts(beside: DonutChart.fitsBeside(tile(chartCols) - 36), fill: chartCols > 1)),
                 const SizedBox(height: 30),
                 const _SectionTitle('Every module', 'What each module holds, in one line. Tap one to see its records and charts.'),
                 for (final group in moduleGroups) ...[
@@ -288,50 +261,6 @@ class AdminOverview extends StatelessWidget {
     );
   }
 
-  List<Widget> _charts({required bool beside, required bool fill}) {
-    List<Map<String, dynamic>> r(String k) => repo.records(k);
-    Widget open(String k) => TextButton(onPressed: () => onOpen(k), child: const Text('Open'));
-    Slice valueSlice(String k, Map<String, dynamic> x, String label, String value, int i) =>
-        Slice('${x[label]}', (x[value] is num ? x[value] as num : num.tryParse('${x[value]}') ?? 0).round(), chartPalette[0], image: recordImage(k, x));
-    List<Slice> ranked(String k, String label, String value, {bool Function(Map<String, dynamic>)? where}) {
-      final rows = r(k).where(where ?? (_) => true).toList()
-        ..sort((a, b) => ((b[value] as num?) ?? 0).compareTo((a[value] as num?) ?? 0));
-      return [for (final (i, x) in rows.take(5).indexed) valueSlice(k, x, label, value, i)];
-    }
-
-    final number = NumberFormat.decimalPattern('en_IN');
-    // Stars are ordered: one hue, lightest for 1 star, darkest for 5.
-    final starColors = [greens[4], greens[3], greens[2], greens[1], greens[0]];
-    return [
-      ChartCard(
-        fill: fill,
-        title: 'App ratings by stars',
-        note: 'How members rate the app. Low ratings are worth a read.',
-        trailing: open('ratings'),
-        child: ColumnChart(slices: [
-          for (var s = 1; s <= 5; s++) Slice('$s ★', r('ratings').where((x) => x['stars'] == s).length, starColors[s - 1]),
-        ]),
-      ),
-      ChartCard(
-        fill: fill,title: 'Members by status', note: 'Active members against blocked ones.', trailing: open('members'), child: DonutChart(horizontal: beside, slices: statusSlices(moduleByKey('members'), r('members')), centerLabel: 'members')),
-      ChartCard(
-        fill: fill,title: 'Subscriptions by plan', note: 'Which plans people choose.', trailing: open('subscriptions'), child: DonutChart(horizontal: beside, slices: countBy(r('subscriptions').map((x) => x['plan'])), centerLabel: 'subscriptions')),
-      ChartCard(
-        fill: fill,title: 'Appointments by status', note: 'Booked, completed, cancelled and no-shows.', trailing: open('appointments'), child: DonutChart(horizontal: beside, slices: statusSlices(moduleByKey('appointments'), r('appointments')), centerLabel: 'appointments')),
-      ChartCard(
-        fill: fill,title: 'Most-read Learn articles', note: 'Views of each article.', trailing: open('articles'), child: BarList(slices: ranked('articles', 'title', 'views'), format: number.format)),
-      ChartCard(
-        fill: fill,title: 'AI health bot chats', note: 'Chats with each health bot.', trailing: open('healthBots'), child: BarList(slices: ranked('healthBots', 'name', 'chats'), format: number.format)),
-      ChartCard(
-        fill: fill,title: 'Delivery partners by status', note: 'Online, offline, suspended and waiting for KYC.', trailing: open('partners'), child: DonutChart(horizontal: beside, slices: statusSlices(moduleByKey('partners'), r('partners')), centerLabel: 'partners')),
-      ChartCard(
-        fill: fill,title: 'Top delivery partners', note: 'Deliveries made by each partner.', trailing: open('partners'), child: BarList(slices: ranked('partners', 'name', 'deliveries'), format: number.format)),
-      ChartCard(
-        fill: fill,title: 'Doctors by specialty', note: 'Who members can consult.', trailing: open('doctors'), child: DonutChart(horizontal: beside, slices: countBy(r('doctors').map((x) => x['specialty'])), centerLabel: 'doctors')),
-      ChartCard(
-        fill: fill,title: 'Why members block someone', note: 'Reasons given in chat blocks.', trailing: open('blocks'), child: BarList(slices: countBy(r('blocks').map((x) => x['reason'])))),
-    ];
-  }
 }
 
 class _SectionTitle extends StatelessWidget {
@@ -552,6 +481,60 @@ class _ModuleSummaryCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+
+/// Who the members are, by segment ("12 B2C, 3 B2B, 1 Unknown"); missing ones count as Unknown.
+String memberSegments(ModuleRepository repo) {
+  final counts = <String, int>{};
+  for (final m in repo.records('members')) {
+    final s = normalizeSegment('${m['segment'] ?? ''}');
+    counts[s] = (counts[s] ?? 0) + 1;
+  }
+  return [for (final s in segments) if ((counts[s] ?? 0) > 0) '${counts[s]} $s'].join(', ');
+}
+
+/// Decisions waiting for a yes or no (Executive › Decisions & Approvals), biggest first.
+class _PendingApprovals extends StatelessWidget {
+  const _PendingApprovals({this.onOpen});
+  final void Function(String itemId)? onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final spec = navPageSpecs['decisions-approvals'];
+    final rows = spec == null ? const <Map<String, Object>>[] : [for (final r in rowsFor('decisions-approvals', spec)) if (r['Status'] == 'Pending approval') r]
+      ..sort((a, b) => ((b['Amount'] as num?) ?? 0).compareTo((a['Amount'] as num?) ?? 0));
+    final total = rows.fold<num>(0, (a, r) => a + ((r['Amount'] as num?) ?? 0));
+    return ChartCard(
+      title: 'Pending decisions',
+      note: rows.isEmpty ? null : '${rows.length} waiting · ${rupees(total.round())} in total',
+      trailing: onOpen == null ? null : TextButton(onPressed: () => onOpen!('decisions-approvals'), child: const Text('Open')),
+      child: rows.isEmpty
+          ? const Padding(padding: EdgeInsets.symmetric(vertical: 20), child: Text('Nothing waiting for a decision.'))
+          : Column(children: [
+              for (final (i, r) in rows.take(5).indexed)
+                InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: onOpen == null ? null : () => onOpen!('decisions-approvals'),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 4),
+                    decoration: BoxDecoration(border: i == 0 ? null : const Border(top: BorderSide(color: Color(0xFFEDF2F0)))),
+                    child: Row(children: [
+                      const Icon(Icons.gavel_outlined, size: 18, color: Color(0xFF8A5A00)),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text('${r['Type']}', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5)),
+                          Text('${r['ID']} · asked by ${r['Requested by']}', style: const TextStyle(color: Color(0xFF5A6C68), fontSize: 12)),
+                        ]),
+                      ),
+                      Text(rupees(((r['Amount'] as num?) ?? 0).round()), style: const TextStyle(fontWeight: FontWeight.w600)),
+                    ]),
+                  ),
+                ),
+            ]),
     );
   }
 }

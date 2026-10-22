@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../admin_modules/admin_search.dart';
+import '../admin_modules/nav_widgets.dart' show PageTreeSlot, menuTitle;
+import '../admin_modules/nav_config.dart' show AppPage;
+import '../admin_modules/dashboard_widgets.dart' show breakdownText;
 import '../admin_modules/schema.dart';
 import '../api.dart';
 import '../format.dart';
@@ -44,6 +47,7 @@ class DashboardStats {
       final age = today.difference(_day(o.createdAt)).inDays;
       if (age >= 0 && age < 7) {
         perDay[6 - age]++;
+        byStatus[6 - age][o.status.label] = (byStatus[6 - age][o.status.label] ?? 0) + 1;
         if (o.status != OrderStatus.cancelled) revenue7d += o.totals.total;
       }
     }
@@ -57,6 +61,9 @@ class DashboardStats {
 
   /// Orders per day for the last 7 days, oldest first, matching [days].
   final List<int> perDay = List.filled(7, 0);
+
+  /// Each day's orders by where they are now, for the chart's hover text.
+  final List<Map<String, int>> byStatus = [for (var i = 0; i < 7; i++) <String, int>{}];
   late final List<DateTime> days;
 
   static DateTime _day(DateTime at) {
@@ -310,6 +317,7 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
                 padding: EdgeInsets.fromLTRB(pad, 24, pad, 0),
                 sliver: SliverList.list(
                   children: [
+                    const PageTreeSlot(bottom: 14),
                     if (widget.nav != null && widget.showSidebar) ...[
                       Align(alignment: Alignment.centerLeft, child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 640), child: AdminSearchBar(nav: widget.nav!))),
                       const SizedBox(height: 18),
@@ -430,9 +438,9 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  'Orders',
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.w600, color: Color(0xFF0C1C19), letterSpacing: -.5),
+                Text(
+                  menuTitle(context, 'Orders', page: AppPage.orders),
+                  style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w600, color: Color(0xFF0C1C19), letterSpacing: -.5),
                 ),
                 Text(
                   '${weekdayDate(now)} · updated ${timeOnly(_updatedAt)}',
@@ -883,7 +891,9 @@ class _WeekChart extends StatelessWidget {
                 for (var i = 0; i < 7; i++)
                   Expanded(
                     child: Tooltip(
-                      message: '${weekdayDate(stats.days[i])}: ${stats.perDay[i]} ${stats.perDay[i] == 1 ? 'order' : 'orders'}',
+                      message: '${weekdayDate(stats.days[i])}: ${stats.perDay[i]} ${stats.perDay[i] == 1 ? 'order' : 'orders'}'
+                          '${breakdownText(stats.byStatus[i], title: 'By status')}',
+                      waitDuration: const Duration(milliseconds: 150),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 5),
                         child: Column(

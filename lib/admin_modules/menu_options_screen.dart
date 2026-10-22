@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../format.dart';
 import 'nav_config.dart';
 import 'nav_pages.dart';
+import 'nav_widgets.dart' show PageTreeSlot;
 import 'option_store.dart';
 import 'schema.dart';
 
@@ -68,6 +69,7 @@ class _MenuOptionsScreenState extends State<MenuOptionsScreen> {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
               children: [
+                const PageTreeSlot(),
                 const Text(
                   'The values in every dropdown of the add and edit forms (and their filters). Values added with “Other…” in a form show up here too. Changes are saved on this device.',
                   style: TextStyle(color: Color(0xFF5A6C68), fontSize: 13.5, height: 1.4),
@@ -218,10 +220,10 @@ class _MenuEditorState extends State<_MenuEditor> {
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     buildDefaultDragHandles: false,
-                    onReorder: (from, to) {
+                    onReorderItem: (from, to) {
                       final next = [...values];
                       final v = next.removeAt(from);
-                      next.insert(to > from ? to - 1 : to, v);
+                      next.insert(to, v);
                       store.set(m.key, next);
                     },
                     children: [

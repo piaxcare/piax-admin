@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'admin_modules/field_store.dart';
+import 'admin_modules/site_layout.dart';
+
 import 'api.dart';
 import 'format.dart';
 import 'admin_modules/admin_shell.dart';
@@ -8,6 +11,8 @@ import 'admin_modules/option_store.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await OptionStore.instance.load(); // the team's dropdown menus, before the first form opens
+  await FieldStore.instance.load(); // the team's own input fields on each page
+  await LayoutStore.instance.load(); // the Site & app builder's demo layout
   runApp(const PiaxOrdersApp());
 }
 
