@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../admin_modules/admin_search.dart';
+import '../admin_modules/charts.dart' show sidePanelWidth;
 import '../admin_modules/nav_widgets.dart' show PageTreeSlot, menuTitle;
 import '../admin_modules/nav_config.dart' show AppPage;
 import '../admin_modules/dashboard_widgets.dart' show breakdownText;
@@ -206,10 +207,10 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
         if (selected != null) _lastSelected = selected;
         final shown = selected ?? _lastSelected;
         final sidebarWidth = wideSidebar ? 228.0 : 76.0;
-        const panelWidth = 460.0;
         // Expanded: the panel takes all the width beside the sidebar.
         final expanded = _expanded && selected != null;
         final fullWidth = constraints.maxWidth - (_sidebarOpen ? sidebarWidth : 0);
+        final panelWidth = sidePanelWidth(fullWidth);
         final contentWidth = expanded ? fullWidth : panelWidth;
         const slide = Duration(milliseconds: 260);
         return Scaffold(
@@ -977,10 +978,7 @@ class _Banner extends StatelessWidget {
         ),
         TextButton(
           onPressed: onTap,
-          child: Text(
-            action,
-            style: TextStyle(color: ink, fontWeight: FontWeight.w600),
-          ),
+          child: Text(action),
         ),
       ],
     ),

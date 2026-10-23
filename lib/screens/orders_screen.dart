@@ -509,18 +509,27 @@ class _OrderCard extends StatelessWidget {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Text(
-                    '${order.itemCount} ${order.itemCount == 1 ? 'pack' : 'packs'} · ${rupees(order.totals.total)}',
-                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  Flexible(
+                    child: Text(
+                      '${order.itemCount} ${order.itemCount == 1 ? 'pack' : 'packs'} · ${rupees(order.totals.total)}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
                   ),
                   if (!order.payment.isPaid) ...[
                     const SizedBox(width: 8),
-                    Text(
-                      order.payment.statusLabel,
-                      style: const TextStyle(color: TColor(0xFF8A5A00), fontSize: 13, fontWeight: FontWeight.w600),
+                    Flexible(
+                      child: Text(
+                        order.payment.statusLabel,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: TColor(0xFF8A5A00), fontSize: 13, fontWeight: FontWeight.w600),
+                      ),
                     ),
                   ],
                   const Spacer(),
+                  const SizedBox(width: 8),
                   Text(ago(order.createdAt), style: muted),
                 ],
               ),

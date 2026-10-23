@@ -513,7 +513,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           const SizedBox(height: 8),
           OutlinedButton(
             onPressed: _busy ? null : _cancel,
-            style: OutlinedButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.error),
+            style: OutlinedButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error, foregroundColor: Colors.white),
             child: const Text('Cancel order'),
           ),
         ],

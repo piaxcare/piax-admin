@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import 'dashboard_images.dart';
+import 'chart_switch.dart';
 import 'insights.dart';
 import 'package:piax_orders_admin/palette.dart';
 
@@ -27,7 +28,7 @@ class ChartCard extends StatelessWidget {
   final bool fill;
 
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) => ChartSwitchHost(id: title, builder: (context, button) => Container(
     padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
     decoration: BoxDecoration(
       color: TColor(0xFFFFFFFF),
@@ -41,6 +42,7 @@ class ChartCard extends StatelessWidget {
           children: [
             Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15.5))),
             ?trailing,
+            ?button,
           ],
         ),
         if (note != null) ...[const SizedBox(height: 3), Text(note!, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: _muted, fontSize: 12.5))],
@@ -48,7 +50,7 @@ class ChartCard extends StatelessWidget {
         if (fill) Expanded(child: Center(child: child)) else child,
       ],
     ),
-  );
+  ));
 }
 
 class _Empty extends StatelessWidget {
@@ -173,7 +175,9 @@ class _DonutChartState extends State<DonutChart> {
   int? _selected;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => SwitchableChart(id: 'DonutChart', data: ChartData.slices(widget.slices, looksLike: ChartKind.donut), original: _chart(context));
+
+  Widget _chart(BuildContext context) {
     final slices = distinctSlices(widget.slices);
     final total = slices.fold<int>(0, (a, s) => a + s.count);
     if (total == 0) return const _Empty();
@@ -289,7 +293,9 @@ class BarList extends StatelessWidget {
   final String Function(Slice slice)? detail;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => SwitchableChart(id: 'BarList', data: ChartData.slices(slices, format: format, looksLike: ChartKind.barH), original: _chart(context));
+
+  Widget _chart(BuildContext context) {
     final slices = distinctSlices(this.slices);
     final top = slices.fold<int>(0, (a, s) => s.count > a ? s.count : a);
     if (top == 0) return const _Empty();
@@ -311,7 +317,8 @@ class BarList extends StatelessWidget {
                   Row(
                     children: [
                       Expanded(child: Text(s.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13))),
-                      if (detail != null) Text('${detail!(s)}  ', style: const TextStyle(fontSize: 11.5, color: TColor(0xFF5A6C68))),
+                      if (detail != null)
+                        Flexible(child: Text('${detail!(s)}  ', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11.5, color: TColor(0xFF5A6C68)))),
                       Text(format?.call(s.count) ?? '${s.count}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                     ],
                   ),
@@ -540,6 +547,11 @@ Widget floatingAdd(String label, VoidCallback onPressed, Widget list) => Stack(
     ),
   ],
 );
+
+/// A right-hand side panel's width for a page [page] px wide: about a third of it, so a small laptop keeps room for
+/// the list and a big monitor gets a roomier panel. Forms are a little wider (two fields to a row).
+double sidePanelWidth(double page, {bool form = false}) =>
+    form ? (page * .42).clamp(420.0, 640.0) : (page * .36).clamp(380.0, 580.0);
 
 /// Around a right-hand side panel (details, add or edit): whether it's full screen, and how to switch. Panels read it
 /// to show the full-screen button beside their close button.

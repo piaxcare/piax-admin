@@ -4,6 +4,7 @@ import 'admin_modules/field_store.dart';
 import 'admin_modules/site_layout.dart';
 
 import 'api.dart';
+import 'font_store.dart';
 import 'theme_mode.dart';
 import 'format.dart';
 import 'palette.dart';
@@ -18,6 +19,7 @@ Future<void> main() async {
   await LayoutStore.instance.load(); // the Site & app builder's demo layout
   await ThemeController.instance.load(); // System, Light or Dark
   await AppLayout.instance.load(); // Settings › Layout & features
+  await FontStore.instance.load(); // Settings › Font: an imported font file, if any
   runApp(const PiaxOrdersApp());
 }
 
@@ -46,9 +48,10 @@ class _PiaxOrdersAppState extends State<PiaxOrdersApp> with WidgetsBindingObserv
   void didChangePlatformBrightness() => setState(() {});
 
   @override
-  Widget build(BuildContext context) => ValueListenableBuilder(
-    valueListenable: ThemeController.instance,
-    builder: (context, mode, _) {
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: Listenable.merge([ThemeController.instance, FontStore.instance]),
+    builder: (context, _) {
+      final mode = ThemeController.instance.value;
       final dark = mode == ThemeMode.dark || (mode == ThemeMode.system && WidgetsBinding.instance.platformDispatcher.platformBrightness == Brightness.dark);
       if (TColor.dark != dark) {
         TColor.dark = dark;
@@ -73,7 +76,7 @@ class _PiaxOrdersAppState extends State<PiaxOrdersApp> with WidgetsBindingObserv
       // Hover hints only when switched on in Settings › Layout & features.
       builder: (context, child) => TooltipVisibility(visible: AppLayout.instance.tooltips, child: child!),
       theme: ThemeData(
-        fontFamily: 'Poppins',
+        fontFamily: FontStore.instance.family,
         colorScheme: scheme,
         scaffoldBackgroundColor: mist,
         appBarTheme: const AppBarTheme(backgroundColor: mist, foregroundColor: TColor(0xFF0C1C19), elevation: 0, scrolledUnderElevation: 0.5),
@@ -92,9 +95,29 @@ class _PiaxOrdersAppState extends State<PiaxOrdersApp> with WidgetsBindingObserv
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
           ),
         ),
+        // Outlined and text buttons look like the primary button too: brand green with white text, never a coloured
+        // outline or bare coloured words.
         outlinedButtonTheme: OutlinedButtonThemeData(
           style: OutlinedButton.styleFrom(
+            backgroundColor: brand,
+            foregroundColor: Colors.white,
+            disabledBackgroundColor: const TColor(0xFFE1E8E6),
+            disabledForegroundColor: const TColor(0xFF8A9A96),
+            side: BorderSide.none,
             minimumSize: const Size(0, 48),
+            textStyle: TextStyle(fontFamily: FontStore.instance.family, fontWeight: FontWeight.w600, fontSize: 14),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+          ),
+        ),
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(
+            backgroundColor: brand,
+            foregroundColor: Colors.white,
+            disabledBackgroundColor: const TColor(0xFFE1E8E6),
+            disabledForegroundColor: const TColor(0xFF8A9A96),
+            minimumSize: const Size(0, 40),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            textStyle: TextStyle(fontFamily: FontStore.instance.family, fontWeight: FontWeight.w600, fontSize: 14),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
           ),
         ),

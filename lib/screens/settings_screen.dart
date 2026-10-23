@@ -7,6 +7,7 @@ import '../admin_modules/menu_options_screen.dart';
 import '../admin_modules/admin_search.dart' show globalSearchActions;
 import '../admin_modules/nav_widgets.dart' show PageTreeSlot, menuTitle;
 import '../api.dart';
+import '../font_store.dart';
 import '../format.dart';
 import '../models.dart';
 import '../session.dart';
@@ -196,6 +197,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             const _SidebarBehaviour(),
                             const SizedBox(height: 16),
                             const _Card(title: 'Layout & features', children: [LayoutSettings()]),
+                            const SizedBox(height: 16),
+                            const _Card(title: 'Font', children: [FontSettings()]),
                             const SizedBox(height: 16),
                             const _Card(title: 'Navigation', children: [NavCustomizer()]),
                             const SizedBox(height: 16),

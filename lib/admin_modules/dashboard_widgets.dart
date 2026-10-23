@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import '../format.dart';
 import 'dashboard_images.dart';
 import 'charts.dart' show SegmentRing;
+import 'chart_switch.dart';
 import 'insights.dart';
 import 'package:piax_orders_admin/palette.dart';
 
@@ -35,7 +36,7 @@ class DashCard extends StatelessWidget {
   final EdgeInsets padding;
 
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) => ChartSwitchHost(id: title, builder: (context, button) => Container(
     padding: padding,
     decoration: BoxDecoration(color: TColor(0xFFFFFFFF), borderRadius: BorderRadius.circular(18), border: Border.all(color: line)),
     child: Column(
@@ -45,6 +46,7 @@ class DashCard extends StatelessWidget {
           children: [
             Expanded(child: Text(title, style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.w600, color: ink))),
             ?trailing,
+            ?button,
           ],
         ),
         if (subtitle != null) ...[const SizedBox(height: 3), Text(subtitle!, style: const TextStyle(color: muted, fontSize: 12.5))],
@@ -52,7 +54,7 @@ class DashCard extends StatelessWidget {
         Expanded(child: child),
       ],
     ),
-  );
+  ));
 }
 
 /// "See all" link for a card's corner.
@@ -64,7 +66,7 @@ class SeeAll extends StatelessWidget {
   @override
   Widget build(BuildContext context) => TextButton(
     onPressed: onTap,
-    style: TextButton.styleFrom(foregroundColor: muted, padding: const EdgeInsets.symmetric(horizontal: 8), minimumSize: const Size(0, 32)),
+    style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 12), minimumSize: const Size(0, 32)),
     child: Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
   );
 }
@@ -231,8 +233,10 @@ class _ActivityCardState extends State<ActivityCard> {
           ]),
           const SizedBox(height: 14),
           Expanded(
-            child: SizedBox(
-              child: LineChart(
+            child: SwitchableChart(
+              id: 'Activity',
+              data: ChartData(labels: [for (var i = 0; i < all.length; i++) week(i)], values: all, shape: ChartShape.series, looksLike: ChartKind.line),
+              original: LineChart(
                 LineChartData(
                   minY: 0,
                   maxY: top * 1.25,
@@ -384,7 +388,9 @@ class RingWithList extends StatelessWidget {
   final double ring;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => SwitchableChart(id: 'RingWithList', data: ChartData.slices(slices, format: format, looksLike: ChartKind.donut), original: _chart(context));
+
+  Widget _chart(BuildContext context) {
     final slices = distinctSlices(this.slices);
     return Column(
       children: [
@@ -423,7 +429,9 @@ class ProgressRows extends StatelessWidget {
   final List<Slice> slices;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => SwitchableChart(id: 'ProgressRows', data: ChartData.slices(slices, looksLike: ChartKind.barH), original: _chart(context));
+
+  Widget _chart(BuildContext context) {
     final slices = distinctSlices(this.slices);
     final total = math.max(1, slices.fold<int>(0, (a, s) => a + s.count));
     return Column(
@@ -462,7 +470,9 @@ class FunnelChart extends StatelessWidget {
   final List<FunnelStep> steps;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => SwitchableChart(id: 'FunnelChart', data: ChartData(labels: [for (final s in steps) s.label], values: [for (final s in steps) s.value], shape: ChartShape.stages, looksLike: ChartKind.bar), original: _chart(context));
+
+  Widget _chart(BuildContext context) {
     final top = math.max(1, steps.fold<int>(0, (a, s) => math.max(a, s.value)));
     return Row(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -527,7 +537,9 @@ class ShareBar extends StatelessWidget {
   final List<Slice> slices;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => SwitchableChart(id: 'ShareBar', data: ChartData.slices(slices), original: _chart(context));
+
+  Widget _chart(BuildContext context) {
     final slices = distinctSlices(this.slices);
     final shown = [for (final s in slices) if (s.count > 0) s];
     final total = math.max(1, shown.fold<int>(0, (a, s) => a + s.count));
@@ -698,7 +710,9 @@ class AreaTrend extends StatelessWidget {
   final (String, String)? names;
 
   @override
-  Widget build(BuildContext context) => LayoutBuilder(builder: (context, box) {
+  Widget build(BuildContext context) => SwitchableChart(id: 'AreaTrend', data: ChartData(labels: [for (final (l, _) in bars) l], values: [for (final (_, v) in bars) v], format: format == null ? null : (v) => format!(v.round()), shape: ChartShape.series, looksLike: ChartKind.area), original: _chart(context));
+
+  Widget _chart(BuildContext context) => LayoutBuilder(builder: (context, box) {
     final roomy = box.maxHeight >= 120 && box.maxWidth >= 220;
     final values = [for (final (_, v) in bars) v];
     final two = second != null && second!.length == values.length;
@@ -814,7 +828,9 @@ class SplitBar extends StatelessWidget {
   final String centerLabel;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => SwitchableChart(id: 'SplitBar', data: ChartData.slices(slices, format: format, looksLike: ChartKind.donut), original: _chart(context));
+
+  Widget _chart(BuildContext context) {
     final slices = distinctSlices(this.slices);
     final shown = [for (final s in slices) if (s.count > 0) s];
     final total = shown.fold<int>(0, (a, s) => a + s.count);
@@ -864,19 +880,20 @@ class SmallCard extends StatelessWidget {
   final Widget? trailing;
 
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) => ChartSwitchHost(id: title, builder: (context, button) => Container(
     padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
     decoration: BoxDecoration(color: TColor(0xFFFFFFFF), borderRadius: BorderRadius.circular(18), border: Border.all(color: line)),
     child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
       Row(children: [
         Expanded(child: Text(title, style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.w600, color: ink))),
         ?trailing,
+        ?button,
       ]),
       if (subtitle != null) ...[const SizedBox(height: 3), Text(subtitle!, style: const TextStyle(color: muted, fontSize: 12.5))],
       const SizedBox(height: 16),
       child,
     ]),
-  );
+  ));
 }
 
 /// Tiles in a grid with a chart beside them as tall as the grid (the order desk's layout); on narrow widths the

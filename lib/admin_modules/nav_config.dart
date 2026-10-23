@@ -23,7 +23,7 @@ class ModuleTarget extends NavTarget {
   final String? status;
 }
 
-/// A screen of its own that isn't a module or one of the app's pages (the Site & app builder).
+/// A screen of its own that isn't a module or one of the app's pages (the Site & app builder, Competitor comparison).
 class ScreenTarget extends NavTarget {
   const ScreenTarget(this.screen);
   final String screen;
@@ -65,6 +65,7 @@ const navSections = <NavSection>[
       NavItem('priority-exceptions', 'Priority Exceptions'),
       NavItem('decisions-approvals', 'Decisions & Approvals'),
       NavItem('targets-forecasts', 'Targets & Forecasts'),
+      NavItem('competitor-comparison', 'Competitor Comparison', ScreenTarget('competitors')),
     ],
   ),
   NavSection(

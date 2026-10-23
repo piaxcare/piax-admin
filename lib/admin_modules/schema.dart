@@ -30,10 +30,14 @@ class FieldDef {
     this.fileTypes = const [],
     this.multiple = true,
     this.hidden = false,
+    this.suffix,
   });
   final String key;
   final String label;
   final FieldType type;
+
+  /// Text after the value ("ml", "days"): in the form's box and wherever the value shows.
+  final String? suffix;
 
   /// The choices of a [FieldType.choice] field.
   final List<String> options;

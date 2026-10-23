@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'competitors.dart';
 import '../format.dart';
 import 'admin_search.dart';
 import 'nav_config.dart';
@@ -246,7 +247,9 @@ class NavDemoPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final found = navItemById(itemId);
     if (found == null) return Scaffold(appBar: AppBar(), body: const Center(child: Text('This page doesn’t exist.')));
-    if (found.$2.target is ScreenTarget) return const SiteBuilderScreen();
+    if (found.$2.target case ScreenTarget(:final screen)) {
+      return screen == 'competitors' ? const CompetitorComparisonScreen() : const SiteBuilderScreen();
+    }
     // Pages with a content spec (nav_pages.dart) show their full demo page.
     if (navPageSpecs[itemId] case final spec?) {
       return NavModulePage(itemId: itemId, spec: spec, onSibling: nav == null ? null : (other) => openNavItem(context, nav!, other));

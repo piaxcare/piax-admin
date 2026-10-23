@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// The app's theme: follow the system, or always light or dark. Kept on this device.
+/// The app's theme: light (the default), dark, or following the system. Kept on this device.
 class ThemeController extends ValueNotifier<ThemeMode> {
-  ThemeController._() : super(ThemeMode.system);
+  ThemeController._() : super(ThemeMode.light);
   static final instance = ThemeController._();
   static const _key = 'theme_mode';
 
   Future<void> load() async {
     try {
       final saved = (await SharedPreferences.getInstance()).getString(_key);
-      value = ThemeMode.values.firstWhere((m) => m.name == saved, orElse: () => ThemeMode.system);
+      value = ThemeMode.values.firstWhere((m) => m.name == saved, orElse: () => ThemeMode.light);
     } catch (_) {}
   }
 

@@ -1,3 +1,4 @@
+import 'chart_switch.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -7,6 +8,7 @@ import '../format.dart';
 import 'admin_search.dart' show globalSearchActions;
 import 'attachments.dart';
 import 'charts.dart';
+import 'exporter.dart';
 import 'field_store.dart';
 import 'dashboard_widgets.dart';
 import 'insights.dart' show Slice, Delta, HeadlineCard, chartPalette;
@@ -107,6 +109,7 @@ PageSpec specWithCustom(String itemId, PageSpec spec) {
         types: const [...docTypes, ...sheetTypes, ...imageTypes],
         mandatory: f.required,
         help: f.help,
+        unit: f.type.takesSuffix ? f.suffix ?? '' : '',
         custom: true,
         multiline: f.type == CustomType.longText,
         customId: f.id,
@@ -660,6 +663,17 @@ String _weighted(math.Random r, List<String> pool) {
   return (const TColor(0xFFEEF2F1), const TColor(0xFF475569));
 }
 
+/// A page's records as an export table (exporter.dart): the columns the team keeps, each cell as the page shows it.
+ExportTable navExportTable(String title, PageSpec s, List<DemoRow> rows) {
+  final cols = [for (final c in s.columns) if (!c.hidden) c];
+  return ExportTable(
+    title: title,
+    note: s.about,
+    columns: [for (final c in cols) c.name],
+    rows: [for (final r in rows) [for (final c in cols) _cell(c, r[c.label])]],
+  );
+}
+
 String _cell(Col c, Object? v) {
   if (v == null || v == '') return '—';
   if (c.kind == ColKind.yesNo) return v == true ? 'Yes' : 'No';
@@ -667,8 +681,9 @@ String _cell(Col c, Object? v) {
   if (c.kind == ColKind.date && v is! DateTime) return '—';
   final n = NumberFormat.decimalPattern('en_IN');
   return switch (c.kind) {
-    ColKind.money => rupees((v as num).round()),
+    ColKind.money => '${rupees((v as num).round())}${c.unit.isEmpty ? '' : ' ${c.unit}'}',
     ColKind.number => '${n.format(v)}${c.unit.isEmpty ? '' : ' ${c.unit}'}',
+    ColKind.text when c.unit.isNotEmpty => '$v ${c.unit}',
     ColKind.percent => '$v%',
     ColKind.date => DateFormat('d MMM yyyy').format(v as DateTime),
     ColKind.file => attachmentsSummary(v),
@@ -995,6 +1010,16 @@ class _NavModulePageState extends State<NavModulePage> {
         actions: [
           ...globalSearchActions(context),
           const SizedBox(width: 8),
+          ExportButton(
+            onPressed: () => showExportDialog(
+              context,
+              title: item.label,
+              fields: [for (final c in s.columns) if (!c.hidden) c.name],
+              canFilter: true,
+              build: ({required all}) async => ExportBundle(title: item.label, subtitle: s.about, tables: [navExportTable(item.label, s, all ? _rows : _shown)]),
+            ),
+          ),
+          const SizedBox(width: 4),
           EditFieldsButton(onPressed: _editFields),
           const SizedBox(width: 8),
         ],
@@ -1003,7 +1028,8 @@ class _NavModulePageState extends State<NavModulePage> {
         builder: (context, box) {
           // Wide windows keep a side panel for the open record; the list gets the rest.
           _split = box.maxWidth >= 1100;
-          final panel = _split && (_selected != null || _formOpen) ? 460.0 : 0.0;
+          final panelWidth = sidePanelWidth(box.maxWidth, form: _formOpen);
+          final panel = _split && (_selected != null || _formOpen) ? panelWidth : 0.0;
           final w = box.maxWidth - panel;
           final pad = w >= 900 ? 28.0 : 16.0;
           final inner = w - pad * 2;
@@ -1124,7 +1150,7 @@ class _NavModulePageState extends State<NavModulePage> {
             AnimatedContainer(
               duration: MediaQuery.disableAnimationsOf(context) ? Duration.zero : const Duration(milliseconds: 220),
               curve: Curves.easeOutCubic,
-              width: panelBody == null ? 0 : 460,
+              width: panelBody == null ? 0 : panelWidth,
               clipBehavior: Clip.hardEdge,
               decoration: const BoxDecoration(color: TColor(0xFFF7FAF9), border: Border(left: BorderSide(color: TColor(0xFFE1E8E6)))),
               child: panelBody == null
@@ -1132,7 +1158,7 @@ class _NavModulePageState extends State<NavModulePage> {
                   : PanelScope(
                       expanded: false,
                       onToggle: () => setState(() => _panelExpanded = true),
-                      child: OverflowBox(alignment: Alignment.centerLeft, minWidth: 460, maxWidth: 460, child: panelBody),
+                      child: OverflowBox(alignment: Alignment.centerLeft, minWidth: panelWidth, maxWidth: panelWidth, child: panelBody),
                     ),
             ),
           ]);
@@ -1406,7 +1432,11 @@ class _DemoRowFormState extends State<DemoRowForm> {
           minLines: c.multiline ? 3 : 1,
           maxLines: c.multiline ? 6 : 1,
           style: const TextStyle(fontSize: 16),
-          decoration: decoration.copyWith(labelText: c.mandatory ? '${c.name} *' : c.name, alignLabelWithHint: c.multiline),
+          decoration: decoration.copyWith(
+            labelText: c.mandatory ? '${c.name} *' : c.name,
+            alignLabelWithHint: c.multiline,
+            suffixText: c.unit.isEmpty ? null : c.unit,
+          ),
           validator: (v) => c.mandatory && (v ?? '').trim().isEmpty ? 'Enter the ${c.name.toLowerCase()}.' : null,
         );
       case ColKind.yesNo:
@@ -1580,7 +1610,7 @@ class RowDetail extends StatelessWidget {
               onPressed: onDelete,
               icon: const Icon(Icons.delete_outline, size: 18),
               label: const Text('Delete'),
-              style: OutlinedButton.styleFrom(foregroundColor: const TColor(0xFFB3261E), side: const BorderSide(color: TColor(0xFFF0B8B3))),
+              style: OutlinedButton.styleFrom(backgroundColor: const TColor(0xFFB3261E), foregroundColor: Colors.white),
             ),
           ),
         ]),
@@ -1617,18 +1647,19 @@ class _WeekBars extends StatelessWidget {
   final List<String>? details;
 
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) => ChartSwitchHost(id: title, builder: (context, button) => Container(
     padding: const EdgeInsets.fromLTRB(20, 18, 20, 14),
     decoration: BoxDecoration(color: TColor(0xFFFFFFFF), borderRadius: BorderRadius.circular(18), border: Border.all(color: line)),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(children: [
         Expanded(child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16.5, color: ink))),
-        Text(total, style: const TextStyle(color: muted, fontSize: 13)),
+        Flexible(child: Text(total, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: muted, fontSize: 13))),
+        ?button,
       ]),
       const SizedBox(height: 12),
       Expanded(child: AreaTrend(bars: bars, format: format, details: details)),
     ]),
-  );
+  ));
 }
 
 /// A table cell for a file column: a clip and the file's name (or how many), grey when there's none.

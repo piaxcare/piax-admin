@@ -148,13 +148,23 @@ class _RefundsScreenState extends State<RefundsScreen> {
         title: Text(menuTitle(context, 'Refunds', page: AppPage.refunds), style: TextStyle(fontWeight: FontWeight.w600)),
         actions: [
           ...globalSearchActions(context),
-          TextButton.icon(
-            onPressed: _checking || orders == null ? null : _checkAll,
-            icon: _checking
-                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                : const Icon(Icons.verified_outlined),
-            label: Text(_checking ? 'Checking…' : 'Check all with Razorpay'),
-          ),
+          // A labelled button where there's room; on phones just the icon.
+          if (MediaQuery.sizeOf(context).width >= 600)
+            TextButton.icon(
+              onPressed: _checking || orders == null ? null : _checkAll,
+              icon: _checking
+                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Icon(Icons.verified_outlined),
+              label: Text(_checking ? 'Checking…' : 'Check all with Razorpay'),
+            )
+          else
+            IconButton.filled(
+              tooltip: 'Check all with Razorpay',
+              onPressed: _checking || orders == null ? null : _checkAll,
+              icon: _checking
+                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : const Icon(Icons.verified_outlined),
+            ),
           const SizedBox(width: 8),
         ],
       ),

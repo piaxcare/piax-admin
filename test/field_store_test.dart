@@ -223,7 +223,7 @@ void main() {
     await tester.pumpWidget(MaterialApp(home: Scaffold(appBar: AppBar(actions: [EditFieldsButton(onPressed: () {})]))));
     await tester.pumpAndSettle();
     final button = tester.widget<FilledButton>(find.byType(FilledButton));
-    expect(button.style!.backgroundColor!.resolve({}), const Color(0xFF0B5B4E));
-    expect(button.style!.foregroundColor!.resolve({}), Colors.white);
+    expect(button.style!.backgroundColor!.resolve({})!.toARGB32(), 0xFF0B5B4E);
+    expect(button.style!.foregroundColor!.resolve({})!.toARGB32(), Colors.white.toARGB32());
   });
 }

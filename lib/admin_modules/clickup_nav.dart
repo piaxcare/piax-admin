@@ -5,6 +5,7 @@ import '../theme_mode.dart';
 import 'admin_search.dart';
 import 'nav_config.dart';
 import 'schema.dart' show modules;
+import 'section_export.dart';
 
 import 'package:piax_orders_admin/palette.dart';
 import 'package:piax_orders_admin/app_layout.dart';
@@ -473,7 +474,7 @@ class _Link extends StatelessWidget {
   @override
   Widget build(BuildContext context) => TextButton(
     onPressed: onTap,
-    style: TextButton.styleFrom(foregroundColor: _barText, minimumSize: const Size(0, 36), padding: const EdgeInsets.symmetric(horizontal: 12)),
+    style: TextButton.styleFrom(backgroundColor: Colors.transparent, foregroundColor: _barText, minimumSize: const Size(0, 36), padding: const EdgeInsets.symmetric(horizontal: 12)),
     child: Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
   );
 }
@@ -555,7 +556,7 @@ class _MegaMenu extends StatelessWidget {
     ],
     builder: (context, menu, _) => TextButton(
       onPressed: () => menu.isOpen ? menu.close() : menu.open(),
-      style: TextButton.styleFrom(foregroundColor: _barText, minimumSize: const Size(0, 36), padding: const EdgeInsets.only(left: 12, right: 6)),
+      style: TextButton.styleFrom(backgroundColor: Colors.transparent, foregroundColor: _barText, minimumSize: const Size(0, 36), padding: const EdgeInsets.only(left: 12, right: 6)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -785,6 +786,7 @@ class ClickSidebar extends StatelessWidget {
                     icon: const Icon(Icons.settings_outlined, size: 18),
                     onSelected: (v) => switch (v) {
                       'customize' => showHomeCustomizer(context),
+                      'export' => exportSection(context, sec!),
                       'reorder' => showReorderDialog(context, sec ?? homeSection),
                       _ => sec == null ? HomeStore.instance.reset() : NavOrder.instance.reset(sec),
                     },
@@ -793,6 +795,11 @@ class ClickSidebar extends StatelessWidget {
                         const PopupMenuItem(
                           value: 'customize',
                           child: ListTile(dense: true, leading: Icon(Icons.edit_outlined), title: Text('Customize Home…')),
+                        ),
+                      if (sec != null)
+                        const PopupMenuItem(
+                          value: 'export',
+                          child: ListTile(dense: true, leading: Icon(Icons.file_download_outlined), title: Text('Export all pages…')),
                         ),
                       const PopupMenuItem(
                         value: 'reorder',
@@ -841,6 +848,7 @@ const _itemIcons = <(List<String>, IconData)>[
   (['exception', 'alert', 'incident', 'security'], Icons.warning_amber_outlined),
   (['decision', 'approval'], Icons.task_alt),
   (['target', 'forecast'], Icons.track_changes),
+  (['competitor'], Icons.compare_arrows),
   (['sku', 'variant'], Icons.qr_code_2),
   (['bom', 'packaging', 'packing'], Icons.inventory_outlined),
   (['specification', 'revision', 'change control', 'firmware', 'configuration'], Icons.tune),
@@ -1029,11 +1037,16 @@ class _NavCustomizerState extends State<NavCustomizer> {
             DropdownButtonFormField<String>(
               initialValue: _section.id,
               decoration: const InputDecoration(labelText: 'Section', isDense: true),
+              isExpanded: true,
               items: [
                 for (final s in [homeSection, ...sections])
                   DropdownMenuItem(
                     value: s.id,
-                    child: Row(children: [Icon(s.icon, size: 18), const SizedBox(width: 8), Text(s.label)]),
+                    child: Row(children: [
+                      Icon(s.icon, size: 18),
+                      const SizedBox(width: 8),
+                      Expanded(child: Text(s.label, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                    ]),
                   ),
               ],
               onChanged: (id) => setState(() => _section = [homeSection, ...navSections].firstWhere((s) => s.id == id)),
@@ -1259,22 +1272,27 @@ class LayoutSettings extends StatelessWidget {
         value: value,
         onChanged: (v) => l.update((_) => set(v)),
       );
-      Widget seg<T>(String title, T value, List<(T, String, IconData)> options, void Function(T) set) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-            ),
-            SegmentedButton<T>(
-              showSelectedIcon: false,
-              segments: [for (final (v, label, icon) in options) ButtonSegment(value: v, icon: Icon(icon, size: 16), label: Text(label))],
-              selected: {value},
-              onSelectionChanged: (s) => l.update((_) => set(s.first)),
-            ),
-          ],
-        ),
-      );
+      // Title and choices side by side; on a phone the choices go under the title and scroll sideways if needed.
+      Widget seg<T>(String title, T value, List<(T, String, IconData)> options, void Function(T) set) {
+        final label = Text(title, style: const TextStyle(fontWeight: FontWeight.w600));
+        final choices = SegmentedButton<T>(
+          showSelectedIcon: false,
+          segments: [for (final (v, label, icon) in options) ButtonSegment(value: v, icon: Icon(icon, size: 16), label: Text(label))],
+          selected: {value},
+          onSelectionChanged: (s) => l.update((_) => set(s.first)),
+        );
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: LayoutBuilder(
+            builder: (context, box) => box.maxWidth >= 560
+                ? Row(children: [Expanded(child: label), choices])
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [label, const SizedBox(height: 6), SingleChildScrollView(scrollDirection: Axis.horizontal, child: choices)],
+                  ),
+          ),
+        );
+      }
       Widget head(String t) => Padding(
         padding: const EdgeInsets.only(top: 12, bottom: 2),
         child: Text(

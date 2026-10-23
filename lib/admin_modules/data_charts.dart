@@ -1,3 +1,4 @@
+import 'chart_switch.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -229,7 +230,7 @@ class _DatasetCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final compact = NumberFormat.compactCurrency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
     final weekly = d.weekly;
-    return Material(
+    return ChartSwitchHost(id: 'dataset: ${d.title}', builder: (context, button) => Material(
       color: TColor(0xFFFFFFFF),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: line)),
       child: InkWell(
@@ -249,6 +250,7 @@ class _DatasetCard extends StatelessWidget {
               Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
                 Text(NumberFormat.decimalPattern('en_IN').format(d.total), style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 18, color: brand)),
               ]),
+              ?button,
             ]),
             if (d.facts.isNotEmpty) ...[
               const SizedBox(height: 8),
@@ -290,6 +292,6 @@ class _DatasetCard extends StatelessWidget {
           ]),
         ),
       ),
-    );
+    ));
   }
 }

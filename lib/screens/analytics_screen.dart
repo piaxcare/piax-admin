@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../admin_modules/nav_config.dart' show AppPage;
 
+import '../admin_modules/chart_switch.dart';
 import '../admin_modules/data_charts.dart';
 import '../admin_modules/nav_widgets.dart' show PageTreeSlot, menuTitle;
 import '../admin_modules/dashboard_widgets.dart' show breakdownText;
@@ -332,7 +333,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   FlGridData get _gridLines =>
       FlGridData(drawVerticalLine: false, getDrawingHorizontalLine: (_) => const FlLine(color: _grid, strokeWidth: 1));
 
-  Widget _revenueChart(Analytics a) {
+  Widget _revenueChart(Analytics a) => SwitchableChart(id: '_revenueChart', data: ChartData(labels: [for (final p in a.series) p.label], values: [for (final p in a.series) p.revenue], format: (v) => rupees(v.round()), shape: ChartShape.series, looksLike: ChartKind.area), original: _revenueChartDrawn(a));
+
+  Widget _revenueChartDrawn(Analytics a) {
     if (a.series.every((p) => p.revenue == 0)) return const _Empty('No revenue in this period yet.');
     final top = a.series.map((p) => p.revenue).reduce((x, y) => x > y ? x : y).toDouble();
     return SizedBox(
@@ -397,7 +400,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     );
   }
 
-  Widget _ordersChart(Analytics a) {
+  Widget _ordersChart(Analytics a) => SwitchableChart(id: '_ordersChart', data: ChartData(labels: [for (final p in a.series) p.label], values: [for (final p in a.series) p.orders], shape: ChartShape.series, looksLike: ChartKind.bar), original: _ordersChartDrawn(a));
+
+  Widget _ordersChartDrawn(Analytics a) {
     if (a.series.every((p) => p.orders == 0)) return const _Empty('No orders in this period yet.');
     final top = a.series.map((p) => p.orders).reduce((x, y) => x > y ? x : y).toDouble();
     final barWidth = (220 / a.series.length).clamp(6, 22).toDouble();
@@ -450,7 +455,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     );
   }
 
-  Widget _growthChart(Analytics a, String per) {
+  Widget _growthChart(Analytics a, String per) => SwitchableChart(id: '_growthChart', data: ChartData(labels: [for (final p in a.series) p.label], values: [for (final g in a.growth) ((g ?? 0) * 100).round()], format: (v) => '${v.round()}%', shape: ChartShape.series, looksLike: ChartKind.bar), original: _growthChartDrawn(a, per));
+
+  Widget _growthChartDrawn(Analytics a, String per) {
     final growth = a.growth;
     final values = growth.whereType<double>().toList();
     if (values.length < 2) {
@@ -529,7 +536,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
 
   // ---------------------------------------------------------------- breakdowns
 
-  Widget _places(List<(String, int, int)> rows) {
+  Widget _places(List<(String, int, int)> rows) => SwitchableChart(id: '_places', data: ChartData(labels: [for (final r in rows.take(8)) r.$1], values: [for (final r in rows.take(8)) r.$2], looksLike: ChartKind.barH), original: _placesDrawn(rows));
+
+  Widget _placesDrawn(List<(String, int, int)> rows) {
     if (rows.isEmpty) return const _Empty('No orders in this period yet.');
     final shown = rows.take(8).toList();
     final others = rows.skip(8).fold(0, (n, r) => n + r.$2);
@@ -591,7 +600,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     );
   }
 
-  Widget _products(Analytics a) {
+  Widget _products(Analytics a) => SwitchableChart(id: '_products', data: ChartData(labels: [for (final p in a.products) productNames[p.$1] ?? p.$1], values: [for (final p in a.products) p.$2], colors: [for (final p in a.products) productColours[p.$1] ?? brand], looksLike: ChartKind.donut), original: _productsDrawn(a));
+
+  Widget _productsDrawn(Analytics a) {
     if (a.products.isEmpty) return const _Empty('No packs sold in this period yet.');
     final total = a.products.fold(0, (n, p) => n + p.$2);
     final chart = SizedBox(
@@ -674,7 +685,26 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     );
   }
 
-  Widget _progress(Analytics a) {
+  Widget _progress(Analytics a) => SwitchableChart(
+    id: '_progress',
+    data: ChartData(
+      labels: [for (final s in _progressSteps) s.label],
+      values: [for (final s in _progressSteps) a.statuses[s] ?? 0],
+      colors: [for (final s in _progressSteps) _stepColours[s]!],
+    ),
+    original: _progressDrawn(a),
+  );
+
+  static const _progressSteps = [
+    OrderStatus.confirmed,
+    OrderStatus.packed,
+    OrderStatus.shipped,
+    OrderStatus.outForDelivery,
+    OrderStatus.delivered,
+    OrderStatus.cancelled,
+  ];
+
+  Widget _progressDrawn(Analytics a) {
     final steps = [
       OrderStatus.confirmed,
       OrderStatus.packed,
@@ -735,7 +765,13 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     );
   }
 
-  Widget _payments(Analytics a) {
+  Widget _payments(Analytics a) => SwitchableChart(
+    id: '_payments',
+    data: ChartData(labels: const ['Online', 'Cash on delivery'], values: [a.payments.$1, a.payments.$2], colors: const [TColor(0xFF0F766E), TColor(0xFFE0A21A)]),
+    original: _paymentsDrawn(a),
+  );
+
+  Widget _paymentsDrawn(Analytics a) {
     final (online, cod) = a.payments;
     final total = online + cod;
     if (total == 0) return const _Empty('No orders in this period yet.');
@@ -788,7 +824,7 @@ class _Card extends StatelessWidget {
   final Widget? trailing;
 
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) => ChartSwitchHost(id: 'analytics: $title', builder: (context, button) => Container(
     padding: const EdgeInsets.all(20),
     decoration: BoxDecoration(
       color: TColor(0xFFFFFFFF),
@@ -815,13 +851,14 @@ class _Card extends StatelessWidget {
               ),
             ),
             ?trailing,
+            ?button,
           ],
         ),
         const SizedBox(height: 18),
         child,
       ],
     ),
-  );
+  ));
 }
 
 class _Kpi extends StatelessWidget {

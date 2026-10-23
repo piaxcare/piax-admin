@@ -383,10 +383,7 @@ class _SiteBuilderScreenState extends State<SiteBuilderScreen> {
               padding: const EdgeInsets.only(top: 8),
               child: OutlinedButton.icon(
                 onPressed: () => _addSection(page, sections.length),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(0, 52),
-                  side: const BorderSide(color: TColor(0xFF9CCFC2), style: BorderStyle.solid),
-                ),
+                style: OutlinedButton.styleFrom(minimumSize: const Size(0, 52)),
                 icon: const Icon(Icons.add),
                 label: const Text('Add a section'),
               ),
@@ -1470,10 +1467,7 @@ class _InspectorState extends State<_Inspector> {
     const SizedBox(height: 8),
     OutlinedButton.icon(
       onPressed: () => widget.onDeleteElement(s, e),
-      style: OutlinedButton.styleFrom(
-        foregroundColor: const TColor(0xFFB3261E),
-        side: const BorderSide(color: TColor(0xFFF0B8B3)),
-      ),
+      style: OutlinedButton.styleFrom(backgroundColor: const TColor(0xFFB3261E), foregroundColor: Colors.white),
       icon: const Icon(Icons.delete_outline, size: 18),
       label: Text('Delete ${e.kind.label.toLowerCase()}'),
     ),

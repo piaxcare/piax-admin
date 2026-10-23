@@ -369,7 +369,7 @@ class _FilterBarState extends State<FilterBar> {
       constraints: const BoxConstraints(maxWidth: 760),
       builder: (context) => _FilterPanel(fields: widget.fields, query: widget.query, count: widget.count, noun: widget.noun),
     );
-    if (result != null) widget.onChanged(result);
+    if (result != null && mounted) widget.onChanged(result); // the page may have closed meanwhile
   }
 
   @override

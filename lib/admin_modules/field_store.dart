@@ -31,10 +31,13 @@ enum CustomType {
   const CustomType(this.label, this.icon);
   final String label;
   final IconData icon;
+
+  /// Kinds whose value can carry a suffix after it ("500 ml", "12 days").
+  bool get takesSuffix => this == text || this == number || this == money;
 }
 
 class CustomField {
-  const CustomField({required this.id, required this.label, required this.type, this.required = false, this.options = const [], this.help});
+  const CustomField({required this.id, required this.label, required this.type, this.required = false, this.options = const [], this.help, this.suffix});
   final String id, label;
   final CustomType type;
   final bool required;
@@ -43,10 +46,28 @@ class CustomField {
   final List<String> options;
   final String? help;
 
-  CustomField copyWith({String? label, CustomType? type, bool? required, List<String>? options, String? help}) =>
-      CustomField(id: id, label: label ?? this.label, type: type ?? this.type, required: required ?? this.required, options: options ?? this.options, help: help ?? this.help);
+  /// Optional text after the value, in the box and wherever the value shows: "ml", "kg", "pcs", "days".
+  final String? suffix;
 
-  Map<String, dynamic> toJson() => {'id': id, 'label': label, 'type': type.name, 'required': required, 'options': options, if (help != null) 'help': help};
+  CustomField copyWith({String? label, CustomType? type, bool? required, List<String>? options, String? help, String? suffix}) => CustomField(
+    id: id,
+    label: label ?? this.label,
+    type: type ?? this.type,
+    required: required ?? this.required,
+    options: options ?? this.options,
+    help: help ?? this.help,
+    suffix: suffix ?? this.suffix,
+  );
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'label': label,
+    'type': type.name,
+    'required': required,
+    'options': options,
+    if (help != null) 'help': help,
+    if (suffix != null) 'suffix': suffix,
+  };
 
   static CustomField? fromJson(Object? j) {
     if (j is! Map) return null;
@@ -59,6 +80,7 @@ class CustomField {
       required: j['required'] == true,
       options: [for (final o in (j['options'] as List?) ?? const []) '$o'],
       help: (j['help'] as String?)?.isEmpty ?? true ? null : j['help'] as String,
+      suffix: (j['suffix'] as String?)?.trim().isEmpty ?? true ? null : (j['suffix'] as String).trim(),
     );
   }
 }
@@ -287,6 +309,7 @@ ModuleDef withCustomFields(ModuleDef module) {
         options: f.options,
         required: f.required,
         help: f.help,
+        suffix: f.type.takesSuffix ? f.suffix : null,
         section: customSection,
         fileTypes: const ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'csv', 'jpg', 'jpeg', 'png'],
       ),
@@ -758,6 +781,7 @@ class _FieldFormState extends State<_FieldForm> {
   late final _label = TextEditingController(text: widget.field?.label ?? '');
   late final _help = TextEditingController(text: widget.field?.help ?? '');
   late final _options = TextEditingController(text: widget.field?.options.join('\n') ?? '');
+  late final _suffix = TextEditingController(text: widget.field?.suffix ?? '');
   late CustomType _type = widget.field?.type ?? CustomType.text;
   late bool _required = widget.field?.required ?? false;
 
@@ -769,6 +793,7 @@ class _FieldFormState extends State<_FieldForm> {
     _label.dispose();
     _help.dispose();
     _options.dispose();
+    _suffix.dispose();
     super.dispose();
   }
 
@@ -787,6 +812,7 @@ class _FieldFormState extends State<_FieldForm> {
       required: _required,
       options: _type == CustomType.choice ? _choices : const [],
       help: _help.text.trim().isEmpty ? null : _help.text.trim(),
+      suffix: _type.takesSuffix && _suffix.text.trim().isNotEmpty ? _suffix.text.trim() : null,
     );
     try {
       await widget.onSave(f);
@@ -862,6 +888,25 @@ class _FieldFormState extends State<_FieldForm> {
                 alignLabelWithHint: true,
               ),
               validator: (_) => _choices.length < 2 ? 'Give at least two choices.' : null,
+            ),
+          ],
+          if (_type.takesSuffix) ...[
+            const SizedBox(height: 14),
+            ListenableBuilder(
+              listenable: _suffix,
+              builder: (_, _) => TextFormField(
+                controller: _suffix,
+                maxLength: 12,
+                style: const TextStyle(fontSize: 16),
+                decoration: InputDecoration(
+                  labelText: 'Suffix (optional)',
+                  hintText: 'e.g. ml, kg, pcs, days',
+                  helperText: _suffix.text.trim().isEmpty ? 'Shown after the value, in the box and on records.' : 'Shows as: 500 ${_suffix.text.trim()}',
+                  border: border,
+                  filled: true,
+                  fillColor: TColor(0xFFFFFFFF),
+                ),
+              ),
             ),
           ],
           const SizedBox(height: 14),

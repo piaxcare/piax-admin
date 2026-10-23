@@ -1,3 +1,4 @@
+import 'chart_switch.dart';
 import 'dart:math' as math;
 
 import 'package:fl_chart/fl_chart.dart';
@@ -397,7 +398,11 @@ class MemberProfile extends StatelessWidget {
                     children: [
                       const Text('Orders, last 6 months', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15.5)),
                       const SizedBox(height: 14),
-                      history,
+                      SwitchableChart(
+                        id: 'Orders by month',
+                        data: ChartData(labels: [for (var i = 0; i < monthly.length; i++) month(i)], values: monthly, shape: ChartShape.series, looksLike: ChartKind.bar),
+                        original: history,
+                      ),
                     ],
                   ),
                 ),

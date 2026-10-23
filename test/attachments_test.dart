@@ -67,7 +67,7 @@ void main() {
     expect(find.byTooltip('Demo file: nothing to download'), findsOneWidget);
     await tester.tap(find.byTooltip('Demo file: nothing to download'));
     await tester.pump();
-    expect(find.textContaining('is a demo file'), findsOneWidget);
+    expect(find.textContaining('is a sample file'), findsOneWidget);
     expect(uploaded.mimeType, 'application/pdf');
   });
 }

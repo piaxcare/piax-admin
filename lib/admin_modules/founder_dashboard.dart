@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../format.dart';
+import 'chart_switch.dart';
 import 'charts.dart';
 import 'dashboard_images.dart';
 import 'dashboard_widgets.dart';
@@ -411,18 +412,19 @@ class _ChartBox extends StatelessWidget {
   final Widget child;
 
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) => ChartSwitchHost(id: title, builder: (context, button) => Container(
     padding: const EdgeInsets.fromLTRB(20, 18, 20, 14),
     decoration: BoxDecoration(color: TColor(0xFFFFFFFF), borderRadius: BorderRadius.circular(18), border: Border.all(color: line)),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(children: [
         Expanded(child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16.5, color: ink))),
-        if (trailing != null) Text(trailing!, style: const TextStyle(color: muted, fontSize: 13)),
+        if (trailing != null) Flexible(child: Text(trailing!, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: muted, fontSize: 13))),
+        ?button,
       ]),
       const SizedBox(height: 12),
       Expanded(child: child),
     ]),
-  );
+  ));
 }
 
 /// The period cut into days, weeks or months: net revenue, cash collected and orders in each.
@@ -671,8 +673,14 @@ class _Matrix extends StatelessWidget {
             Row(mainAxisSize: MainAxisSize.min, children: [
               dot(_colors[s]!),
               const SizedBox(width: 6),
-              Text('$s ${rupees(sum((k) => k.$2 == s).$1)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: ink)),
-              Text(' · ${sum((k) => k.$2 == s).$2} orders', style: const TextStyle(fontSize: 11.5, color: muted)),
+              Flexible(
+                child: Text.rich(
+                  TextSpan(children: [
+                    TextSpan(text: '$s ${rupees(sum((k) => k.$2 == s).$1)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: ink)),
+                    TextSpan(text: ' · ${sum((k) => k.$2 == s).$2} orders', style: const TextStyle(fontSize: 11.5, color: muted)),
+                  ]),
+                ),
+              ),
             ]),
         Text('Total ${rupees(total.$1)} · ${total.$2} orders', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: brand)),
       ]),

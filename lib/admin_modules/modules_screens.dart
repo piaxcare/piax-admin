@@ -1,3 +1,4 @@
+import 'chart_switch.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -13,6 +14,7 @@ import 'admin_search.dart';
 import 'attachments.dart';
 import 'charts.dart';
 import 'discounts.dart';
+import 'exporter.dart';
 import 'field_store.dart';
 import 'dashboard_images.dart';
 import 'dashboard_widgets.dart' show AreaTrend, SplitBar, breakdownText, greens;
@@ -33,7 +35,23 @@ import 'package:piax_orders_admin/app_layout.dart';
 // One set of screens serves every module: Home (module groups) → List (search, status filter, add) → Details
 // (fields, one-tap actions, edit, delete) → Form (add / edit).
 
+/// A module's records as an export table (exporter.dart): the fields the team keeps, each value as the app shows it.
+ExportTable moduleExportTable(ModuleDef m, List<Map<String, dynamic>> records, {String? title}) {
+  final fields = [for (final f in m.fields) if (!f.hidden && f.type != FieldType.image) f];
+  return ExportTable(
+    title: title ?? m.title,
+    note: m.description,
+    columns: [for (final f in fields) f.label],
+    rows: [for (final r in records) [for (final f in fields) displayValue(f, r[f.key])]],
+  );
+}
+
 String displayValue(FieldDef field, Object? value) {
+  final shown = _displayValue(field, value);
+  return field.suffix == null || shown == '—' ? shown : '$shown ${field.suffix}';
+}
+
+String _displayValue(FieldDef field, Object? value) {
   if (value == null || (value is String && value.isEmpty)) return '—';
   switch (field.type) {
     case FieldType.money:
@@ -258,9 +276,14 @@ class ModulesHomeScreenState extends State<ModulesHomeScreen> {
                       padding: const EdgeInsets.fromLTRB(28, 20, 28, 12),
                       child: Row(
                         children: [
-                          Text(
-                            title,
-                            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w600, color: TColor(0xFF0C1C19), letterSpacing: -.5),
+                          Flexible(
+                            flex: 4,
+                            child: Text(
+                              title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w600, color: TColor(0xFF0C1C19), letterSpacing: -.5),
+                            ),
                           ),
                           const SizedBox(width: 24),
                           const Spacer(),
@@ -542,7 +565,7 @@ class _ModuleListScreenState extends State<ModuleListScreen> {
 
   void _setQuery(RecordQuery q) {
     rememberQuery('module:${m.key}', q);
-    setState(() => _q = q);
+    if (mounted) setState(() => _q = q);
   }
 
   List<Map<String, dynamic>> _filter(RecordQuery q) {
@@ -624,8 +647,22 @@ class _ModuleListScreenState extends State<ModuleListScreen> {
         ),
         actions: [
           ...globalSearchActions(context),
+          const SizedBox(width: 8),
+          ExportButton(
+            onPressed: () => showExportDialog(
+              context,
+              title: m.title,
+              fields: [for (final f in m.fields) if (!f.hidden && f.type != FieldType.image) f.label],
+              canFilter: true,
+              build: ({required all}) async => ExportBundle(
+                title: m.title,
+                subtitle: m.description,
+                tables: [moduleExportTable(m, all ? widget.repo.records(m.key) : _shown)],
+              ),
+            ),
+          ),
           if (!m.readOnly && !m.sensitive) ...[
-            const SizedBox(width: 8),
+            const SizedBox(width: 4),
             EditFieldsButton(
               onPressed: () => showFieldEditor(
                 context,
@@ -766,7 +803,7 @@ class _ModuleListScreenState extends State<ModuleListScreen> {
               AnimatedContainer(
                 duration: MediaQuery.disableAnimationsOf(context) ? Duration.zero : const Duration(milliseconds: 220),
                 curve: Curves.easeOutCubic,
-                width: panel == null ? 0 : (form == null ? 460 : 520),
+                width: panel == null ? 0 : sidePanelWidth(constraints.maxWidth, form: form != null),
                 clipBehavior: Clip.hardEdge,
                 decoration: const BoxDecoration(
                   color: TColor(0xFFF2F6F5),
@@ -1049,20 +1086,23 @@ class _ModuleDashboard extends StatelessWidget {
               color: const TColor(0xFF2D5F80),
             ),
         ];
-        Widget panel(String title, Widget child) => Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: TColor(0xFFFFFFFF),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: const TColor(0xFFE6EEEB)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14.5)),
-              const SizedBox(height: 12),
-              child,
-            ],
+        Widget panel(String title, Widget child) => ChartSwitchHost(
+          id: '${m.key}: $title',
+          builder: (context, button) => Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: TColor(0xFFFFFFFF),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: const TColor(0xFFE6EEEB)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(children: [Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14.5))), ?button]),
+                const SizedBox(height: 12),
+                child,
+              ],
+            ),
           ),
         );
         final charts = <Widget>[
@@ -1331,10 +1371,7 @@ class _ModuleDetailScreenState extends State<ModuleDetailScreen> {
                                       onPressed: _busy ? null : () => _run(a),
                                       icon: Icon(a.icon, size: 18),
                                       label: Text(a.label),
-                                      style: OutlinedButton.styleFrom(
-                                        foregroundColor: const TColor(0xFFB3261E),
-                                        side: const BorderSide(color: TColor(0xFFF0B8B3)),
-                                      ),
+                                      style: OutlinedButton.styleFrom(backgroundColor: const TColor(0xFFB3261E), foregroundColor: Colors.white),
                                     )
                                   : FilledButton.tonalIcon(onPressed: _busy ? null : () => _run(a), icon: Icon(a.icon, size: 18), label: Text(a.label)),
                             ),
@@ -1718,6 +1755,7 @@ class _ModuleFormScreenState extends State<ModuleFormScreen> {
     filled: true,
     fillColor: TColor(0xFFFFFFFF),
     alignLabelWithHint: f.type == FieldType.longText,
+    suffixText: f.suffix,
     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
   );
 

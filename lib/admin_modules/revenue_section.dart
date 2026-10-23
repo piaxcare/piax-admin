@@ -9,6 +9,7 @@ import '../models.dart';
 import 'charts.dart';
 import 'dashboard_images.dart';
 import 'dashboard_widgets.dart';
+import 'chart_switch.dart';
 import 'insights.dart';
 import 'repository.dart';
 import 'package:piax_orders_admin/palette.dart';
@@ -326,7 +327,9 @@ class ComboChart extends StatelessWidget {
   static const _ink = TColor(0xFF0B5B4E);
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => SwitchableChart(id: 'ComboChart', data: ChartData(labels: [for (var i = 0; i < bars.length; i++) label(i)], values: bars, format: money ? (v) => rupees(v.round()) : null, shape: ChartShape.series, looksLike: ChartKind.bar), original: _chart(context));
+
+  Widget _chart(BuildContext context) {
     final n = bars.length;
     final topBar = math.max(1, bars.fold<int>(0, math.max)).toDouble();
     final topCount = math.max(1, counts.fold<int>(0, math.max)).toDouble();
